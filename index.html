@@ -2727,6 +2727,7 @@ const onClick = e => {
     case 'acc-mode': keepEmail(); acc.d.pass = acc.d.pass2 = ''; acc.mode = v; acc.msg = ''; acc.auto = false; renderAccount(); break;
     case 'acc-login': doLogin(); break;
     case 'acc-resend': doResend(); break;
+    case 'acc-code': doCode(); break;
     case 'acc-signup': doSignup(); break;
     case 'acc-reset': doReset(); break;
     case 'acc-newpass': doNewPass(); break;
@@ -3059,7 +3060,7 @@ function results(){
 }
 
 /* ---------- compte (Supabase) : inscription, connexion, synchronisation, espace admin ---------- */
-const APP_VERSION = '24 oct. 2026 · v86';
+const APP_VERSION = '24 oct. 2026 · v87';
 async function forceUpdate(el){
   if (!navigator.onLine) return alert(tr('Pas de connexion : connecte-toi à internet pour mettre à jour.'));
   el.disabled = true; el.textContent = tr('Mise à jour…');
@@ -3109,6 +3110,7 @@ function friendly(e){
   if (/email rate limit|over_email_send_rate_limit/i.test(m)) return tr("Le site a atteint sa limite d'e-mails pour le moment : réessaie dans une heure, ou préviens l'administrateur.");
   if (/not authorized/i.test(m) && /email/i.test(m)) return tr("L'envoi d'e-mails n'est pas encore ouvert à tout le monde sur ce site : l'administrateur doit brancher un service d'envoi (voir supabase/README.md).");
   if (/sending (confirmation|recovery|magic link|email)|error sending/i.test(m)) return tr("L'e-mail n'a pas pu être envoyé : réessaie plus tard ou préviens l'administrateur.");
+  if (/token has expired|otp.*(expired|invalid)|invalid.*(token|otp)/i.test(m)) return tr('Code incorrect ou expiré : demande un nouvel e-mail et utilise le dernier code reçu.');
   if (/rate limit|too many|security purposes/i.test(m)) return tr('Trop de tentatives : réessaie dans quelques minutes.');
   if (/Password should|weak.password|known to be weak|pwned/i.test(m) || (e && Array.isArray(e.reasons) && e.reasons.length)) return pwHelp(e, m) || tr('Mot de passe refusé : choisis-en un plus long, avec majuscules, minuscules, chiffres et un caractère spécial.');
   if (/does not exist|schema cache|Could not find/i.test(m)) return tr("La base n'est pas prête : exécute supabase/schema.sql dans Supabase.");
@@ -3295,7 +3297,11 @@ function renderAccount(){
   $app.innerHTML = `${gate ? langBar : `<div class="top"><button class="link" data-act="acc-back">${tr('← Retour')}</button><span>${tr('Compte')}</span></div>`}
     ${gate ? `<div class="hero" style="margin-top:8px"><div class="logo"><span class="lg">تثبيت</span></div><div><h1>Tathbīt</h1><p class="tag">${tr('Coran et moutoun')}</p><p>${tr("Crée un compte ou connecte-toi pour accéder à l'application.")}</p><p class="ref" style="margin:2px 0 0">${tr('Consolider ce que tu as déjà mémorisé (tathbīt), pas le mémoriser pour la première fois (ḥifẓ).')}</p></div></div>` : `<h1 style="margin-top:8px">${tr('Mon compte')}</h1>`}
     ${acc.msg && cloudOn() && sb ? `<div id="acc-msg" class="fb ${acc.ok ? 'ok' : 'ko'}">${esc(acc.msg)}</div>` : ''}
-    ${acc.resend && !me && sb && !acc.mode.startsWith('newp') ? `<p style="margin:0 0 10px;text-align:center"><button class="link" data-act="acc-resend">✉ ${tr("Renvoyer l'e-mail de confirmation")}</button></p>` : ''}${body}`;
+    ${acc.resend && !me && sb && !acc.mode.startsWith('newp') ? `<div class="card"><h2>🔢 ${tr("J'ai un code de confirmation")}</h2>
+      <p class="ref" style="margin:0 0 6px">${tr("Le message de confirmation contient aussi un code. S'il est classé dans les indésirables, ses liens ne sont pas cliquables : ouvre-le, touche « Ce n'est pas du spam » (les liens redeviennent cliquables), ou tape le code ici.")}</p>
+      ${f('ac-code', tr('Code reçu par e-mail'), 'text', 'one-time-code', 'inputmode="numeric" maxlength="12" data-enter="ac-codego"')}
+      <button id="ac-codego" class="pri" style="margin-top:8px" data-act="acc-code">${tr('Valider le code')}</button></div>
+    <p style="margin:0 0 10px;text-align:center"><button class="link" data-act="acc-resend">✉ ${tr("Renvoyer l'e-mail de confirmation")}</button></p>` : ''}${body}`;
   clearTimeout(msgTimer);
   if (acc.msg && acc.auto) msgTimer = setTimeout(clearMsg, 3500); // « Déconnecté. », « Synchronisé. »… disparaissent seuls
 }
@@ -3329,7 +3335,14 @@ const doSignup = () => busy(async () => {
   if (data.user && data.user.identities && data.user.identities.length === 0) throw new Error(tr('Un compte existe déjà avec cet e-mail : connecte-toi.'));
   if (data.session){ await loadMe(data.session); acc.msg = tr('Compte créé.'); acc.ok = true; return; }
   acc.mode = 'login'; acc.ok = true; acc.resend = email;
-  acc.msg = tr('Compte créé. Un e-mail de confirmation a été envoyé à {email} : clique le lien, puis connecte-toi.', {email}) + ' ' + tr('Regarde aussi dans les courriers indésirables.');
+  acc.msg = tr('Compte créé. Un e-mail de confirmation a été envoyé à {email} : clique le lien ou tape le code, puis connecte-toi.', {email}) + ' ' + tr('Regarde aussi dans les courriers indésirables.');
+});
+const doCode = () => busy(async () => { // confirmation par code (le lien du message peut être désactivé quand il est classé en indésirable)
+  const code = (val('ac-code') || '').replace(/\s+/g, ''); if (!/^\d{6,10}$/.test(code)) throw new Error(tr('Le code contient 6 à 10 chiffres.'));
+  if (!okEmail(acc.resend)) throw new Error(tr('Adresse e-mail invalide.'));
+  const {data, error} = await sb.auth.verifyOtp({email: acc.resend, token: code, type: 'signup'}); if (error) throw error;
+  acc.resend = ''; acc.ok = true;
+  if (data && data.session){ await loadMe(data.session); acc.msg = tr('E-mail confirmé : bienvenue !'); } else { acc.mode = 'login'; acc.msg = tr('E-mail confirmé : connecte-toi.'); }
 });
 const doResend = () => busy(async () => {
   const wait = Math.ceil((acc.resendAt + 60000 - Date.now()) / 1000);

@@ -76,5 +76,11 @@ Pour démarrer gratuitement (environ 500 e-mails par jour pour un compte Gmail p
 4. Supabase → Authentication → SMTP Settings → Custom SMTP : Sender email = l'adresse Gmail dédiée · Sender name = `Tathbīt` · Host = `smtp.gmail.com` · Port = `465` (ou `587`) · Username = l'adresse Gmail complète · Password = le code de 16 caractères.
 5. Puis les étapes 4 à 7 ci-dessus (limite horaire, URL de site, modèles, test). Si Google bloque l'envoi ou si le nombre d'inscrits dépasse la limite quotidienne, passe à un nom de domaine et à Resend.
 
+### Le message de confirmation arrive dans les indésirables
+Gmail désactive les liens d'un message classé en indésirables : le bouton « Confirmer mon e-mail » n'est alors plus cliquable. Pourquoi ça arrive : adresse d'envoi toute neuve, lien qui pointe vers `supabase.co` (domaine différent de l'expéditeur), envoi depuis un compte Gmail par SMTP plutôt que depuis un domaine vérifié. Ce qui aide, du plus rapide au plus durable :
+1. **Le code dans le message** : le modèle `confirm-signup.html` contient `{{ .Token }}` (code à chiffres) ; l'application propose « J'ai un code de confirmation » après l'inscription et sur l'écran de connexion. Le code reste lisible et se tape même quand les liens sont désactivés. Il faut recoller le modèle dans Supabase (étape 6). La longueur du code se règle dans les réglages de l'e-mail de Supabase (6 chiffres par défaut d'après sa documentation ; le nom du menu peut varier) ; l'application accepte de 6 à 10 chiffres.
+2. **L'utilisateur** ouvre le message et touche « Ce n'est pas du spam » : les liens redeviennent cliquables et les messages suivants arrivent en général dans la boîte de réception.
+3. **Un nom de domaine à toi + Resend** (section ci-dessus) : envoi depuis un domaine vérifié (SPF, DKIM), c'est la vraie solution de fond.
+
 Ne mets jamais la clé API dans le dépôt : elle ne va que dans le champ « Password » de Supabase.
 

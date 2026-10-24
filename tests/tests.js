@@ -825,11 +825,16 @@
     ok(/n'a pas pu être envoyé/.test(f('Error sending confirmation email')), 'envoi'); ok(/Trop de tentatives/.test(f('For security purposes, you can only request this after 20 seconds')), 'anti-spam');
     ok(/incorrect/.test(f('Invalid login credentials')), 'identifiants');
     const calls = []; W.__c = calls;
-    E("CLOUD.url = 'https://x.supabase.co'; CLOUD.anonKey = 'k'; me = null; acc.mode = 'signup'; acc.resend = ''; acc.resendAt = 0; sb = {auth: {async signUp(){ window.__c.push('signUp'); return {data: {user: {identities: [{}]}, session: null}, error: null}; }, async resend(o){ window.__c.push('resend ' + o.email + ' ' + o.type); return {error: null}; }, async signInWithPassword(){ return {data: null, error: {message: 'Email not confirmed'}}; }}};");
+    E("CLOUD.url = 'https://x.supabase.co'; CLOUD.anonKey = 'k'; me = null; acc.mode = 'signup'; acc.resend = ''; acc.resendAt = 0; sb = {auth: {async signUp(){ window.__c.push('signUp'); return {data: {user: {identities: [{}]}, session: null}, error: null}; }, async resend(o){ window.__c.push('resend ' + o.email + ' ' + o.type); return {error: null}; }, async verifyOtp(o){ window.__c.push('otp ' + o.email + ' ' + o.token + ' ' + o.type); return o.token === '123456' ? {data: {session: null}, error: null} : {data: null, error: {message: 'Token has expired or is invalid'}}; }, async signInWithPassword(){ return {data: null, error: {message: 'Email not confirmed'}}; }}};");
     E("renderAccount()"); ok(!$q('[data-act="acc-resend"]'), 'pas de bouton avant inscription');
     ok(/8 caractères minimum, avec au moins une minuscule, une majuscule, un chiffre et un symbole/.test(appText()), 'inscription : les règles du mot de passe sont écrites avant la saisie');
     $q('#ac-email').value = 'a@b.fr'; $q('#ac-pass').value = 'motdepasse1'; $q('#ac-pass2').value = 'motdepasse1'; $q('#ac-consent').checked = true; clickAct('acc-signup'); await wait(300);
     ok($q('[data-act="acc-resend"]'), 'bouton de renvoi après inscription'); ok(/indésirables/.test($q('#acc-msg').textContent), 'rappel du dossier spam');
+    ok($q('#ac-code') && $q('[data-act="acc-code"]') && /pas du spam/.test(appText()), 'code de confirmation proposé quand le lien est désactivé (message en indésirables)');
+    $q('#ac-code').value = '12'; clickAct('acc-code'); await wait(200); ok(/6 à 10 chiffres/.test($q('#acc-msg').textContent) && !calls.some(c => c.startsWith('otp')), 'code trop court refusé sans appel');
+    $q('#ac-code').value = '999999'; clickAct('acc-code'); await wait(300); ok(calls.includes('otp a@b.fr 999999 signup') && /incorrect ou expiré/.test($q('#acc-msg').textContent), 'mauvais code : message clair');
+    $q('#ac-code').value = '123 456'; clickAct('acc-code'); await wait(300); ok(calls.includes('otp a@b.fr 123456 signup') && /E-mail confirmé/.test($q('#acc-msg').textContent) && !$q('#ac-code'), 'bon code (espaces ignorés) : e-mail confirmé, carte du code disparue');
+    E("acc.resend = 'a@b.fr'; acc.mode = 'login'; renderAccount()");
     clickAct('acc-resend'); await wait(300); ok(calls.includes('resend a@b.fr signup'), 'renvoi demandé'); ok(/renvoyé/.test($q('#acc-msg').textContent));
     clickAct('acc-resend'); await wait(300); eq(calls.filter(c => c.startsWith('resend')).length, 1, 'une relance par minute au plus'); ok(/Patiente/.test($q('#acc-msg').textContent), 'attente affichée');
     E("acc.resend = ''; acc.resendAt = 0; acc.mode = 'login'; renderAccount()"); $q('#ac-email').value = 'c@d.fr'; $q('#ac-pass').value = 'x'; clickAct('acc-login'); await wait(300);
