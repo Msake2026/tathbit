@@ -1045,6 +1045,11 @@
     ok(calls.at(-1).startsWith('push_subscribe') && calls.at(-1).includes('"p_time":"20:00"') && calls.at(-1).includes('"p_time2":"21:30"'), 'push_subscribe avec les 2 heures');
     $q('#rem-two').click(); clickAct('rem-save'); await wait(300); ok(calls.at(-1).includes('"p_time2":null'), 'sans 2e rappel : p_time2 nul');
     clickAct('rem-off'); await wait(300); ok(calls.some(c => c.startsWith('push_unsubscribe')), 'désabonnement serveur'); eq(E('remState().on'), false);
+    // iPhone dans Safari (application non installée) : pas de « navigateur incompatible » mais le guide d'installation
+    E("IOS = true; cfg.setTab = 'all'; go('settings')"); ok(!/Ton navigateur ne gère pas les notifications/.test(appText()) && /les rappels ne marchent que si l'application est installée/.test(appText()), 'iPhone non installé : explication au lieu de « navigateur incompatible »');
+    clickAct('tile-install'); await wait(100); ok(/Installation/.test(appText()) && $$q('.inststeps svg').length === 3, 'le bouton ouvre le guide d’installation en 3 schémas');
+    for (const L of ['en', 'ar']){ E(`setLang('${L}'); cfg.setTab = 'all'; go('settings')`); ok(!!$q('[data-act="tile-install"]'), 'bouton d’installation dans les rappels (' + L + ')'); eq(E('[...missingKeys]'), [], 'clés traduites (' + L + ')'); }
+    E("setLang('fr'); IOS = false");
     E("CLOUD.url = ''; CLOUD.anonKey = ''; CLOUD.vapidPublicKey = ''; sb = null; me = null;");
   });
 

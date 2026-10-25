@@ -3644,8 +3644,8 @@ function remindCard(){
   const r = remState(), ok = PUSH_OK(), needInstall = IOS && !IOS_APP;
   return `<div class="card"><h2>${tr('Rappels')}</h2>
     <p class="ref" style="margin:0 0 8px">${tr("Reçois une notification chaque jour à l'heure choisie, seulement si tu n'as pas encore révisé ce jour-là.")}</p>
-    ${!ok ? `<p class="ref" style="margin:0">${tr('Ton navigateur ne gère pas les notifications.')}</p>`
-    : needInstall ? `<p class="ref" style="margin:0">${tr("Sur iPhone, installe d'abord l'application sur l'écran d'accueil (Partager, puis « Sur l'écran d'accueil ») pour recevoir des rappels.")}</p>`
+    ${needInstall ? `<p class="ref" style="margin:0 0 8px">${tr("Sur iPhone, les rappels ne marchent que si l'application est installée sur l'écran d'accueil.")}</p><button class="pri" data-act="tile-install">📲 ${tr("Voir comment installer l'application")}</button>`   // avant « !ok » : Safari (hors application installée) n'expose pas les notifications
+    : !ok ? `<p class="ref" style="margin:0">${tr('Ton navigateur ne gère pas les notifications.')}</p>`
     : `<label class="f" for="rem-time">${tr('Heure du rappel')}</label><input type="time" id="rem-time" value="${esc(r.time)}">
        <label class="f" style="display:flex;gap:8px;align-items:center;margin-top:12px"><input type="checkbox" id="rem-two"${r.two ? ' checked' : ''}>${tr("Un 2e rappel plus tard, si je n'ai toujours pas révisé")}</label>
        <input type="time" id="rem-time2" value="${esc(r.time2)}"${r.two ? '' : ' disabled'} aria-label="${tr('Heure du 2e rappel')}">
