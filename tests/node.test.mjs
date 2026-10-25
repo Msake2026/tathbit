@@ -593,3 +593,18 @@ test('version.json : suit la version affichée par l’application (à mettre à
   const ts = read('supabase/functions/send-reminders/index.ts'); assert.match(ts, /announceUpdates/); assert.match(ts, /kind: 'app_update'/);
   const sql = read('supabase/teacher.sql'); for (const f of ['admin_announce_update', 'admin_announcements', 'updates_set']) assert.match(sql, new RegExp('function public\\.' + f), f);
 });
+
+test('e-mail « nouvelle version » : HTML avec logo, couleurs de l’application, bouton, note échappée, trois langues (arabe de droite à gauche)', () => {
+  const ts = read('supabase/functions/send-reminders/index.ts'), code = ts.slice(ts.indexOf('/* UH:begin'), ts.indexOf('/* UH:end */'))
+    .replace('const escH = (x: string)', 'const escH = (x)').replace('function updHtml(langs: string[], label: string, note: string | null): string', 'function updHtml(langs, label, note)')
+    .replace('const part = (k: string, i: number)', 'const part = (k, i)').replace('(UH as Record<string, typeof UH.fr>)[k]', 'UH[k]');
+  const { updHtml } = new Function(code + '; return {updHtml};')();
+  const h3 = updHtml(['fr', 'en', 'ar'], '25 oct. 2026 · v92', 'Récitation <libre> & « voyelles »');
+  assert.match(h3, /icons\/icon-192\.png/, 'logo'); assert.match(h3, /#0f5d46/, 'vert de l’application'); assert.match(h3, /#b58a2c/, 'or de l’application');
+  assert.match(h3, /href="https:\/\/msake2026\.github\.io\/tathbit\/"/, 'bouton vers le site'); assert.match(h3, /Ouvrir Tathbīt/); assert.match(h3, /Open Tathbīt/); assert.match(h3, /dir="rtl"/, 'arabe de droite à gauche');
+  assert.ok(h3.includes('Récitation &lt;libre&gt; &amp; « voyelles »') && !h3.includes('<libre>'), 'la note est échappée (pas d’HTML injecté)');
+  assert.ok(h3.includes('v92') && h3.indexOf('Chercher les mises à jour') > 0 && h3.includes('Check for updates'), 'version et consigne');
+  const fr = updHtml(['fr'], 'v93', null); assert.ok(!fr.includes('Open Tathbīt') && !fr.includes('dir="rtl"') && !fr.includes('border-left:4px'), 'une seule langue, sans encadré de note quand il n’y en a pas');
+  assert.match(ts, /html: updHtml\(/, 'l’e-mail part avec la version HTML en plus du texte brut');
+});
+

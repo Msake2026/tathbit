@@ -143,6 +143,40 @@ async function notifyMessages(db: ReturnType<typeof createClient>) {
   return n;
 }
 
+/* UH:begin — e-mail « nouvelle version » en HTML (logo, couleurs de l'application) ; testé en Node */
+const SITE = 'https://msake2026.github.io/tathbit/', LOGO = SITE + 'icons/icon-192.png';
+const escH = (x: string) => x.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+const UH = {
+  fr: { h: 'Une nouvelle version de Tathbīt est disponible', ver: 'Version', tip: "Ouvre l'application : un message « Nouvelle version disponible » apparaît à l'accueil. Touche « Chercher les mises à jour » (aussi dans Réglages) pour la récupérer.", btn: 'Ouvrir Tathbīt', tail: 'Tu peux ne plus recevoir ces e-mails : Tathbīt → Réglages → Compte.' },
+  en: { h: 'A new version of Tathbīt is available', ver: 'Version', tip: 'Open the app: a “New version available” message appears on the home screen. Tap “Check for updates” (also in Settings) to get it.', btn: 'Open Tathbīt', tail: 'You can stop these e-mails: Tathbīt → Settings → Account.' },
+  ar: { h: 'يتوفر إصدار جديد من «تثبيت»', ver: 'الإصدار', tip: 'افتح التطبيق: تظهر في الصفحة الرئيسية رسالة «إصدار جديد متاح». اضغط «البحث عن التحديثات» (وهي أيضاً في الإعدادات) للحصول عليه.', btn: 'افتح تثبيت', tail: 'يمكنك إيقاف هذه الرسائل: تثبيت ← الإعدادات ← الحساب.' },
+};
+function updHtml(langs: string[], label: string, note: string | null): string {
+  const part = (k: string, i: number) => {
+    const t = (UH as Record<string, typeof UH.fr>)[k], rtl = k === 'ar', side = rtl ? 'right' : 'left';
+    return `${i ? '<tr><td style="padding:0 28px"><hr style="border:0;border-top:1px solid #decfa9;margin:6px 0 0"></td></tr>' : ''}
+<tr><td dir="${rtl ? 'rtl' : 'ltr'}" style="padding:22px 28px 8px;text-align:${side}">
+<h2 style="margin:0 0 10px;font:700 21px/1.35 Georgia,'Times New Roman',serif;color:#0f5d46">${t.h}</h2>
+<p style="margin:0 0 12px"><span style="display:inline-block;background:#b58a2c;color:#fffdf6;font:700 13px Arial,sans-serif;padding:4px 12px;border-radius:999px">${t.ver} · <bdi dir="ltr">${escH(label)}</bdi></span></p>
+${note ? `<div style="margin:0 0 12px;padding:10px 14px;background:#f3ead6;border-${side}:4px solid #b58a2c;border-radius:8px;font:15px/1.6 Arial,sans-serif;color:#2b2218">${escH(note)}</div>` : ''}
+<p style="margin:0 0 16px;font:15px/1.65 Arial,sans-serif;color:#2b2218">${t.tip}</p>
+<p style="margin:0 0 18px;text-align:center"><a href="${SITE}" style="display:inline-block;background:#0f5d46;color:#fff8e6;text-decoration:none;font:700 16px Arial,sans-serif;padding:13px 28px;border-radius:12px">${t.btn}</a></p>
+<p style="margin:0 0 6px;font:12px/1.5 Arial,sans-serif;color:#6f6049;text-align:${side}">${t.tail}</p>
+</td></tr>`;
+  };
+  return `<!doctype html><html lang="${langs[0]}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"></head><body style="margin:0;padding:24px 12px;background:#f3ead6">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center">
+<table role="presentation" width="520" cellpadding="0" cellspacing="0" style="max-width:520px;width:100%;background:#fcf7ea;border:1px solid #decfa9;border-radius:16px;overflow:hidden">
+<tr><td align="center" style="background:#0f5d46;padding:26px 20px">
+<img src="${LOGO}" width="84" height="84" alt="تثبيت" style="display:block;margin:0 auto 10px;border:0;border-radius:20px">
+<div style="font:700 26px Georgia,'Times New Roman',serif;color:#fff8e6;letter-spacing:.5px">Tathbīt</div>
+<div style="font:14px Arial,sans-serif;color:#e3cf98;margin-top:2px">تثبيت · Coran et moutoun</div></td></tr>
+${langs.map(part).join('')}
+<tr><td style="padding:10px 28px 22px;text-align:center;font:12px Arial,sans-serif;color:#6f6049"><a href="${SITE}" style="color:#6f6049">msake2026.github.io/tathbit</a></td></tr>
+</table></td></tr></table></body></html>`;
+}
+/* UH:end */
+
 const UPD = {
   fr: { title: 'Tathbīt · nouvelle version', subject: 'Tathbīt : nouvelle version disponible',
         body: (l: string, n: string | null) => `Une nouvelle version de Tathbīt est disponible (${l}).${n ? '\n' + n : ''}\n\nOuvre l'application, puis touche « Chercher les mises à jour » (Réglages) pour la récupérer.`,
@@ -197,7 +231,7 @@ async function announceUpdates(db: ReturnType<typeof createClient>) {
       for (const p of todo) {
         const l = lang.get(p.id) as keyof typeof UPD | undefined, one = l && UPD[l];
         const content = one ? `${one.body(a.label, a.note)}\n\n${one.tail}` : (['fr', 'en', 'ar'] as const).map((k) => `${UPD[k].body(a.label, a.note)}\n${UPD[k].tail}`).join('\n\n———\n\n');
-        try { await client.send({ from: smtpUser, to: p.email, subject: one ? one.subject : UPD.en.subject, content }); await db.from('announce_mail').insert({ announcement_id: a.id, user_id: p.id }); mail++; }
+        try { await client.send({ from: `Tathbīt <${smtpUser}>`, to: p.email, subject: one ? one.subject : UPD.en.subject, content, html: updHtml(one && l ? [l] : ['fr', 'en', 'ar'], a.label, a.note) }); await db.from('announce_mail').insert({ announcement_id: a.id, user_id: p.id }); mail++; }
         catch (e) { console.error('mail maj', (e as Error).message); }
       }
     } finally { await client.close().catch(() => {}); }
