@@ -820,24 +820,22 @@ function weakCard(full){
     ${full ? `<p class="ref" style="margin:8px 0 0">${tr("Choisis chaque jour parmi tes versets les plus fragiles : erreurs récentes (les plus récentes comptent le plus), retard de révision et taux de réussite. Un verset reste dans la liste jusqu'à ce qu'il tienne plus d'une semaine sans erreur.")}</p>`
       : `<button class="list-btn" data-act="tab" data-v="plan"><span>${tr('Voir la liste')}</span><span>›</span></button>`}</div>`;
 }
-function homeTiles(due){ // tableau de bord : une tuile par grande fonction, avec son état en cours et un accès direct
-  const wk = errors.filter(e => e.t >= Date.now() - 7 * 864e5).length, tot = Object.values(stats).reduce((a, v) => [a[0] + (v[0] || 0), a[1] + (v[1] || 0)], [0, 0]);
-  const act7 = [0, 1, 2, 3, 4, 5, 6].filter(i => days[today(new Date(Date.now() - i * 864e5))]).length, last = store.get('tathbit.frLast', null);
+function homeTiles(){ // tableau de bord : une tuile par fonction, avec son état en cours et un accès direct (la révision des versets dus et la série de jours sont dans « Aujourd'hui »)
+  const wk = errors.filter(e => e.t >= Date.now() - 7 * 864e5).length, tot = Object.values(stats).reduce((a, v) => [a[0] + (v[0] || 0), a[1] + (v[1] || 0)], [0, 0]), last = store.get('tathbit.frLast', null);
   let planSt = tr('Pas de plan : crée-en un');
   if (plan){ const T = planToday(), n = (T.next ? 1 : 0) + (T.rec.length ? 1 : 0) + (T.man.length ? 1 : 0), d = (T.next && T.d.sabaq ? 1 : 0) + (T.rec.length && T.d.sabqi ? 1 : 0) + (T.man.length && T.d.manzil ? 1 : 0); planSt = T.next || n ? tr("{a} / {b} étapes terminées aujourd'hui", {a: d, b: n}) : tr('Plan terminé 🎉'); }
   const mt = cfg.lastM && MT[cfg.lastM] ? MN(cfg.lastM) : null;
   const T = [
-    [due.length ? 'review' : 'tab', due.length ? '' : 'train', '🔁', 'Réviser', 'Versets dus et séries', due.length ? trp(due.length, '{n} verset à revoir|{n} versets à revoir') : tr('Rien à revoir pour le moment')],
     ['tab', 'plan', '📅', 'Plan', 'Ta routine de révision', planSt],
     ['fr-setup', '', '🎙️', 'Réciter à voix haute', 'Sourates de mémoire, au micro', last ? tr('Dernière : {d} · {n}', {d: new Date(last.t).toLocaleDateString(LOCALE(), {day: 'numeric', month: 'short'}), n: trp(last.n, '{n} verset|{n} versets')}) : tr("Pas encore essayé")],
     ['tile-matn', '', '📜', 'Moutoun', "Ibn ʿĀshir, Tuḥfa, Bayqūniyya…", mt ? tr('Dernier : {m}', {m: esc(mt)}) : trp(Object.keys(MT).length, '{n} matn|{n} moutoun')],
-    ['tab', 'progress', '📊', 'Progrès', 'Statistiques et jours actifs', tot[0] + tot[1] ? tr('{r} % de réussite · {n} jours actifs sur 7', {r: Math.round(100 * tot[0] / (tot[0] + tot[1])), n: act7}) : tr('Pas encore de réponses')],
+    ['rdscope', '', '📖', 'Lire', 'Texte complet, tajwīd, traductions', tr('Coran ({n} sourates) et moutoun', {n: 114})],
+    ['tab', 'progress', '📊', 'Progrès', 'Statistiques par sourate', tot[0] + tot[1] ? tr('{r} % de réussite · {n} réponses', {r: Math.round(100 * tot[0] / (tot[0] + tot[1])), n: Math.round(tot[0] + tot[1])}) : tr('Pas encore de réponses')],
     ['tab', 'errors', '⚠️', 'Erreurs', 'Ce qu\'il faut renforcer', wk ? trp(wk, '{n} erreur cette semaine|{n} erreurs cette semaine') : tr('Aucune erreur cette semaine 👍')]];
   return `<h2 style="margin:16px 0 0">${tr('Mon tableau de bord')}</h2><div class="sethub">${T.map(([a, v, ic, t, d, st]) => `<button data-act="${a}"${v ? ` data-v="${v}"` : ''}><span class="si" aria-hidden="true">${ic}</span><b>${tr(t)}</b><small>${tr(d)}</small><span class="sv">${st}</span></button>`).join('')}</div>`;
 }
 function tabHome(){
   const due = dueRefs(), td = days[today()] || 0, st = streak();
-  const top = aggErrors(errors.filter(e => e.t >= Date.now() - 7 * 864e5)).slice(0, 3);
   return `
   <div id="upd-slot">${updBannerHtml()}</div>
   <div id="news-slot">${newsCardHtml()}</div>
@@ -854,23 +852,16 @@ function tabHome(){
       : `<p class="sub" style="margin:8px 0 0">${tr("Rien à revoir pour l'instant. Lance une série : les versets à retravailler reviendront ici au bon moment.")}</p>`}
   </div>
 
-  ${homeTiles(due)}
+  ${homeTiles()}
 
   ${weakCard(false)}
   ${goalHomeCard()}
-  ${plan ? (() => { const T = planToday(), tot = (T.next ? 1 : 0) + (T.rec.length ? 1 : 0) + (T.man.length ? 1 : 0), dn = (T.next && T.d.sabaq ? 1 : 0) + (T.rec.length && T.d.sabqi ? 1 : 0) + (T.man.length && T.d.manzil ? 1 : 0);
-    return `<div class="card"><h2>${tr('Plan du jour')}</h2><p class="sub" style="margin:0 0 8px">${T.next || tot ? tr("{a} / {b} étapes terminées aujourd'hui", {a: dn, b: tot}) : tr('Plan terminé 🎉')}</p>
-    <button class="pri big" data-act="tab" data-v="plan">${tr('Ouvrir mon plan')}</button></div>`; })() : ''}
-
   <div class="card"><h2>${tr('Ma série')}</h2>
     <div class="sumline"><span>${cfg.scope.type === 'matn' ? '📜 ' + tr('Moutoun') : '📖 ' + tr('Coran')}</span><span>${esc(scopeLabel(cfg.scope))}</span>
       <span>${esc(modeTitle(cfg.mode))}</span>${cfg.mode === 'tajweed' ? `<span>${tr((TJKINDS.find(k => k[0] === cfg.tjKind) || TJKINDS[0])[1])}</span>` : cfg.mode === 'madd' ? `<span>${tr((MDKINDS.find(k => k[0] === cfg.mdKind) || MDKINDS[0])[1])}</span>` : cfg.mode === 'ahkam' ? `<span>${tr((AHKINDS.find(k => k[0] === cfg.ahKind) || AHKINDS[0])[1])}</span>` : cfg.mode === 'makharij' ? `<span>${tr((MKKINDS.find(k => k[0] === cfg.mkKind) || MKKINDS[0])[1])}</span>` : cfg.mode === 'sifat' ? `<span>${tr((SFKINDS.find(k => k[0] === cfg.sfKind) || SFKINDS[0])[1])}</span>` : ''}<span>${trp(cfg.n, '{n} question|{n} questions')}</span>${(MODE_OPTS[cfg.mode] || {}).input ? `<span>${tr(INPUTS[cfg.input] || '')}</span>` : ''}</div>
     <button class="pri big" data-act="start">${tr('Commencer')}</button>
     <div class="row" style="margin-top:8px"><button data-act="tab" data-v="train">${tr('Modifier')}</button><button data-act="lsopen">🎧 ${tr('Écouter')}</button></div>
-  </div>
-
-  ${top.length ? `<div class="card"><h2>${tr('Mes erreurs de la semaine')}</h2>${top.map(a => `<div class="weak"><span>${rlabel(a.r)}</span><span>${a.n}×</span></div>`).join('')}
-    <button class="list-btn" data-act="tab" data-v="errors"><span>${tr('Voir toutes mes erreurs')}</span><span>›</span></button></div>` : ''}`;
+  </div>`;
 }
 
 /* -- Plan de révision : sabaq (nouveau), sabqi (révision récente), manzil (révision ancienne) -- */
