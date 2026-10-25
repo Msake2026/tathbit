@@ -622,3 +622,12 @@ test('news.json : même version que l’application, chaque nouveauté en trois 
     assert.ok(it.icon && it.go && targets.includes(it.go) && it.go !== 'news', 'cible « ' + it.go + ' » connue de l’application (' + targets.join(', ') + ')');
   }
 });
+test('news-history.json : versions précédentes (plus récente d’abord), chaque nouveauté en trois langues', () => {
+  const html = read('index.html'), n = JSON.parse(read('news.json')), H = JSON.parse(read('news-history.json')).versions, build = +/v(\d+)/.exec(/const APP_VERSION = '([^']+)'/.exec(html)[1])[1];
+  assert.ok(H.length >= 1, 'au moins une version archivée');
+  for (let i = 0; i < H.length; i++){
+    assert.ok(H[i].v < n.v, 'une version archivée est plus ancienne que la version courante (v' + H[i].v + ' < v' + n.v + ')'); if (i) assert.ok(H[i - 1].v > H[i].v, 'ordre décroissant');
+    for (const it of H[i].items) for (const k of ['title', 'text']) for (const l of ['fr', 'en', 'ar']) assert.ok(it[k] && it[k][l] && it[k][l].length > 3, 'v' + H[i].v + ' ' + it.id + ' ' + k + ' ' + l);
+  }
+  assert.equal(new Set(H.map(x => x.v)).size, H.length, 'pas de doublon'); assert.ok(n.v === build);
+});

@@ -119,18 +119,18 @@ button.big{width:100%;padding:14px;font-size:1.05rem}
 .mode small{color:var(--muted)}
 .mode.sel{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent) inset}
 .seg{display:flex;gap:6px;flex-wrap:wrap}.seg button{flex:1;min-width:110px}.seg button.sel{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
-.ar{font-family:"Amiri Quran","Traditional Arabic",serif;direction:rtl;text-align:right;font-size:1.9rem;line-height:2.3;padding:6px 2px}
+.ar{font-family:"Amiri Quran","Traditional Arabic",serif;direction:rtl;text-align:right;font-size:calc(1.9rem*var(--arz,1));line-height:2.3;padding:6px 2px}
 .ref{color:var(--muted);font-size:.85rem}
 .bar{height:6px;background:var(--line);border-radius:6px;overflow:hidden;margin:6px 0 16px}.bar i{display:block;height:100%;background:var(--accent)}
 .top{display:flex;justify-content:space-between;align-items:center;color:var(--muted);font-size:.9rem}
 .blank{display:inline-block;min-width:3.2em;border-bottom:2px dashed var(--accent);color:transparent;cursor:pointer;user-select:none;margin:0 .15em}
 .blank.rev{color:var(--accent);border-bottom-style:solid}
-.blankin{display:inline-block;width:6.5em;padding:2px 6px;font:inherit;font-family:"Amiri Quran",serif;font-size:1.5rem;direction:rtl;margin:0 .15em}
+.blankin{display:inline-block;width:6.5em;padding:2px 6px;font:inherit;font-family:"Amiri Quran",serif;font-size:calc(1.5rem*var(--arz,1));direction:rtl;margin:0 .15em}
 .w-ok{color:var(--ok)} .w-ko{color:var(--ko);text-decoration:underline wavy}
 .wd{cursor:pointer;border-radius:6px;padding:0 2px}.wd:hover{background:var(--line)}.wd.bad{color:var(--ko);text-decoration:underline wavy}
 sup.vn{font-family:Inter,sans-serif;font-size:.6rem;color:var(--muted);margin:0 3px}
 .opt{display:block;width:100%;margin:8px 0;text-align:right;padding:10px 14px}
-.opt.ar{font-size:1.45rem;line-height:2}
+.opt.ar{font-size:calc(1.45rem*var(--arz,1));line-height:2}
 .opt.c{background:var(--okbg);border-color:var(--ok)} .opt.w{background:var(--kobg);border-color:var(--ko)}
 .fb{padding:10px 14px;border-radius:10px;margin:12px 0}
 .fb.ok{background:var(--okbg)} .fb.ko{background:var(--kobg)} .fb.mid{background:var(--midbg)}
@@ -149,6 +149,7 @@ p a[href],.ref a[href],li a[href]{display:inline-block;min-height:24px;line-heig
 .wdots{display:flex;gap:6px;margin-top:6px}.wdot{width:22px;height:6px;border-radius:3px;background:var(--line)}.wdot.on{background:var(--accent)}
 pre.diag{margin:0 0 8px;padding:8px 10px;background:var(--bg);border:1px solid var(--line);border-radius:10px;font:.78rem/1.45 ui-monospace,Menlo,Consolas,monospace;white-space:pre-wrap;overflow-wrap:anywhere;max-height:14em;overflow:auto;direction:ltr;text-align:left}
 #offbar{position:sticky;top:0;z-index:40;background:var(--midbg);color:var(--ink);border-bottom:1px solid var(--line);padding:6px 16px;font-size:.85rem}#offbar summary{cursor:pointer;font-weight:600}#offbar ul{margin:6px 0 2px;padding-inline-start:20px;line-height:1.5}
+.nhv summary{cursor:pointer}.nhv .card{box-shadow:none}
 .sethub{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:8px 0}.sethub button{display:grid;grid-template-columns:auto minmax(0,1fr);column-gap:8px;row-gap:3px;align-items:center;align-content:start;min-width:0;min-height:0;padding:11px 12px;text-align:start;border-radius:16px;white-space:normal}.sethub .si{font-size:1.45rem;line-height:1}.sethub b{font-size:1rem;line-height:1.2}.sethub small,.sethub .sv{grid-column:1 / -1;min-width:0}.sethub small{color:var(--muted);font-weight:400;font-size:.78rem;line-height:1.3}.sethub .sv{padding-top:4px;border-top:1px dashed var(--line);color:var(--accent);font-size:.8rem;font-weight:600;line-height:1.3;overflow-wrap:anywhere}.sethub .sv.one{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 @media(min-width:700px){.sethub{grid-template-columns:repeat(3,minmax(0,1fr))}}
 .setnav{position:sticky;top:0;z-index:6;background:var(--bg);padding:8px 0}
@@ -160,7 +161,7 @@ details.card>summary{cursor:pointer;list-style:none}details.card>summary::-webki
 .kbd button{min-width:44px;font-size:1.4rem;padding:2px 10px;font-family:"Amiri Quran",serif}
 .chips{display:flex;gap:6px;flex-wrap:wrap}.chips button.sel{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
 .sib{border-top:1px solid var(--line);margin-top:8px;padding-top:6px}
-.sib .ar{font-size:1.3rem;line-height:2}
+.sib .ar{font-size:calc(1.3rem*var(--arz,1));line-height:2}
 /* carte de progression */
 .grid{display:flex;flex-wrap:wrap;gap:4px}
 .cell{width:34px;height:30px;padding:0;font-size:.72rem;border-radius:6px;background:var(--line);color:var(--ink)}
@@ -388,11 +389,13 @@ function offlineSync(){
 }
 addEventListener('offline', () => offlineSync());
 addEventListener('online', () => { offlineSync(); if (me && sb && cmeta().dirty) cloudPush(); });
+const AR_DEF = 1.9;   // taille par défaut du texte arabe (rem) ; cfg.rdSize la règle partout (lecteur, exercices, résultats, erreurs…)
+function applyArSize(){ document.documentElement.style.setProperty('--arz', ((cfg.rdSize || AR_DEF) / AR_DEF).toFixed(3)); }
 function applyLang(){
   document.documentElement.lang = LANG; document.documentElement.dir = LANG === 'ar' ? 'rtl' : 'ltr';
   document.title = tr('Tathbīt – Coran et moutoun');
   const b = document.getElementById('boot'); if (b) b.textContent = tr('Chargement du texte du Coran…');
-  offlineSync();
+  offlineSync(); applyArSize();
 }
 
 /* Normalisation arabe (mode souple) : on ignore voyelles, signes coraniques, variantes d'alif/ya/ta marbuta */
@@ -881,6 +884,20 @@ function renderInstall(){
   window.scrollTo(0, 0);
 }
 async function installNow(){ if (!deferredInstall) return renderInstall(); const e = deferredInstall; deferredInstall = null; let r = null; try { e.prompt(); r = await e.userChoice; } catch { /* refusé ou non pris en charge */ } if (r && r.outcome === 'accepted') alert(tr('Tathbīt est installée : ouvre-la depuis son icône sur ton écran d’accueil.')); home(); }
+/* rappel d'export : sans compte, la progression n'est que sur l'appareil ; au bout de 30 jours sans sauvegarde on le dit (reporté de 7 jours par « Plus tard ») */
+const EXPORT_DAYS = 30;
+function exportNudgeDays(){
+  if (me || !Object.keys(stats).length) return 0;
+  let first = store.get('tathbit.firstUse', 0); if (!first){ first = Date.now(); store.set('tathbit.firstUse', first); }
+  if (Date.now() < store.get('tathbit.exportSnooze', 0)) return 0;
+  const d = Math.floor((Date.now() - Math.max(first, store.get('tathbit.lastExport', 0))) / 864e5);
+  return d >= EXPORT_DAYS ? d : 0;
+}
+function exportNudgeHtml(){
+  const d = exportNudgeDays(); if (!d) return '';
+  return `<div class="card" id="export-nudge"><h2>💾 ${tr('Pense à sauvegarder ta progression')}</h2><p class="sub" style="margin:0 0 8px">${tr("Sans compte, ta progression n'est que sur cet appareil. Elle est perdue si tu effaces les données du navigateur ou si tu changes de téléphone. Dernière sauvegarde : il y a {n} jours.", {n: d})}</p>
+    <div class="row"><button class="pri" data-act="export">${tr('Exporter maintenant')}</button><button data-act="export-later">${tr('Plus tard')}</button></div></div>`;
+}
 function tabHome(){
   const DS = daySteps(), td = days[today()] || 0, st = streak();
   return `
@@ -889,6 +906,7 @@ function tabHome(){
   ${homeNotice ? `<div class="fb ok" role="status">${esc(homeNotice)}</div>` : ''}
   ${remOfferHtml()}
   <div class="hero"><div class="logo"><span class="lg">تثبيت</span></div><div><h1>Tathbīt</h1><p class="tag">${tr('Coran et moutoun')}</p><p>${me ? esc(me.user.email) + ' ' + roleChips() : tr('Que ta mémorisation soit bénie.')}</p></div></div>
+  ${exportNudgeHtml()}
   ${cloudOn() && !me ? `<div class="card"><h2>${tr('Sauvegarde ta progression')}</h2><p class="sub" style="margin:0 0 8px">${tr('Crée un compte gratuit pour retrouver tes séries, tes erreurs et ton historique sur tous tes appareils.')}</p>
     <div class="row"><button class="pri" data-act="acc-open" data-v="signup">${tr('Créer un compte')}</button><button data-act="acc-open" data-v="login">${tr('Se connecter')}</button></div></div>` : ''}
 
@@ -1032,7 +1050,7 @@ function sabTest(){
 }
 function planDefsHtml(open){ // définitions des trois étapes du plan
   const ar = {Sabaq: 'السبق', Sabqi: 'السبقي', Manzil: 'المنزل'};
-  const item = (k, d) => `<p style="margin:0 0 8px"><b>${tr(k)}${LANG === 'ar' ? '' : ' · <span class="ar" style="font-size:1.15rem;line-height:1.4;padding:0">' + ar[k] + '</span>'}</b> — ${tr(d)}</p>`;
+  const item = (k, d) => `<p style="margin:0 0 8px"><b>${tr(k)}${LANG === 'ar' ? '' : ' · <span class="ar" style="font-size:calc(1.15rem*var(--arz,1));line-height:1.4;padding:0">' + ar[k] + '</span>'}</b> — ${tr(d)}</p>`;
   return `<details class="card" ${open ? 'open' : ''}><summary>${tr('Comprendre sabaq, sabqi et manzil')}</summary><div style="margin-top:10px">
     ${item('Sabaq', "La leçon nouvelle : la portion que tu apprends aujourd'hui, par lecture, écoute et répétition jusqu'à pouvoir la réciter de mémoire.")}
     ${item('Sabqi', "La révision des leçons récentes : chaque jour, tu récites les portions apprises ces derniers jours pour les ancrer avant qu'elles ne s'effacent.")}
@@ -1285,6 +1303,10 @@ function tabSettings(){
     lang: `<div class="card"><h2>${tr('Langue')}</h2>
     <div class="seg">${Object.entries(LANGS).map(([k, n]) => `<button class="${LANG === k ? 'sel' : ''}" data-act="lang" data-v="${k}" lang="${k}">${n}</button>`).join('')}</div>
   </div>`,
+    arsize: `<div class="card"><h2>${tr('Taille du texte arabe')}</h2>
+    <p class="ref" style="margin:0 0 6px">${tr("Valable partout : questions, lecteur, récitation, résultats et erreurs.")}</p>
+    <div class="row" style="align-items:center"><button data-act="ar-size" data-v="-1" aria-label="${tr('Réduire le texte arabe')}" ${(cfg.rdSize || AR_DEF) <= 1.1 ? 'disabled' : ''}>A−</button><b id="arsz" style="flex:1;text-align:center" role="status">${Math.round(100 * (cfg.rdSize || AR_DEF) / AR_DEF)} %</b><button data-act="ar-size" data-v="1" aria-label="${tr('Agrandir le texte arabe')}" ${(cfg.rdSize || AR_DEF) >= 3.2 ? 'disabled' : ''}>A+</button><button data-act="ar-size" data-v="reset">${tr('Par défaut')}</button></div>
+    <div class="ar" dir="rtl" lang="ar" style="text-align:center">بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ</div></div>`,
     corr: `<div class="card"><h2>${tr('Correction de la saisie (Coran)')}</h2>
     <div class="seg">${[['strict', 'Stricte'], ['standard', 'Standard'], ['soft', 'Souple']].map(([k, t]) =>
       `<button class="${cfg.corr === k ? 'sel' : ''}" data-act="corr" data-v="${k}">${tr(t)}</button>`).join('')}</div>
@@ -1341,7 +1363,7 @@ function tabSettings(){
   </details>`,
   };
   const G = [['account', '👤', 'Compte', 'Connexion, rôle, mot de passe', ['account']], ['learn', '🎓', 'Apprentissage', 'Correction de la saisie, indices', ['corr', 'hints']],
-    ['audio', '🔊', 'Audio et rappels', 'Récitateur, objectif, audio hors ligne, rappels', ['audio', 'audioOff', 'remind']], ['display', '🎨', 'Affichage', 'Langue, thème, accessibilité', ['lang', 'a11y']],
+    ['audio', '🔊', 'Audio et rappels', 'Récitateur, objectif, audio hors ligne, rappels', ['audio', 'audioOff', 'remind']], ['display', '🎨', 'Affichage', 'Langue, taille du texte arabe, thème, accessibilité', ['lang', 'arsize', 'a11y']],
     ['data', '💾', 'Données', 'Exporter, importer, effacer', ['data']], ['help', 'ℹ️', 'Aide et infos', 'Mises à jour, contact, confidentialité, sources', ['app', 'contact', 'privacy', 'about', 'contents', 'sources']]];
   const plain = h => h.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').toLowerCase();
   const q = setQ.trim().toLowerCase(), grp = G.some(g => g[0] === cfg.setTab) || cfg.setTab === 'all' ? cfg.setTab : 'hub';   // « hub » : les 6 blocs d'un coup d'œil (par défaut)
@@ -1353,7 +1375,7 @@ function tabSettings(){
     account: me ? esc(me.user.email) : tr('Pas de compte connecté'),
     learn: tr('Correction : {c}', {c: tr({strict: 'Stricte', standard: 'Standard', soft: 'Souple'}[cfg.corr] || 'Standard')}) + ' · ' + trp(nHint, '{n} indice affiché|{n} indices affichés'),
     audio: esc((RECITERS.find(r => r[0] === cfg.reciter) || [])[1] || cfg.reciter) + ' · ' + tr('Objectif : {n}', {n: cfg.goal}) + ' · ' + (rm.on ? tr('Rappels : {t}', {t: rm.time}) : tr('Rappels : désactivés')),
-    display: esc(LANGS[LANG]) + ' · ' + theme,
+    display: esc(LANGS[LANG]) + ' · ' + theme + ' · ' + tr('Texte arabe : {p} %', {p: Math.round(100 * (cfg.rdSize || AR_DEF) / AR_DEF)}),
     data: trp(Math.round(nAns), '{n} réponse enregistrée|{n} réponses enregistrées') + ' · ' + trp(errors.length, '{n} erreur|{n} erreurs'),
     help: tr('Version {v}', {v: 'v' + APP_BUILD}) + (newVer && newVer.v > APP_BUILD ? ' · 🆕 ' + tr('mise à jour disponible') : '')};
   const search = `<input type="search" id="set-q" value="${esc(setQ)}" placeholder="${tr('Chercher un réglage…')}" aria-label="${tr('Chercher un réglage…')}" autocomplete="off" style="margin-bottom:8px">`;
@@ -1582,7 +1604,7 @@ function qCont(){ // passage continu
     : tr('{name}, {u} {a} à {b}', {name: MN(r.s), u: trp(L, ({vers: 'vers|vers', hadith: 'hadith|hadiths', passage: 'passage|passages'})[MT[r.s].unit] || 'passage|passages'), a, b: a + L - 1});
   const first = book(r.s).a[a - 1].t.split(/\s+/).slice(0, 2).join(' ');
   startPassage(range(r.s, a, L), lbl, tr("Récite de mémoire ce passage, d'une traite :"),
-    cfg.show.v ? `<p class="ref">${tr('Il commence par :')} <span class="ar" style="font-size:1.3rem">${esc(first)} …</span></p>` : '');
+    cfg.show.v ? `<p class="ref">${tr('Il commence par :')} <span class="ar" style="font-size:calc(1.3rem*var(--arz,1))">${esc(first)} …</span></p>` : '');
 }
 function qEnd(){ // fin de sourate
   const {r} = cur, S = Q[r.s - 1], L = Math.min(cfg.endLen, S.a.length), a = S.a.length - L + 1;
@@ -1929,20 +1951,20 @@ const HFNOTE = () => { const S = window.HURUF.sources, a = (x, t) => `<a href="$
 function hfOpt(o){
   const H = window.HURUF;
   if (o.t === 'area') return `<b>${H.areas[o.v]}</b> · ${esc(tr(AREAGLOSS[o.v]))}`;
-  if (o.t === 'group') return `<span class="ar" style="font-size:1.4rem">${o.letters.join(' ')}</span>`;
-  if (o.t === 'letter') return `<span class="ar" style="font-size:1.6rem">${o.v}</span>`;
-  if (o.t === 'throat') return `<span class="ar" style="font-size:1.25rem">${o.ar}</span>`;
+  if (o.t === 'group') return `<span class="ar" style="font-size:calc(1.4rem*var(--arz,1))">${o.letters.join(' ')}</span>`;
+  if (o.t === 'letter') return `<span class="ar" style="font-size:calc(1.6rem*var(--arz,1))">${o.v}</span>`;
+  if (o.t === 'throat') return `<span class="ar" style="font-size:calc(1.25rem*var(--arz,1))">${o.ar}</span>`;
   if (o.t === 'attr') return esc(hfAttrL(o.v));
   if (o.t === 'rule') return esc(AH_NAME[o.v]);
   if (o.t === 'mtype') return esc(MD_NAME[o.v]);
   if (o.t === 'mcount') return esc(tr(MD_COUNTLABEL[o.v]));
-  if (o.t === 'letters') return `<span class="ar" style="font-size:1.4rem">${[...o.letters].join(' ')}</span>`;
+  if (o.t === 'letters') return `<span class="ar" style="font-size:calc(1.4rem*var(--arz,1))">${[...o.letters].join(' ')}</span>`;
   if (o.t === 'yn') return o.v === 't' ? tr('Oui') : tr('Non');
   return o.v === 't' ? tr('Vrai') : tr('Faux');
 }
 function hfShow(q, stem, bigHtml, explain, stat, note = HFNOTE()){
   cur.correct = q.correct; cur.stat = stat; cur.explain = explain + note;
-  shell(`<p class="ref">${stem}</p>${bigHtml ? `<div class="ar" style="text-align:center;font-size:2.6rem;line-height:1.6">${bigHtml}</div>` : ''}
+  shell(`<p class="ref">${stem}</p>${bigHtml ? `<div class="ar" style="text-align:center;font-size:calc(2.6rem*var(--arz,1));line-height:1.6">${bigHtml}</div>` : ''}
     ${q.options.map(o => `<button class="opt" data-act="opt" data-v="${o.v}">${hfOpt(o)}</button>`).join('')}<div id="fb"></div>`);
 }
 function qMakharij(){
@@ -2265,6 +2287,25 @@ function frAlign(exp, start, heard, same, look = 4, raw = heard){   // raw : les
 const FR_MAX = 1800;   // durée maximale d'une récitation libre (secondes)
 let fr = null;
 function frQuit(){ if (fr){ clearTimeout(fr.timer); clearTimeout(fr.cap); clearTimeout(fr.grace); if (fr.rec){ fr.rec.onend = null; fr.rec.onresult = null; try { fr.rec.abort(); } catch { /* déjà arrêté */ } } fr = null; } go('train'); }
+/* historique de la récitation libre, par sourate (sur cet appareil) : date, versets récités, sans oubli, à revoir, et où reprendre */
+const frHist = () => store.get('tathbit.frSurah', {});
+function frRemember(done, clean, flagged, open){
+  const H = frHist(), now = Date.now(), by = {};
+  for (const v of done){ const e = (by[v.s] ||= {a0: v.a, a1: v.a, c: 0, flag: []}); e.a0 = Math.min(e.a0, v.a); e.a1 = Math.max(e.a1, v.a); }
+  clean.forEach(v => { by[v.s].c++; }); flagged.forEach(f => by[f.v.s].flag.push(f.v.a));
+  for (const [k, e] of Object.entries(by)) H[k] = {t: now, a0: e.a0, a1: e.a1, c: e.c, flag: e.flag.sort((x, y) => x - y), tot: slen(+k), stop: open && open.s === +k ? open.a : 0, rt: fr.to};
+  store.set('tathbit.frSurah', H);
+}
+function frHistHtml(){ // « Mes récitations » : dernière récitation de chaque sourate, ce qui est à revoir, et le bouton pour reprendre
+  const E_ = Object.entries(frHist()).filter(([k]) => Q[k - 1]).sort((a, b) => b[1].t - a[1].t).slice(0, 8);
+  if (!E_.length) return '';
+  const fd = t => new Date(t).toLocaleDateString(LOCALE(), {day: 'numeric', month: 'short'});
+  return `<div class="card" id="fr-hist"><h2>${tr('Mes récitations')}</h2>${E_.map(([k, e]) => { const n = e.a1 - e.a0 + 1;
+    return `<div class="weak" style="display:block"><div><b>${k}. ${esc(SN(+k))}</b> · <span class="ref">${fd(e.t)}</span></div>
+      <div class="ref" style="margin:2px 0 4px">${tr('{n} versets récités sur {t}', {n, t: e.tot})} · ${trp(e.c, '{n} sans oubli|{n} sans oubli')}${e.flag.length ? ' · ' + tr('à revoir : versets {l}', {l: e.flag.slice(0, 8).join(', ') + (e.flag.length > 8 ? '…' : '')}) : ''}</div>
+      <div class="row">${e.stop ? `<button class="pri" data-act="fr-resume" data-v="${k}:${e.stop}">▶ ${tr('Reprendre au verset {a}', {a: e.stop})}</button>` : ''}<button data-act="fr-resume" data-v="${k}:1">${e.stop ? tr('Depuis le début') : tr('Réciter encore')}</button></div></div>`; }).join('')}
+    <p class="ref" style="margin:8px 0 0">${tr('Enregistré sur cet appareil. Le suivi se fait aux mots entendus : il peut se tromper.')}</p></div>`;
+}
 function frSetup(){
   if (fr && fr.rec){ fr.rec.onend = null; try { fr.rec.abort(); } catch { /* déjà arrêté */ } } fr = null; stopMic(); setNav(false);
   const from = cfg.frFrom || 78, to = cfg.frTo || 114, hide = cfg.frHide !== false;
@@ -2275,6 +2316,7 @@ function frSetup(){
       <div class="row"><div><label class="f" for="frfrom">${tr('De')}</label><select id="frfrom">${surahOpts(from)}</select></div>
         <div><label class="f" for="frto">${tr('À')}</label><select id="frto">${surahOpts(to)}</select></div></div>
       <label class="consent" style="margin-top:10px"><input type="checkbox" id="frhide" ${hide ? 'checked' : ''}><span>${tr('Réciter de mémoire : le texte reste masqué et se dévoile au fur et à mesure.')}</span></label></div>
+    ${frHistHtml()}
     <div class="card"><p class="ref" style="margin:0 0 6px">${tr("Le micro reste ouvert jusqu'à ce que tu touches « J'ai fini de réciter » (30 minutes au plus).")}</p>
       <p class="ref" style="margin:0 0 6px">${tr("L'application suit les mots que tu dis. Elle ne vérifie ni les voyelles ni le tajwīd, et elle peut se tromper : un mot non reconnu n'est pas forcément une erreur.")}</p>
       ${SR ? '' : `<p class="ref" style="margin:0;color:var(--ko)">${tr("La reconnaissance vocale n'est pas disponible sur ce navigateur.")}</p>`}</div>
@@ -2287,13 +2329,14 @@ function frBuild(from, to, hide){
     tok.forEach((w, j) => { const n = norm(w); if (n){ exp.push(n); meta.push({s, a: i + 1, j}); } });
     verses.push({s, a: i + 1, from: start, to: exp.length, tok});
   });
-  return {from, to, hide, exp, meta, verses, p: 0, base: 0, miss: new Set(), sess: new Set(), hint: new Set(), sec: 0, quick: 0, undo: {}, koDone: new Set(), said: {}, sessSaid: {}};
+  return {from, to, hide, exp, meta, verses, p: 0, base: 0, start0: 0, miss: new Set(), sess: new Set(), hint: new Set(), sec: 0, quick: 0, undo: {}, koDone: new Set(), said: {}, sessSaid: {}};
 }
 const frVerse = p => { const V = fr.verses; let lo = 0, hi = V.length - 1; while (lo < hi){ const m = (lo + hi + 1) >> 1; if (V[m].from <= p) lo = m; else hi = m - 1; } return lo; };
-function frStart(){
-  let from = +$('frfrom').value, to = +$('frto').value; if (from > to) [from, to] = [to, from];
-  cfg.frFrom = from; cfg.frTo = to; cfg.frHide = $('frhide').checked; saveCfg();
-  fr = frBuild(from, to, cfg.frHide); stopMic(); setNav(false);
+function frStart(res){ // res = {s, a, to} : reprise au verset a de la sourate s (sinon, la plage choisie depuis son début)
+  let from = res ? res.s : +$('frfrom').value, to = res ? Math.max(res.s, res.to || res.s) : +$('frto').value; if (from > to) [from, to] = [to, from];
+  cfg.frFrom = from; cfg.frTo = to; if ($('frhide')) cfg.frHide = $('frhide').checked; saveCfg();
+  fr = frBuild(from, to, cfg.frHide !== false); stopMic(); setNav(false);
+  if (res && res.a > 1){ const v = fr.verses.find(x => x.s === res.s && x.a === res.a); if (v){ fr.p = fr.base = fr.start0 = v.from; } }
   $app.innerHTML = `<div class="top"><button class="link" data-act="fr-quit">✕ ${tr('Quitter')}</button><span id="fr-pos"></span></div>
     <div class="bar"><i id="fr-bar" style="width:0%"></i></div>
     <h2 class="rtitle" id="fr-title" style="margin-top:8px"></h2>
@@ -2305,7 +2348,7 @@ function frStart(){
     <div class="ar heard" id="heard" dir="rtl" lang="ar" aria-live="off"></div>
     <div class="grades"><button data-act="fr-hint" ${fr.hide ? '' : 'hidden'}>💡 ${tr('Montrer le mot suivant')}</button><button data-act="fr-skip">⏭ ${tr('Passer ce verset')}</button></div>
     <button class="rec-stop" data-act="fr-stop">⏹ ${esc(tr("J'ai fini de réciter"))}<small>${esc(tr('Touche ici pour terminer et voir le bilan'))}</small></button>`;
-  frDraw(fr.meta[0].s); frPaint();
+  frDraw(fr.meta[Math.min(fr.p, fr.exp.length - 1)].s); frPaint();
   fr.cap = setTimeout(() => frFinish('time'), FR_MAX * 1000);
   frListen();
 }
@@ -2380,10 +2423,11 @@ function frFinish(reason){
 function frSummary(){
   if (fr.rec){ fr.rec.onend = null; try { fr.rec.abort(); } catch { /* déjà arrêté */ } fr.rec = null; }
   frCommit(); const mo = $('mic-on'); if (mo) mo.remove();
-  const done = fr.verses.filter(v => v.to <= fr.p), clean = [], flagged = [];
+  const done = fr.verses.filter(v => v.from >= fr.start0 && v.to <= fr.p), clean = [], flagged = [];   // start0 : en reprise, les versets d'avant ne comptent pas
   for (const v of done){ const bad = []; for (let w = v.from; w < v.to; w++) if (fr.miss.has(w) || fr.hint.has(w)) bad.push(w); (bad.length ? flagged.push({v, bad}) : clean.push(v)); }
   fr.clean = clean; fr.flagged = flagged;
-  if (done.length) store.set('tathbit.frLast', {t: Date.now(), n: done.length, c: clean.length});   // pour la tuile de l'accueil
+  const open0 = fr.p < fr.exp.length ? fr.verses[frVerse(fr.p)] : null;
+  if (done.length){ store.set('tathbit.frLast', {t: Date.now(), n: done.length, c: clean.length}); frRemember(done, clean, flagged, open0); }   // tuile de l'accueil + historique par sourate
   if (fr.hide && clean.length && !fr.recorded){ // récités de mémoire, sans oubli : comptent dans la révision (une seule écriture pour tout)
     fr.recorded = true; const now = Date.now();
     for (const v of clean){ const k = v.s + ':' + v.a, [ok, ko] = stats[k] || [0, 0]; fr.undo[k] = {st: [ok, ko], sc: sched[k]}; stats[k] = [ok + 1, ko]; sched[k] = srsNext(sched[k], 1, now); }
@@ -2406,7 +2450,7 @@ function frShowSummary(){
     ${done.length ? `<div class="card"><h2>${tr('Vérifier mes voyelles')}</h2>
       <p class="ref" style="margin:0 0 8px">${tr("La reconnaissance vocale n'entend pas les voyelles. Compare ta récitation avec ton mushaf : touche les mots dont tu n'es pas sûr des voyelles, ou que tu as mal prononcés.")}</p>
       ${fr.vowSaved ? `<p class="ref" style="margin:0">✓ ${tr('Voyelles vérifiées')}</p>` : `<button data-act="fr-vow">✍️ ${tr('Vérifier mes voyelles')}</button>`}</div>` : ''}
-    ${flagged.length ? `<div class="card"><h2>${tr('À revoir')}</h2><p class="ref" style="margin:0 0 6px">${tr("Rouge : mot non entendu ou sauté ; touche-le pour voir ce que le téléphone a entendu. Ce n'est pas forcément une faute : l'application n'entend pas les voyelles.")}</p><p class="ref" style="margin:0 0 6px;font-weight:600" id="fr-heard-info" role="status"></p>${flagged.map(f => `<div class="sib"><p class="ref" style="margin:0">${esc(SN(f.v.s))} · ${f.v.a}</p><div class="ar" dir="rtl" lang="ar" style="font-size:1.4rem;line-height:2;margin:4px 0 0">${wtxt(f)}</div></div>`).join('')}
+    ${flagged.length ? `<div class="card"><h2>${tr('À revoir')}</h2><p class="ref" style="margin:0 0 6px">${tr("Rouge : mot non entendu ou sauté ; touche-le pour voir ce que le téléphone a entendu. Ce n'est pas forcément une faute : l'application n'entend pas les voyelles.")}</p><p class="ref" style="margin:0 0 6px;font-weight:600" id="fr-heard-info" role="status"></p>${flagged.map(f => `<div class="sib"><p class="ref" style="margin:0">${esc(SN(f.v.s))} · ${f.v.a}</p><div class="ar" dir="rtl" lang="ar" style="font-size:calc(1.4rem*var(--arz,1));line-height:2;margin:4px 0 0">${wtxt(f)}</div></div>`).join('')}
       <button style="margin-top:8px" data-act="fr-err" id="fr-err">${tr('Ajouter ces versets à mes erreurs')}</button><p class="ref" id="fr-errmsg" role="status" style="margin:6px 0 0"></p></div>` : ''}
     <button class="pri big" data-act="fr-again">🎤 ${tr('Réciter encore')}</button>
     <button class="big" style="margin-top:8px" data-act="fr-quit">${tr('Terminer')}</button>`;
@@ -2781,7 +2825,8 @@ const onClick = e => {
     case 'tile-matn': cfg.scope = {type: 'matn', id: cfg.lastM && MT[cfg.lastM] ? cfg.lastM : 'all'}; saveCfg(); go('train'); break;
     case 'strengthen': { const W = weakNow().slice(0, 10); if (W.length) start(shuffle(W.map(w => pk(w.k)))); } break;
     case 'ics': exportIcs(); break;
-    case 'export': exportData(); break;
+    case 'export': exportData(); if (cfg.tab === 'home') home(); break;
+    case 'export-later': store.set('tathbit.exportSnooze', Date.now() + 7 * 864e5); home(); break;
     case 'csv': exportCsv($('csv-kind') ? $('csv-kind').value : 'verses'); break;
     case 'import': $('impfile').click(); break;
     case 'addcustom': addCustom(); break;
@@ -2790,6 +2835,7 @@ const onClick = e => {
     case 'listen': listen(); break;
     case 'fr-setup': frSetup(); break;
     case 'fr-start': frStart(); break;
+    case 'fr-resume': { const [a, b] = String(v).split(':').map(Number), e = frHist()[a]; frStart({s: a, a: b, to: e ? e.rt : a}); } break;
     case 'fr-stop': frFinish('stop'); break;
     case 'fr-hint': frHint(); break;
     case 'fr-heard': frHeard(v); break;
@@ -2927,7 +2973,8 @@ const onClick = e => {
       rd.closed.clear(); if (v === '1') rd.secs.forEach(id => (MT[id].sec || []).forEach((_, k) => rd.closed.add(id + ':' + k)));
       const y = scrollY; rdStop(); rd.focus = 0; renderReader(); scrollTo(0, y); break; }
     case 'rd-hide': cfg.rdHide = !cfg.rdHide; saveCfg(); { const y = scrollY; rdStop(); rd.focus = 0; renderReader(); scrollTo(0, y); } break;
-    case 'rd-size': cfg.rdSize = Math.min(3.2, Math.max(1.1, +(cfg.rdSize + 0.2 * +v).toFixed(2))); saveCfg(); { const y = scrollY; rdStop(); rd.focus = 0; renderReader(); scrollTo(0, y); } break;
+    case 'ar-size': cfg.rdSize = v === 'reset' ? AR_DEF : Math.min(3.2, Math.max(1.1, +((cfg.rdSize || AR_DEF) + 0.2 * +v).toFixed(2))); saveCfg(); applyArSize(); home(); break;
+    case 'rd-size': cfg.rdSize = Math.min(3.2, Math.max(1.1, +(cfg.rdSize + 0.2 * +v).toFixed(2))); saveCfg(); applyArSize(); { const y = scrollY; rdStop(); rd.focus = 0; renderReader(); scrollTo(0, y); } break;
     case 'rd-prev': case 'rd-next': {
       const k = rd.spec.slice(0, 1), id = rd.secs[0], ids = k === 'q' ? Array.from({length: 114}, (_, i) => i + 1) : Object.keys(MT);
       rdStop(); openReader(k + ':' + ids[ids.indexOf(id) + (el.dataset.act === 'rd-next' ? 1 : -1)]); break;
@@ -3031,7 +3078,7 @@ const rvSpan = (id, a) => `<span class="rv${cfg.rdHide ? ' hid' : ''}" data-act=
 function secHtml(id){
   const q = isQ(id), B = book(id), n = B.a.length, siz = cfg.rdSize;
   if (q){
-    const bas = id !== 1 && id !== 9 ? `<div class="ar" style="text-align:center;font-size:1.5rem">${esc(verse({s: 1, a: 1}))}</div>` : '';
+    const bas = id !== 1 && id !== 9 ? `<div class="ar" style="text-align:center;font-size:calc(1.5rem*var(--arz,1))">${esc(verse({s: 1, a: 1}))}</div>` : '';
     return `<section class="rsec" id="rs-${id}"><h2 class="rtitle"><span class="ar">${esc(B.ar)}</span><small>${id}. ${esc(SN(id))} · ${trp(n, '{n} verset|{n} versets')} · ${tr('pages {a}–{b}', {a: B.a[0].p, b: B.a[n - 1].p})}</small></h2>${bas}
       ${cfg.rdTr || cfg.rdTf ? B.a.map((_, i) => `<div class="rvb"><div class="rd${cfg.rdTaj ? ' tj' : ''}" style="font-size:${siz}rem">${rvSpan(id, i + 1)}</div>
         ${cfg.rdTr ? `<p class="rtr" lang="${cfg.rdTr}" dir="ltr">${esc(window.QX[cfg.rdTr].s[id - 1][i])}</p>` : ''}${cfg.rdTf ? `<p class="rtf" lang="ar">${esc(window.QX.muyassar.s[id - 1][i])}</p>` : ''}</div>`).join('')
@@ -3166,14 +3213,14 @@ function tabErrors(){
   const body = hv === 'v'
     ? rows.slice(0, 80).map(a => `<div class="sib"><p class="ref" style="margin:0">${rlabel(a.r)}</p>
         <p class="ref" style="margin:0"><b>${tr('raté {n} fois', {n: a.n})}</b> · ${tr('dernière :')} ${fdate(a.last)} · ${esc([...a.modes].join(', '))}</p>
-        <div class="ar" style="font-size:1.35rem;line-height:2">${esc(verse(a.r))}</div>
+        <div class="ar" style="font-size:calc(1.35rem*var(--arz,1));line-height:2">${esc(verse(a.r))}</div>
         <button class="link" data-act="rdopen" data-v="${a.k}">📖 ${tr('Lire tout le texte')}</button>
-        ${a.bad.length ? `<p class="ref" style="margin:0">${tr('Mots souvent faux :')} <span class="ar" style="font-size:1.2rem;display:inline">${esc(a.bad.slice(0, 12).join(' · '))}</span></p>` : ''}</div>`).join('')
+        ${a.bad.length ? `<p class="ref" style="margin:0">${tr('Mots souvent faux :')} <span class="ar" style="font-size:calc(1.2rem*var(--arz,1));display:inline">${esc(a.bad.slice(0, 12).join(' · '))}</span></p>` : ''}</div>`).join('')
     : L.slice().reverse().slice(0, 100).map(e => { const r = pk(e.k);
         return `<div class="sib"><p class="ref" style="margin:0">${fdate(e.t)} · ${esc(MODE_NAME[e.m] || e.m)} · ${e.sc === 0.5 ? tr('hésité') : tr('raté')}</p>
         <p class="ref" style="margin:0"><b>${rlabel(r)}</b></p>
-        ${e.bad ? `<p class="ref" style="margin:0">${tr('Mots faux ou oubliés :')} <span class="ar" style="font-size:1.2rem;display:inline">${esc(e.bad.join(' · '))}</span></p>` : ''}
-        ${e.ans ? `<p class="ref" style="margin:0">${tr('Ta réponse :')} <span class="ar" style="font-size:1.2rem;display:inline">${esc(e.ans)}</span></p>` : ''}</div>`; }).join('');
+        ${e.bad ? `<p class="ref" style="margin:0">${tr('Mots faux ou oubliés :')} <span class="ar" style="font-size:calc(1.2rem*var(--arz,1));display:inline">${esc(e.bad.join(' · '))}</span></p>` : ''}
+        ${e.ans ? `<p class="ref" style="margin:0">${tr('Ta réponse :')} <span class="ar" style="font-size:calc(1.2rem*var(--arz,1));display:inline">${esc(e.ans)}</span></p>` : ''}</div>`; }).join('');
   return `
   <h1>${tr('Erreurs')}</h1>
   <p class="sub">${trp(L.length, '{n} erreur|{n} erreurs')} · ${trp(rows.length, '{n} verset concerné|{n} versets concernés')}</p>
@@ -3204,7 +3251,7 @@ function results(){
   ${ses.hf ? `<div class="card"><h2>${tr('Résumé de la série')}</h2>${Object.entries(ses.hf).sort((a, b) => b[1][1] - a[1][1]).map(([k, [o, e]]) => `<div class="weak"><span>${hfKeyLabel(k)}</span><span>${o} ✓ · ${e} ✗</span></div>`).join('')}${HFNOTE()}</div>` : ''}
   ${ses.tj ? `<div class="card"><h2>${tr('Règles de cette série')}</h2>${Object.entries(ses.tj).sort((a, b) => b[1][1] - a[1][1]).map(([c, [o, k]]) => `<div class="weak"><span>${esc(tr(TJNAME[c]))}</span><span>${o} ✓ · ${k} ✗</span></div>`).join('')}${TJNOTE()}</div>` : ''}
   ${missed.length ? `<div class="card"><h2>${tr('À revoir ({n})', {n: missed.length})}</h2>
-    ${missed.map(r => `<p class="ref" style="margin:10px 0 0">${rlabel(r)}</p><div class="ar" style="font-size:1.5rem">${esc(verse(r))}</div>`).join('')}</div>` : ''}
+    ${missed.map(r => `<p class="ref" style="margin:10px 0 0">${rlabel(r)}</p><div class="ar" style="font-size:calc(1.5rem*var(--arz,1))">${esc(verse(r))}</div>`).join('')}</div>` : ''}
   ${missed.length && !(ses.day && ses.day.i < ses.day.steps.length - 1) ? `<button class="pri big" data-act="retry">${tr('Refaire mes erreurs')}</button>` : ''}
   ${ses.day ? dayEndHtml() : ''}
   ${ses.planKind === 'sabaq' ? `<button class="pri big" style="margin-top:8px" data-act="plan-learned">✓ ${tr('Marquer cette portion comme apprise')}</button>` : ''}
@@ -3249,13 +3296,28 @@ async function openNews(v){ // une seule nouveauté : on va directement à la fo
   if (news.items.length === 1) { store.set('tathbit.newsSeen', +news.v); return newsGo(news.items[0].go); }
   renderNews();
 }
+/* historique : news-history.json = les versions précédentes (la plus récente d'abord) ; la publication y archive les nouveautés de chaque version */
+let newsHist = null;
+async function loadNewsHist(){
+  if (newsHist) return newsHist;
+  try { const r = await fetch('news-history.json?t=' + Date.now(), {cache: 'no-store'}); if (r.ok){ const j = await r.json(); if (j && Array.isArray(j.versions)) newsHist = j.versions.filter(x => x && Array.isArray(x.items)); } } catch { /* hors ligne ou fichier absent */ }
+  return newsHist;
+}
+const newsItemHtml = i => `<div class="card"><h2>${i.icon || ''} ${esc(newsText(i.title))}</h2><p style="margin:0 0 8px">${esc(newsText(i.text))}</p>${NEWS_GO[i.go] ? `<button class="pri" data-act="news-go" data-v="${esc(i.go)}">${tr('Essayer')}</button>` : ''}</div>`;
+function newsHistHtml(H){
+  if (!H) return `<p class="ref" role="status">${tr("Historique indisponible (hors ligne ?).")}</p>`;
+  if (!H.length) return '';
+  return `<h2 style="margin:18px 0 6px">${tr('Versions précédentes')}</h2>${H.map(x => `<details class="card nhv"><summary><b>v${esc(String(x.v))}</b>${x.date ? ' · ' + esc(new Date(x.date).toLocaleDateString(LOCALE(), {day: 'numeric', month: 'long', year: 'numeric'})) : ''} · ${trp(x.items.length, '{n} nouveauté|{n} nouveautés')}</summary><div style="margin-top:8px">${x.items.map(newsItemHtml).join('')}</div></details>`).join('')}`;
+}
 function renderNews(){
   setNav(false); screen = 'news'; store.set('tathbit.newsSeen', +news.v);
   $app.innerHTML = `<div class="top"><button class="link" data-act="news-back">${tr('← Retour')}</button><span>${tr('Nouveautés')}</span></div>
     <h1 style="margin-top:8px">✨ ${tr('Nouveautés de la version v{v}', {v: news.v})}</h1>
     <p class="sub">${tr("Touche « Essayer » pour aller directement à la fonction.")} ${AI()}</p>
-    ${news.items.map(i => `<div class="card"><h2>${i.icon || ''} ${esc(newsText(i.title))}</h2><p style="margin:0 0 8px">${esc(newsText(i.text))}</p>${NEWS_GO[i.go] ? `<button class="pri" data-act="news-go" data-v="${esc(i.go)}">${tr('Essayer')}</button>` : ''}</div>`).join('')}`;
+    ${news.items.map(newsItemHtml).join('')}
+    <div id="news-hist">${newsHist ? newsHistHtml(newsHist) : `<p class="ref" role="status">${tr('Chargement…')}</p>`}</div>`;
   window.scrollTo(0, 0);
+  if (!newsHist) loadNewsHist().then(H => { const el = $('news-hist'); if (el && screen === 'news') el.innerHTML = newsHistHtml(H); });
 }
 function updSlot(){ const el = $('upd-slot'); if (el) el.innerHTML = updBannerHtml(); }
 async function checkVersion(force){

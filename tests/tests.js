@@ -1035,6 +1035,53 @@
     E("store.set('tathbit.cloud', {uid: 'u', dirty: false})"); W.dispatchEvent(new W.Event('online')); await wait(50); eq(W.__up, 1, 'rien à envoyer : pas d’appel');
     E("me = null; sb = null; store.set('tathbit.cloud', {})"); noErr('hors ligne');
   });
+  test('Taille du texte arabe : réglable dans Affichage, valable partout (lecteur, questions, récitation…)', async () => {
+    reset("cfg.rdSize = 1.9"); E("applyArSize(); cfg.setTab = 'display'; go('settings')");
+    const px = sel => parseFloat(W.getComputedStyle($q(sel)).fontSize), v0 = px('.card .ar'); ok(/Taille du texte arabe/.test(appText()) && /100 %/.test($q('#arsz').textContent), 'carte « Taille du texte arabe » (100 %)');
+    clickAct('ar-size', '1'); eq(E('cfg.rdSize'), 2.1, 'A+ : 2,1'); ok(/111 %/.test($q('#arsz').textContent) || /110 %/.test($q('#arsz').textContent), 'affichage : ' + $q('#arsz').textContent); ok(px('.card .ar') > v0 * 1.08, 'l’aperçu grandit (' + v0 + ' → ' + px('.card .ar') + ')');
+    eq(E("document.documentElement.style.getPropertyValue('--arz')"), '1.105', 'variable de taille posée pour toute la page');
+    // la même taille s'applique dans les exercices
+    E("go('train')"); E("cfg.mode = 'mcq'; cfg.n = 3; start()"); ok($$q('.opt.ar').length > 0 || $$q('.ar').length > 0, 'question affichée'); const q0 = parseFloat(W.getComputedStyle($q('.ar')).fontSize); ok(q0 > 1.9 * 16 * 1.05 * 0.99 || q0 > 31, 'le texte arabe d’une question suit la taille choisie : ' + q0 + ' px'); E("ses = null; go('settings')");
+    E("cfg.rdSize = 3.2; applyArSize(); cfg.setTab = 'display'; go('settings')"); ok($q('[data-act="ar-size"][data-v="1"]').disabled, 'A+ désactivé à la taille maximale'); E("cfg.rdSize = 1.1; go('settings')"); ok($q('[data-act="ar-size"][data-v="-1"]').disabled, 'A− désactivé au minimum');
+    clickAct('ar-size', 'reset'); eq(E('cfg.rdSize'), 1.9, 'Par défaut'); eq(E("document.documentElement.style.getPropertyValue('--arz')"), '1.000', 'variable remise à 1');
+    for (const L of ['en', 'ar']){ E(`setLang('${L}'); cfg.setTab = 'display'; go('settings')`); ok(!!$q('[data-act="ar-size"]') && !/undefined|NaN/.test(appText()), 'réglage en ' + L); E("cfg.setTab = 'hub'; go('settings')"); eq(E('[...missingKeys]'), [], 'clés traduites (' + L + ')'); }
+    E("setLang('fr'); cfg.rdSize = 1.9; applyArSize()"); noErr('taille du texte arabe');
+  });
+  test('Récitation libre : historique par sourate (dernière récitation, sans oubli, à revoir) et reprise là où on s’est arrêté', async () => {
+    reset("cfg.frFrom = 110; cfg.frTo = 111; delete cfg.frHide; store.set('tathbit.frSurah', {});");
+    E("SR = function(){ window.__rec = this; this.start = function(){ if (this.onstart) this.onstart(); }; this.stop = function(){ if (this.onend) this.onend(); }; this.abort = function(){}; }");
+    E("frSetup()"); ok(!$q('#fr-hist'), 'aucun historique au départ');
+    E("fr = frBuild(110, 111, true); fr.p = fr.verses[1].to; fr.miss.add(fr.verses[1].from); frSummary()");
+    const H = JSON.parse(E("JSON.stringify(frHist()['110'])")); eq([H.a0, H.a1, H.c, H.flag.join(), H.tot, H.stop, H.rt], [1, 2, 1, '2', 3, 3, 111], 'sourate 110 : versets 1–2 récités, 1 sans oubli, verset 2 à revoir, arrêt au verset 3');
+    E("fr = null; frSetup()"); ok(!!$q('#fr-hist') && /110\. /.test($q('#fr-hist').textContent) && /2 versets récités sur 3/.test($q('#fr-hist').textContent) && /1 sans oubli/.test($q('#fr-hist').textContent) && /versets 2/.test($q('#fr-hist').textContent), 'carte « Mes récitations » : ' + $q('#fr-hist').textContent.replace(/\s+/g, ' ').slice(0, 200));
+    clickAct('fr-resume', '110:3'); await wait(150); eq(E('fr.start0'), E('fr.verses[2].from'), 'reprise : on repart du verset 3'); eq(E('fr.p'), E('fr.verses[2].from'), 'le suivi commence au verset 3'); ok(/Verset 3 \/ 3/.test($q('#fr-pos').textContent), 'position : ' + $q('#fr-pos').textContent);
+    E("fr.p = fr.verses[2].to; fr.base = fr.p; frSummary()");
+    ok(E('fr.done.length') === 1 && E("fr.done[0].a") === 3, 'le bilan ne compte que le verset récité en reprise (pas ceux d’avant)'); const H2 = JSON.parse(E("JSON.stringify(frHist()['110'])")); eq([H2.a0, H2.a1, H2.stop], [3, 3, 0], 'sourate terminée : plus de reprise à proposer');
+    E("fr = null; frSetup()"); ok(!$q('[data-act="fr-resume"][data-v="110:3"]') && !!$q('[data-act="fr-resume"][data-v="110:1"]'), 'sourate terminée : « Réciter encore » seulement');
+    for (const L of ['en', 'ar']){ E(`setLang('${L}'); frSetup()`); ok(!!$q('#fr-hist') && !/undefined|NaN/.test(appText()), 'historique en ' + L); eq(E('[...missingKeys]'), [], 'clés traduites (' + L + ')'); }
+    E("setLang('fr'); fr = null; store.set('tathbit.frSurah', {}); store.set('tathbit.frLast', null)"); noErr('historique de récitation');
+  });
+  test('Rappel d’export : sans compte, au bout de 30 jours sans sauvegarde ; reporté par « Plus tard »', async () => {
+    reset("stats = {'112:1': [3, 1]}"); const DAY = 864e5, got = []; W.download = async (name, text, type) => { got.push(name); };
+    E(`store.set('tathbit.firstUse', Date.now() - 10 * ${DAY}); store.set('tathbit.lastExport', 0); store.set('tathbit.exportSnooze', 0); go('home')`); ok(!$q('#export-nudge'), '10 jours : pas de rappel');
+    E(`store.set('tathbit.firstUse', Date.now() - 40 * ${DAY}); go('home')`); ok(!!$q('#export-nudge') && /il y a 40 jours/.test($q('#export-nudge').textContent) && /n'est que sur cet appareil/.test($q('#export-nudge').textContent), 'au bout de 40 jours : rappel');
+    E(`me = {user: {email: 'a@b.fr'}, profile: {role: 'user'}}; go('home')`); ok(!$q('#export-nudge'), 'avec un compte : pas de rappel'); E("me = null; go('home')");
+    clickAct('export-later'); ok(!$q('#export-nudge') && E("store.get('tathbit.exportSnooze', 0)") > Date.now() + 6 * DAY, '« Plus tard » : reporté de 7 jours'); E("go('home')"); ok(!$q('#export-nudge'), 'reste caché pendant le report');
+    E(`store.set('tathbit.exportSnooze', Date.now() - 1000); go('home')`); ok(!!$q('#export-nudge'), 'report terminé : le rappel revient'); clickAct('export'); await wait(100); ok(got.some(n => /^tathbit-sauvegarde-/.test(n)) && !$q('#export-nudge'), 'export : fichier créé, rappel retiré');
+    E(`store.set('tathbit.lastExport', Date.now() - 35 * ${DAY}); go('home')`); ok(!!$q('#export-nudge') && /il y a 35 jours/.test($q('#export-nudge').textContent), 'compté depuis la dernière sauvegarde');
+    E("stats = {}; go('home')"); ok(!$q('#export-nudge'), 'rien à sauvegarder : pas de rappel');
+    for (const L of ['en', 'ar']){ E(`stats = {'112:1': [3, 1]}; store.set('tathbit.lastExport', Date.now() - 35 * ${DAY}); setLang('${L}'); go('home')`); ok(!!$q('#export-nudge') && !/undefined|NaN/.test(appText()), 'rappel en ' + L); eq(E('[...missingKeys]'), [], 'clés traduites (' + L + ')'); }
+    E("setLang('fr'); stats = {}; store.set('tathbit.lastExport', 0); store.set('tathbit.firstUse', Date.now()); store.set('tathbit.exportSnooze', 0)"); noErr('rappel d’export');
+  });
+  test('Nouveautés : historique des versions précédentes consultable depuis l’écran des nouveautés', async () => {
+    reset(); E(`news = {v: APP_BUILD, items: [{id: 'a', icon: '🎙️', go: 'home', title: {fr: 'Titre A', en: 'Title A', ar: 'عنوان أ'}, text: {fr: 'Texte A', en: 'Text A', ar: 'نص أ'}}, {id: 'b', icon: '📅', go: 'plan', title: {fr: 'Titre B', en: 'Title B', ar: 'عنوان ب'}, text: {fr: 'Texte B', en: 'Text B', ar: 'نص ب'}}]}; newsHist = null`);
+    const real = W.fetch; W.fetch = async u => String(u).startsWith('news-history.json') ? ({ok: true, json: async () => ({versions: [{v: 90, date: '2026-10-01', items: [{id: 'o', icon: '📜', go: 'home', title: {fr: 'Ancienne nouveauté', en: 'Old feature', ar: 'ميزة قديمة'}, text: {fr: 'Ancien texte', en: 'Old text', ar: 'نص قديم'}}]}, {v: 80, items: []}]})}) : real(u);
+    E("renderNews()"); await wait(200); ok(/Versions précédentes/.test(appText()) && /v90/.test(appText()) && !!$q('details.nhv'), 'versions précédentes listées'); ok(/Ancienne nouveauté/.test($q('details.nhv').textContent) && /1 octobre 2026/.test($q('details.nhv summary').textContent), 'chaque version : date et nouveautés');
+    ok(/Titre A/.test(appText()), 'la version courante reste en haut');
+    E("newsHist = null; setLang('en'); renderNews()"); await wait(200); ok(/Previous versions/.test(appText()) && /Old feature/.test(appText()), 'historique en anglais');
+    W.fetch = async u => { throw new Error('offline'); }; E("newsHist = null; setLang('fr'); renderNews()"); await wait(200); ok(/Historique indisponible/.test(appText()), 'hors ligne : message clair');
+    W.fetch = real; E("newsHist = null; news = null; setLang('fr')"); noErr('historique des nouveautés');
+  });
   test('Contact : page avec adresse, sujets préremplis, copie de l’adresse ; liens depuis les Réglages et l’écran de connexion', async () => {
     reset(); E("window.TATHBIT_LEGAL = {contact: 'tathbit.app.contact@gmail.com', region: ''}; renderContact()");
     ok(appText().includes('tathbit.app.contact@gmail.com'), 'adresse affichée'); const links = $$q('a.btnlink'); eq(links.length, 5, 'cinq sujets, dont « Autre sujet »'); ok(/autre/i.test(links[4].textContent) && /autre/i.test(decodeURIComponent(links[4].getAttribute('href'))), 'le dernier sujet est « Autre sujet »');
