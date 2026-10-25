@@ -1,6 +1,72 @@
 {
  "versions": [
   {
+   "v": 97,
+   "date": "2026-10-25",
+   "items": [
+    {
+     "id": "arsize",
+     "icon": "🔤",
+     "go": "arsize",
+     "title": {
+      "fr": "Taille du texte arabe réglable partout",
+      "en": "Arabic text size adjustable everywhere",
+      "ar": "حجم النص العربي قابل للضبط في كل مكان"
+     },
+     "text": {
+      "fr": "Réglages → Affichage : agrandis ou réduis le texte arabe, avec un aperçu. Le réglage vaut pour les questions, le lecteur, la récitation, les résultats et les erreurs.",
+      "en": "Settings → Display: enlarge or shrink the Arabic text, with a preview. It applies to questions, the reader, recitation, results and mistakes.",
+      "ar": "الإعدادات ← العرض: كبّر النص العربي أو صغّره مع معاينة. يسري على الأسئلة والقارئ والتسميع والنتائج والأخطاء."
+     }
+    },
+    {
+     "id": "resume",
+     "icon": "🎙️",
+     "go": "recite",
+     "title": {
+      "fr": "Récitation libre : reprendre où tu t'es arrêté",
+      "en": "Free recitation: resume where you stopped",
+      "ar": "التسميع الحر: تابع من حيث توقفت"
+     },
+     "text": {
+      "fr": "Pour chaque sourate, l'application retient ta dernière récitation : versets récités, sans oubli, à revoir. Un bouton, aussi sur l'accueil, te fait reprendre au verset où tu t'es arrêté.",
+      "en": "For each surah the app remembers your last recitation: verses recited, without a slip, to review. A button, also on the home screen, resumes at the verse where you stopped.",
+      "ar": "يتذكّر التطبيق آخر تسميع لكل سورة: الآيات المسمَّعة وما كان بلا نسيان وما يحتاج مراجعة. وزرّ، في الصفحة الرئيسية أيضًا، يستأنف من الآية التي توقفت عندها."
+     }
+    },
+    {
+     "id": "backup",
+     "icon": "💾",
+     "go": "backup",
+     "title": {
+      "fr": "Rappel de sauvegarde sans compte",
+      "en": "Backup reminder without an account",
+      "ar": "تذكير بالنسخ الاحتياطي دون حساب"
+     },
+     "text": {
+      "fr": "Sans compte, ta progression n'est que sur ton appareil : après 30 jours sans sauvegarde, l'accueil te propose de l'exporter.",
+      "en": "Without an account your progress lives only on your device: after 30 days without a backup, the home screen offers to export it.",
+      "ar": "بدون حساب يبقى تقدّمك على جهازك فقط: بعد 30 يومًا دون نسخة احتياطية تقترح الصفحة الرئيسية تصديره."
+     }
+    },
+    {
+     "id": "history",
+     "icon": "📜",
+     "go": "appinfo",
+     "title": {
+      "fr": "Historique des nouveautés",
+      "en": "History of new features",
+      "ar": "سجلّ المستجدّات"
+     },
+     "text": {
+      "fr": "L'écran « Nouveautés » (Réglages → Aide et infos) garde maintenant les versions précédentes, avec ce qu'elles ont apporté.",
+      "en": "The “What's new” screen (Settings → Help and info) now keeps previous versions, with what each one brought.",
+      "ar": "تحتفظ شاشة «المستجدّات» (الإعدادات ← المساعدة والمعلومات) الآن بالإصدارات السابقة وما أضافته كل منها."
+     }
+    }
+   ]
+  },
+  {
    "v": 96,
    "items": [
     {

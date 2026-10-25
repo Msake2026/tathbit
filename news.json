@@ -1,65 +1,80 @@
 {
- "v": 97,
+ "v": 98,
  "date": "2026-10-25",
  "items": [
   {
-   "id": "arsize",
-   "icon": "🔤",
-   "go": "arsize",
+   "id": "home2",
+   "icon": "▶️",
+   "go": "home",
    "title": {
-    "fr": "Taille du texte arabe réglable partout",
-    "en": "Arabic text size adjustable everywhere",
-    "ar": "حجم النص العربي قابل للضبط في كل مكان"
+    "fr": "Un accueil centré sur ta séance du jour",
+    "en": "A home screen built around your daily session",
+    "ar": "صفحة رئيسية تتمحور حول حصّتك اليومية"
    },
    "text": {
-    "fr": "Réglages → Affichage : agrandis ou réduis le texte arabe, avec un aperçu. Le réglage vaut pour les questions, le lecteur, la récitation, les résultats et les erreurs.",
-    "en": "Settings → Display: enlarge or shrink the Arabic text, with a preview. It applies to questions, the reader, recitation, results and mistakes.",
-    "ar": "الإعدادات ← العرض: كبّر النص العربي أو صغّره مع معاينة. يسري على الأسئلة والقارئ والتسميع والنتائج والأخطاء."
+    "fr": "Le bouton « Ma séance du jour » passe en premier, avec la durée estimée. Sans révision à faire, il te propose ta dernière série en un toucher. Moins de cartes en double, des icônes uniformes.",
+    "en": "The “My session of the day” button comes first, with an estimated duration. With nothing to review, it offers your last series in one tap. Fewer duplicate cards, consistent icons.",
+    "ar": "يأتي زر «حصّتي اليوم» أولًا مع المدة التقديرية. وإن لم يكن هناك ما يُراجَع اقترح عليك سلسلتك الأخيرة بلمسة واحدة. بطاقات مكرّرة أقل وأيقونات موحّدة."
    }
   },
   {
-   "id": "resume",
-   "icon": "🎙️",
-   "go": "recite",
+   "id": "train2",
+   "icon": "📖",
+   "go": "train",
    "title": {
-    "fr": "Récitation libre : reprendre où tu t'es arrêté",
-    "en": "Free recitation: resume where you stopped",
-    "ar": "التسميع الحر: تابع من حيث توقفت"
+    "fr": "Réviser : d'abord quoi, ensuite comment",
+    "en": "Revise: first what, then how",
+    "ar": "المراجعة: أولًا ماذا ثم كيف"
    },
    "text": {
-    "fr": "Pour chaque sourate, l'application retient ta dernière récitation : versets récités, sans oubli, à revoir. Un bouton, aussi sur l'accueil, te fait reprendre au verset où tu t'es arrêté.",
-    "en": "For each surah the app remembers your last recitation: verses recited, without a slip, to review. A button, also on the home screen, resumes at the verse where you stopped.",
-    "ar": "يتذكّر التطبيق آخر تسميع لكل سورة: الآيات المسمَّعة وما كان بلا نسيان وما يحتاج مراجعة. وزرّ، في الصفحة الرئيسية أيضًا، يستأنف من الآية التي توقفت عندها."
+    "fr": "Tu choisis d'abord ce que tu révises (Coran ou moutoun, la portée), puis l'exercice. Les exercices sont plus compacts, avec la description du choix en dessous.",
+    "en": "You first choose what to revise (Quran or mutun, the range), then the exercise. Exercises are more compact, with the description of your choice below.",
+    "ar": "تختار أولًا ما تراجعه (القرآن أو المتون والنطاق) ثم التمرين. التمارين أكثر إيجازًا ووصف اختيارك تحتها."
    }
   },
   {
-   "id": "backup",
-   "icon": "💾",
-   "go": "backup",
+   "id": "map2",
+   "icon": "📊",
+   "go": "progress",
    "title": {
-    "fr": "Rappel de sauvegarde sans compte",
-    "en": "Backup reminder without an account",
-    "ar": "تذكير بالنسخ الاحتياطي دون حساب"
+    "fr": "Carte des sourates : les fragiles se voient",
+    "en": "Surah map: weak spots stand out",
+    "ar": "خريطة السور: تظهر السور الهشّة"
    },
    "text": {
-    "fr": "Sans compte, ta progression n'est que sur ton appareil : après 30 jours sans sauvegarde, l'accueil te propose de l'exporter.",
-    "en": "Without an account your progress lives only on your device: after 30 days without a backup, the home screen offers to export it.",
-    "ar": "بدون حساب يبقى تقدّمك على جهازك فقط: بعد 30 يومًا دون نسخة احتياطية تقترح الصفحة الرئيسية تصديره."
+    "fr": "Les sourates fragiles (moins de 60 % de réussite) sont soulignées en rouge. Un filtre n'affiche que celles que tu as vues, en cases plus compactes.",
+    "en": "Weak surahs (under 60% success) are underlined in red. A filter shows only those you have seen, in more compact cells.",
+    "ar": "تُسطَّر السور الهشّة (نجاح أقل من 60٪) بالأحمر. ومرشّح يعرض ما رأيته فقط في خانات أصغر."
    }
   },
   {
-   "id": "history",
-   "icon": "📜",
-   "go": "appinfo",
+   "id": "plan2",
+   "icon": "📅",
+   "go": "plan",
    "title": {
-    "fr": "Historique des nouveautés",
-    "en": "History of new features",
-    "ar": "سجلّ المستجدّات"
+    "fr": "Plan : tes étapes du jour d'abord",
+    "en": "Plan: today's steps first",
+    "ar": "الخطة: خطوات اليوم أولًا"
    },
    "text": {
-    "fr": "L'écran « Nouveautés » (Réglages → Aide et infos) garde maintenant les versions précédentes, avec ce qu'elles ont apporté.",
-    "en": "The “What's new” screen (Settings → Help and info) now keeps previous versions, with what each one brought.",
-    "ar": "تحتفظ شاشة «المستجدّات» (الإعدادات ← المساعدة والمعلومات) الآن بالإصدارات السابقة وما أضافته كل منها."
+    "fr": "Sabaq, sabqi et manzil tiennent dans une seule carte, au-dessus de la liste des versets à renforcer. La prévision de la semaine est repliée.",
+    "en": "Sabaq, sabqi and manzil fit in a single card, above the list of verses to strengthen. The weekly forecast is collapsed.",
+    "ar": "السبق والسبقي والمنزل في بطاقة واحدة فوق قائمة الآيات المراد تقويتها. وتوقّع الأسبوع مطويّ."
+   }
+  },
+  {
+   "id": "draw2",
+   "icon": "🎯",
+   "go": "train",
+   "title": {
+    "fr": "Des questions mieux choisies",
+    "en": "Better-chosen questions",
+    "ar": "أسئلة أحسن اختيارًا"
+   },
+   "text": {
+    "fr": "Dans tes séries, les versets dus reviennent plus souvent et ceux que tu tiens bien, moins. Les données de progression abîmées sont écartées au lieu de faire planter l'application.",
+    "en": "In your series, due verses come back more often and those you know well less often. Damaged progress data is dropped instead of crashing the app.",
+    "ar": "في سلاسلك تعود الآيات المستحقة أكثر وما تتقنه أقل. وتُستبعد بيانات التقدّم التالفة بدل أن يتعطّل التطبيق."
    }
   }
  ]

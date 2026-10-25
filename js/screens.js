@@ -429,7 +429,7 @@ function planWeek(pl, from = new Date()){ // prévision sur 7 jours : on suppose
 }
 function planWeekHtml(pl){
   const W = planWeek(pl), fmt = d => d.toLocaleDateString(LOCALE(), {weekday: 'long', day: 'numeric', month: 'short'});
-  return `<div class="card"><h2>${tr('Semaine')}</h2>
+  return `<div style="margin-top:8px">
     ${W.map((x, i) => `<div class="weak" style="display:block${i === 0 ? ';font-weight:600' : ''}"><div>${i === 0 ? '▸ ' : ''}${esc(fmt(x.day))}</div>
       <div class="ref" style="margin:2px 0 0">${x.chunk ? `${x.done.sabaq ? '✓ ' : ''}${tr('Nouveau :')} ${esc(passageLabel(chunkRefs(x.chunk)))}` : tr('Plan terminé 🎉')}${x.rec ? ` · ${x.done.sabqi ? '✓ ' : ''}${trp(x.rec, 'révision récente : {n} portion|révision récente : {n} portions')}` : ''}${x.man ? ` · ${x.done.manzil ? '✓ ' : ''}${trp(x.man, 'révision ancienne : {n} portion|révision ancienne : {n} portions')}` : ''}</div></div>`).join('')}
     <p class="ref" style="margin:8px 0 0">${tr("Prévision : elle suppose que tu apprends chaque jour la portion prévue. Les portions de révision sont celles de la règle sabqi / manzil de ton plan.")} ${AI()}</p></div>`;
@@ -439,22 +439,25 @@ function tabPlan(){
   const T = planToday(), units = planUnits(plan), L = learnedKeys(plan), nL = units.filter(u => L.has(key(u))).length, pct = Math.round(100 * nL / units.length), rem = units.length - nL;
   const dist = new Set((plan.log || []).map(c => c.d)).size, per = dist >= 3 ? nL / dist : (plan.amt[0] === 'v' ? +plan.amt.slice(1) : +plan.amt.slice(1) * 10.3), days = Math.ceil(rem / Math.max(per, 1));
   const end = addDays(new Date(), days).toLocaleDateString(LOCALE(), {day: 'numeric', month: 'long', year: 'numeric'});
-  const row = (title, sub, done, act, btn) => `<div class="card"><h2>${title}</h2><p class="sub" style="margin:0 0 8px">${sub}</p>
-    ${done ? `<p class="ref" style="margin:0">✓ ${tr('Fait')}</p>` : act ? `<button class="pri big" data-act="${act}">${btn}</button>` : ''}</div>`;
+  const row = (title, sub, done, act, btn) => `<div class="prow"><div><b>${title}</b><br><span class="ref">${sub}</span></div>
+    ${done ? `<span class="pdone">${ic('check')} ${tr('Fait')}</span>` : act ? `<button class="pri" data-act="${act}">${btn}</button>` : ''}</div>`;
+  const none = (title, sub) => `<div class="prow"><div><b>${title}</b><br><span class="ref">${sub}</span></div></div>`;
   return `
   <h1>${tr('Plan')}</h1>
   <div class="card"><h2>${tr('Mon plan de révision')}</h2>
     <div class="goal"><i style="width:${pct}%"></i></div>
     <p style="margin:6px 0 0"><b>${tr('{a} / {b} versets appris', {a: nL, b: units.length})}</b> · ${pct} %</p>
     <p class="ref" style="margin:4px 0 0">${rem ? tr('À ce rythme : environ {d} jours (fin vers le {date}).', {d: days, date: end}) : tr('Plan terminé 🎉')}</p></div>
+  <div class="card"><h2>${tr("Aujourd'hui")}</h2>
   ${T.next ? row(tr('Nouveau (sabaq)'), esc(passageLabel(chunkRefs(T.next))) + ' · ' + amtLabel(plan.amt), T.d.sabaq, 'plan-sabaq', tr('Apprendre'))
-    : `<div class="card"><h2>${tr('Nouveau (sabaq)')}</h2><p class="sub" style="margin:0">${tr('Plan terminé 🎉')}</p></div>`}
+    : none(tr('Nouveau (sabaq)'), tr('Plan terminé 🎉'))}
   ${T.rec.length ? row(tr('Révision récente (sabqi)'), trp(T.rec.length, '{n} portion apprise ces {d} derniers jours|{n} portions apprises ces {d} derniers jours', {d: plan.recent}), T.d.sabqi, 'plan-sabqi', tr('Réviser'))
-    : `<div class="card"><h2>${tr('Révision récente (sabqi)')}</h2><p class="sub" style="margin:0">${tr('Rien à réviser pour le moment.')}</p></div>`}
+    : none(tr('Révision récente (sabqi)'), tr('Rien à réviser pour le moment.'))}
   ${T.man.length ? row(tr('Révision ancienne (manzil)'), trp(T.man.length, '{n} portion à revoir aujourd\'hui (cycle de {c} jours)|{n} portions à revoir aujourd\'hui (cycle de {c} jours)', {c: plan.cycle}) + (T.xtra ? ' · ' + tr('dont {n} à renforcer', {n: T.xtra}) : ''), T.d.manzil, 'plan-manzil', tr('Réviser'))
-    : `<div class="card"><h2>${tr('Révision ancienne (manzil)')}</h2><p class="sub" style="margin:0">${tr('Rien à réviser pour le moment.')}</p></div>`}
+    : none(tr('Révision ancienne (manzil)'), tr('Rien à réviser pour le moment.'))}
+  </div>
   ${weakCard(true)}
-  ${planWeekHtml(plan)}
+  <details class="card"><summary><h2>${tr('Semaine')}</h2></summary>${planWeekHtml(plan, true)}</details>
   ${planDefsHtml(false)}
   <div class="row"><button data-act="plan-edit">${tr('Modifier le plan')}</button><button data-act="plan-del" style="color:var(--ko)">${tr('Supprimer le plan')}</button></div>`;
 }
@@ -629,7 +632,8 @@ function tabSettings(){
   </div>`,
     arsize: `<div class="card" id="card-arsize"><h2>${tr('Taille du texte arabe')}</h2>
     <p class="ref" style="margin:0 0 6px">${tr("Valable partout : questions, lecteur, récitation, résultats et erreurs.")}</p>
-    <div class="row" style="align-items:center"><button data-act="ar-size" data-v="-1" aria-label="${tr('Réduire le texte arabe')}" ${(cfg.rdSize || AR_DEF) <= 1.1 ? 'disabled' : ''}>A−</button><b id="arsz" style="flex:1;text-align:center" role="status">${Math.round(100 * (cfg.rdSize || AR_DEF) / AR_DEF)} %</b><button data-act="ar-size" data-v="1" aria-label="${tr('Agrandir le texte arabe')}" ${(cfg.rdSize || AR_DEF) >= 3.2 ? 'disabled' : ''}>A+</button><button data-act="ar-size" data-v="reset">${tr('Par défaut')}</button></div>
+    <div class="stepper"><button data-act="ar-size" data-v="-1" aria-label="${tr('Réduire le texte arabe')}" ${(cfg.rdSize || AR_DEF) <= 1.1 ? 'disabled' : ''}>A−</button><b id="arsz" role="status">${Math.round(100 * (cfg.rdSize || AR_DEF) / AR_DEF)} %</b><button data-act="ar-size" data-v="1" aria-label="${tr('Agrandir le texte arabe')}" ${(cfg.rdSize || AR_DEF) >= 3.2 ? 'disabled' : ''}>A+</button></div>
+    <p style="margin:6px 0 0;text-align:center"><button class="link" data-act="ar-size" data-v="reset">${tr('Par défaut')}</button></p>
     <div class="ar" dir="rtl" lang="ar" style="text-align:center">بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ</div></div>`,
     corr: `<div class="card"><h2>${tr('Correction de la saisie (Coran)')}</h2>
     <div class="seg">${[['strict', 'Stricte'], ['standard', 'Standard'], ['soft', 'Souple']].map(([k, t]) =>
@@ -714,7 +718,7 @@ function tabSettings(){
   return `
   <h1>${tr('Réglages')}</h1>
   ${search}
-  ${q ? found : `<div class="top setnav"><button class="link" data-act="set-grp" data-v="hub">← ${tr('Les 6 blocs')}</button><span>${g0 ? g0[1] + ' ' + tr(g0[2]) : '☰ ' + tr('Tout')}</span></div>`}
+  ${q ? found : `<div class="top setnav"><button class="link" data-act="set-grp" data-v="hub">← ${tr('Les 6 blocs')}</button><span>${g0 ? ic(g0[1]) + ' ' + tr(g0[2]) : tr('Tout')}</span></div>`}
   ${shown.map(c => c.html).join('\n')}
   ${!q ? `<p style="text-align:center;margin:10px 0"><button class="link" data-act="set-grp" data-v="hub">← ${tr('Les 6 blocs')}</button></p>` : ''}`;
 }

@@ -1025,6 +1025,24 @@
     $q('.today [data-act="start"]').click(); await wait(150); ok(E('!!ses') && E('ses.total') === 10, 'la série de secours démarre'); E("ses = null; go('home')");
     for (const L of ['en', 'ar']){ E(`setLang('${L}'); go('home')`); ok(!!$q('.today [data-act="start"]') && !/undefined|NaN/.test(appText()), 'accueil sans séance en ' + L); eq(E('[...missingKeys]'), [], 'clés traduites (' + L + ')'); } E("setLang('fr')"); noErr('algorithme');
   });
+  test('Présentation : icônes SVG (pas d’émojis), Réviser « quoi puis comment », plan « étapes d’abord », carte des sourates dense avec « fragile »', async () => {
+    reset("stats = {'112:1': [9, 0], '112:2': [9, 0], '112:3': [9, 0], '108:1': [1, 3], '108:2': [1, 2]}; sched = {}; errors = []; plan = {v: 1, from: 78, to: 114, order: 'desc', amt: 'v5', recent: 7, cycle: 14, log: [{d: dayKey(addDays(new Date(), -2)), s: 112, a: 1, b: 3}], mptr: 0, done: {}}");
+    E("go('home')"); const tiles = $$q('.sethub button'); eq(tiles.length, 6, 'six tuiles'); ok(tiles.every(b => b.querySelector('.si svg.ic') && !/[\u{1F300}-\u{1FAFF}]/u.test(b.querySelector('.si').textContent)), 'chaque tuile a une icône SVG, pas un émoji');
+    ok($$q('.ic').every(s => s.getAttribute('aria-hidden') === 'true'), 'icônes décoratives masquées aux lecteurs d’écran');
+    E("cfg.setTab = 'hub'; go('settings')"); ok($$q('.sethub .si svg.ic').length === 6, 'réglages : six icônes SVG');
+    // Réviser : quoi réviser, puis exercice (compact)
+    E("cfg.mode = 'mix'; go('train')"); const heads = $$q('#app h2').map(h => h.textContent.trim()); ok(heads.indexOf('Je veux réviser') >= 0 && heads.indexOf('Je veux réviser') < heads.indexOf('Exercice') && heads.indexOf('Exercice') < heads.indexOf('Options de la série'), 'ordre : Je veux réviser › Exercice › Options : ' + heads.join(' | '));
+    ok($$q('.mode').length >= 6 && $$q('.mode small').length === 0 && !!$q('.modedesc'), 'exercices compacts : titres seulement, la description du choix en dessous');
+    const d0 = $q('.modedesc').textContent; clickAct('mode', 'cloze'); ok($q('.modedesc').textContent !== d0 && $q('.mode.sel').dataset.v === 'cloze', 'la description suit le choix');
+    // Plan : les étapes du jour avant les versets fragiles
+    E("planEditing = false; go('plan')"); const pl = $$q('#app > *').map(x => x.textContent.slice(0, 30)); ok($$q('.prow').length === 3 && $$q('#app h2').map(h => h.textContent.trim()).indexOf("Aujourd'hui") < ($$q('#app h2').map(h => h.textContent.trim()).indexOf('À renforcer en priorité') < 0 ? 99 : $$q('#app h2').map(h => h.textContent.trim()).indexOf('À renforcer en priorité')), 'plan : trois lignes sabaq / sabqi / manzil, avant la liste des versets fragiles : ' + $$q('.prow').length + ' lignes ; ' + $$q('#app h2').map(h => h.textContent.trim()).join(' | '));
+    ok(!!$q('details.card summary') && !$q('details.card[open]'), 'la prévision de la semaine est repliée');
+    // carte des sourates
+    E("cfg.map = 's'; cfg.mapSeen = true; go('progress')"); eq($$q('.cell.named').length, 2, 'seulement les sourates vues (108 et 112)'); ok($q('.cell.named.lw') && /^108/.test($q('.cell.named.lw').textContent) && $$q('.cell.named.lw').length === 1, 'la sourate 108 (réussite 33 %) est marquée « fragile »');
+    clickAct('mapseen'); eq($$q('.cell.named').length, 114, 'filtre retiré : 114 sourates'); const cw = $q('.cell.named').getBoundingClientRect().width; ok(cw < 120, 'cases compactes (' + Math.round(cw) + ' px)');
+    for (const L of ['en', 'ar']){ E(`setLang('${L}'); cfg.mapSeen = true; go('progress')`); ok(!/undefined|NaN/.test(appText()), 'progrès en ' + L); E("go('train')"); ok(!/undefined|NaN/.test(appText()), 'réviser en ' + L); E("go('plan')"); eq(E('[...missingKeys]'), [], 'clés traduites (' + L + ')'); }
+    E("setLang('fr'); plan = null; stats = {}; cfg.mapSeen = true"); noErr('présentation');
+  });
   test('Premier lancement : 3 écrans (le but, choisir ses sourates ou un matn, premier exercice) ; pas pour un utilisateur existant', async () => {
     reset(); E("store.set('tathbit.welcome', 0); go('home')"); ok(/Le but de Tathbīt/.test(appText()) && /1 \/ 3/.test(appText()) && /ḥifẓ/.test(appText()), 'écran 1 : le but (tathbīt, pas ḥifẓ)'); ok(!$q('#nav') || $q('#nav').hidden, 'pas de barre de menu pendant le guide');
     clickAct('wz-next'); ok(/Ce que tu veux consolider/.test(appText()) && /2 \/ 3/.test(appText()) && !!$q('#wz-from'), 'écran 2 : choix des sourates');

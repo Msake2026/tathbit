@@ -232,7 +232,8 @@ function results(){
   $app.innerHTML = `
   <h1>${tr('Résultat')}</h1>
   <div class="card"><div class="big-score">${pct} %</div>
-    <p class="sub" style="text-align:center">${ses.score % 1 ? ses.score.toFixed(1) : ses.score} / ${ses.total} · ${msg}</p></div>
+    <p class="sub" style="text-align:center;margin-bottom:6px">${ses.score % 1 ? ses.score.toFixed(1) : ses.score} / ${ses.total} · ${msg}</p>
+    <p class="ref" style="text-align:center;margin:0">${ic('flame')} ${tr('objectif : {a} / {b}', {a: Math.min(days[today()] || 0, cfg.goal), b: cfg.goal})}</p></div>
   ${ses.hf ? `<div class="card"><h2>${tr('Résumé de la série')}</h2>${Object.entries(ses.hf).sort((a, b) => b[1][1] - a[1][1]).map(([k, [o, e]]) => `<div class="weak"><span>${hfKeyLabel(k)}</span><span>${o} ✓ · ${e} ✗</span></div>`).join('')}${HFNOTE()}</div>` : ''}
   ${ses.tj ? `<div class="card"><h2>${tr('Règles de cette série')}</h2>${Object.entries(ses.tj).sort((a, b) => b[1][1] - a[1][1]).map(([c, [o, k]]) => `<div class="weak"><span>${esc(tr(TJNAME[c]))}</span><span>${o} ✓ · ${k} ✗</span></div>`).join('')}${TJNOTE()}</div>` : ''}
   ${missed.length ? `<div class="card"><h2>${tr('À revoir ({n})', {n: missed.length})}</h2>

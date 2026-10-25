@@ -1,7 +1,7 @@
 /* Tathbīt — Compte (Supabase), nouveautés, premier lancement, contact, confidentialité, espace admin.
    Scripts classiques chargés dans l'ordre par index.html (même portée globale) : ne pas les réordonner. */
 /* ---------- compte (Supabase) : inscription, connexion, synchronisation, espace admin ---------- */
-const APP_VERSION = '25 oct. 2026 · v97';
+const APP_VERSION = '25 oct. 2026 · v98';
 const APP_BUILD = +((/v(\d+)/.exec(APP_VERSION) || [])[1]) || 0;   // numéro de la version qui tourne ; version.json (à jour à chaque publication) donne le dernier numéro publié
 let newVer = null, verAt = 0;
 function updBannerHtml(){
@@ -17,7 +17,7 @@ function settingsGo(tab, id){ // « Essayer » depuis les nouveautés : ouvre le
   cfg.setTab = tab; setQ = ''; saveCfg(); go('settings');
   setTimeout(() => { const el = document.getElementById(id); if (!el) return; try { el.scrollIntoView({block: 'center'}); } catch { /* ancien navigateur */ } el.classList.add('flash'); setTimeout(() => el.classList.remove('flash'), 2600); }, 50);
 }
-const NEWS_GO = {arsize: () => settingsGo('display', 'card-arsize'), backup: () => settingsGo('data', 'card-data'), appinfo: () => settingsGo('help', 'card-app'), news: () => openNews(), recite: () => frSetup(), moutoun: () => { cfg.scope = {type: 'matn', id: 'ibnachir'}; saveCfg(); go('train'); }, plan: () => go('plan'), contact: () => renderContact(), settings: () => go('settings'), home: () => go('home'), install: () => renderInstall()};
+const NEWS_GO = {train: () => go('train'), progress: () => go('progress'), arsize: () => settingsGo('display', 'card-arsize'), backup: () => settingsGo('data', 'card-data'), appinfo: () => settingsGo('help', 'card-app'), news: () => openNews(), recite: () => frSetup(), moutoun: () => { cfg.scope = {type: 'matn', id: 'ibnachir'}; saveCfg(); go('train'); }, plan: () => go('plan'), contact: () => renderContact(), settings: () => go('settings'), home: () => go('home'), install: () => renderInstall()};
 async function loadNews(force){
   if (!force && news && Date.now() - newsAt < 30 * 60e3) return news;
   try { const r = await fetch('news.json?t=' + Date.now(), {cache: 'no-store'}); if (r.ok){ const j = await r.json(); if (j && Array.isArray(j.items)){ news = j; newsAt = Date.now(); } } } catch { /* hors ligne ou fichier absent */ }
