@@ -145,6 +145,7 @@ sup.vn{font-family:Inter,sans-serif;font-size:.6rem;color:var(--muted);margin:0 
 .frvow .wd.bad{color:inherit;background:color-mix(in srgb,#e08a1e 28%,transparent);text-decoration:underline wavy #e08a1e}
 .fw.mask{color:transparent!important;background:color-mix(in srgb,var(--muted) 30%,transparent);user-select:none}.fw.cur{outline:2px solid var(--accent);outline-offset:1px}.fw.hint{background:color-mix(in srgb,var(--gold,#c9a227) 30%,transparent);color:var(--ink)}
 p a[href],.ref a[href],li a[href]{display:inline-block;min-height:24px;line-height:24px}   /* liens dans une phrase : zone à toucher d'au moins 24 px de haut (WCAG 2.5.8), sans déborder sur les voisins */
+.inststeps{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}.inststeps figure{margin:0;text-align:center}.inststeps figcaption{font-size:.9rem;line-height:1.4;margin-top:4px}
 .sethub{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:8px 0}.sethub button{display:grid;grid-template-columns:auto minmax(0,1fr);column-gap:8px;row-gap:3px;align-items:center;align-content:start;min-width:0;min-height:0;padding:11px 12px;text-align:start;border-radius:16px;white-space:normal}.sethub .si{font-size:1.45rem;line-height:1}.sethub b{font-size:1rem;line-height:1.2}.sethub small,.sethub .sv{grid-column:1 / -1;min-width:0}.sethub small{color:var(--muted);font-weight:400;font-size:.78rem;line-height:1.3}.sethub .sv{padding-top:4px;border-top:1px dashed var(--line);color:var(--accent);font-size:.8rem;font-weight:600;line-height:1.3;overflow-wrap:anywhere}.sethub .sv.one{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 @media(min-width:700px){.sethub{grid-template-columns:repeat(3,minmax(0,1fr))}}
 .setnav{position:sticky;top:0;z-index:6;background:var(--bg);padding:8px 0}
@@ -834,19 +835,30 @@ function homeTiles(){ // tableau de bord : seulement ce qui n'est pas déjà dan
   return `<h2 style="margin:16px 0 0">${tr('Mon tableau de bord')}</h2><div class="sethub">${T.map(([a, v, ic, t, d, st]) => `<button data-act="${a}"${v ? ` data-v="${v}"` : ''}><span class="si" aria-hidden="true">${ic}</span><b>${tr(t)}</b><small>${tr(d)}</small><span class="sv">${st}</span></button>`).join('')}</div>`;
 }
 /* ---------- installation de l'application ---------- */
+function instImg(n){ // mini-schémas de l'installation sur iPhone (sans texte : rien à traduire ; le texte est dans la légende)
+  const ph = '<rect x="46" y="6" width="68" height="108" rx="10" fill="var(--card)" stroke="var(--ink)" stroke-width="2"/>', hi = 'fill="none" stroke="var(--accent)" stroke-width="2.5"';
+  const share = (x, y, c) => `<g stroke="${c}" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M${x - 5} ${y - 1}v7h10v-7M${x} ${y + 4}v-10M${x - 3} ${y - 3}l3-3 3 3"/></g>`;
+  const lines = '<g stroke="var(--line)" stroke-width="3" stroke-linecap="round"><path d="M56 22h48M56 32h36M56 42h44M56 52h30"/></g>';
+  const body = n === 1 ? `${lines}<rect x="47" y="90" width="66" height="23" fill="var(--bg)" stroke="var(--line)"/><path d="M58 102h-1M64 98l-4 4 4 4" stroke="var(--muted)" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/>${share(80, 102, 'var(--accent)')}<circle cx="80" cy="101" r="11" ${hi}/><rect x="98" y="97" width="9" height="9" rx="2" fill="none" stroke="var(--muted)" stroke-width="1.8"/>`
+    : n === 2 ? `${lines}<rect x="47" y="44" width="66" height="70" rx="9" fill="var(--bg)" stroke="var(--line)"/><rect x="55" y="52" width="50" height="11" rx="3" fill="var(--line-soft)"/><rect x="55" y="68" width="50" height="14" rx="3" fill="var(--card)" ${hi}/><rect x="59" y="71" width="8" height="8" rx="2" fill="none" stroke="var(--accent)" stroke-width="1.8"/><path d="M63 73v4M61 75h4" stroke="var(--accent)" stroke-width="1.5"/><rect x="72" y="73" width="28" height="4" rx="2" fill="var(--accent)"/><rect x="55" y="87" width="50" height="11" rx="3" fill="var(--line-soft)"/>`
+    : `<g fill="var(--line-soft)"><rect x="55" y="18" width="16" height="16" rx="4"/><rect x="72" y="18" width="16" height="16" rx="4"/><rect x="89" y="18" width="16" height="16" rx="4"/><rect x="55" y="42" width="16" height="16" rx="4"/><rect x="72" y="42" width="16" height="16" rx="4"/><rect x="55" y="66" width="16" height="16" rx="4"/><rect x="72" y="66" width="16" height="16" rx="4"/></g><rect x="89" y="42" width="16" height="16" rx="4" fill="var(--accent)"/><circle cx="97" cy="50" r="4.5" fill="none" stroke="var(--gold)" stroke-width="2"/><rect x="85" y="38" width="24" height="24" rx="7" ${hi}/>`;
+  return `<svg viewBox="0 0 160 120" width="150" height="112" role="img" aria-label="${tr(['Schéma : le bouton Partager en bas de Safari', 'Schéma : la ligne « Sur l’écran d’accueil » dans le menu', 'Schéma : l’icône de Tathbīt sur l’écran d’accueil'][n - 1])}" focusable="false">${ph}${body}</svg>`;
+}
 function renderInstall(){
   setNav(false); screen = 'install';
-  const steps = IOS ? [tr('Ouvre cette page dans Safari.'), tr('Touche le bouton Partager (le carré avec une flèche vers le haut).'), tr("Touche « Sur l'écran d'accueil », puis « Ajouter »."), tr("Ouvre Tathbīt depuis son icône sur l'écran d'accueil.")]
-    : [tr('Ouvre le menu du navigateur (les trois points ⋮).'), tr("Touche « Installer l'application » (ou « Ajouter à l'écran d'accueil »)."), tr("Ouvre Tathbīt depuis son icône sur l'écran d'accueil.")];
+  const ios = [tr('Dans Safari, touche le bouton Partager (le carré avec une flèche vers le haut).'), tr("Fais défiler le menu et touche « Sur l'écran d'accueil », puis « Ajouter »."), tr("Ouvre Tathbīt depuis son icône sur l'écran d'accueil.")];
+  const steps = [tr('Ouvre le menu du navigateur (les trois points ⋮).'), tr("Touche « Installer l'application » (ou « Ajouter à l'écran d'accueil »)."), tr("Ouvre Tathbīt depuis son icône sur l'écran d'accueil.")];
   $app.innerHTML = `<div class="top"><button class="link" data-act="tab" data-v="home">${tr('← Retour')}</button><span>${tr('Installation')}</span></div>
     <h1 style="margin-top:8px">📲 ${tr("Installer l'application")}</h1>
     ${IS_STANDALONE() ? `<div class="fb ok" role="status">✓ ${tr("Tathbīt est déjà installée sur cet appareil.")}</div>` : ''}
     <div class="card"><p style="margin:0 0 8px">${tr("Installée, Tathbīt s'ouvre en plein écran, marche mieux hors ligne et peut t'envoyer tes rappels de révision.")}</p>
-      ${deferredInstall ? `<button class="pri big" data-act="install-now">📲 ${tr('Installer maintenant')}</button>` : `<ol class="steps" style="margin:0;padding-inline-start:20px;line-height:1.7">${steps.map(x => `<li>${x}</li>`).join('')}</ol>`}</div>
+      ${deferredInstall ? `<button class="pri big" data-act="install-now">📲 ${tr('Installer maintenant')}</button>`
+      : IOS ? `<p class="ref" style="margin:0 0 10px">${tr("Sur iPhone et iPad, l'installation se fait depuis Safari (pas depuis un autre navigateur).")}</p><div class="inststeps">${ios.map((x, k) => `<figure>${instImg(k + 1)}<figcaption><b>${k + 1}.</b> ${x}</figcaption></figure>`).join('')}</div>`
+      : `<ol class="steps" style="margin:0;padding-inline-start:20px;line-height:1.7">${steps.map(x => `<li>${x}</li>`).join('')}</ol>`}</div>
     ${IOS ? `<div class="card"><p class="ref" style="margin:0">${tr("Sur iPhone, l'application installée peut démarrer sans ta progression : exporte-la d'abord (Réglages, Données) puis importe-la dans l'application installée, ou connecte-toi à ton compte.")}</p></div>` : ''}`;
   window.scrollTo(0, 0);
 }
-async function installNow(){ if (!deferredInstall) return renderInstall(); const e = deferredInstall; deferredInstall = null; try { e.prompt(); await e.userChoice; } catch { /* refusé ou non pris en charge */ } renderInstall(); }
+async function installNow(){ if (!deferredInstall) return renderInstall(); const e = deferredInstall; deferredInstall = null; let r = null; try { e.prompt(); r = await e.userChoice; } catch { /* refusé ou non pris en charge */ } if (r && r.outcome === 'accepted') alert(tr('Tathbīt est installée : ouvre-la depuis son icône sur ton écran d’accueil.')); home(); }
 function tabHome(){
   const due = dueRefs(), td = days[today()] || 0, st = streak();
   return `
@@ -2427,7 +2439,7 @@ function exportIcs(){
     'BEGIN:VALARM', 'TRIGGER:PT0S', 'ACTION:DISPLAY', 'DESCRIPTION:' + tr('Révision du Coran'), 'END:VALARM', 'END:VEVENT', 'END:VCALENDAR'].join('\r\n');
   download('rappel-tathbit.ics', ics, 'text/calendar');
 }
-const IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+let IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 const IS_STANDALONE = () => navigator.standalone === true || !!(window.matchMedia && matchMedia('(display-mode: standalone)').matches);   // application installée
 let deferredInstall = null;   // invite d'installation proposée par Chrome/Android
 window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); deferredInstall = e; });
@@ -2718,7 +2730,7 @@ const onClick = e => {
       start(); break;
     }
     case 'review': start(shuffle(reviewPick(15))); break;
-    case 'tile-install': renderInstall(); break;
+    case 'tile-install': if (deferredInstall && !IS_STANDALONE()) installNow(); else renderInstall(); break;   // Android/Chrome : un toucher lance l'installation
     case 'install-now': installNow(); break;
     case 'tile-tajwid': setCat('tajwid'); saveCfg(); go('train'); break;
     case 'tile-backup': cfg.setTab = 'data'; saveCfg(); go('settings'); break;
