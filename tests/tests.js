@@ -24,7 +24,7 @@
   for (let i = 0; i < 100 && !(() => { try { return E('Q') && E('Q').length; } catch { return 0; } })(); i++) await wait(100);
   ok(E('Q') && E('Q').length === 114, "le Coran ne s'est pas chargé");
   E("CLOUD.url = ''; CLOUD.anonKey = ''; sb = null; me = null; window.confirm = () => true; window.alert = m => { window.__alerts = (window.__alerts || []).concat(String(m)); };"); // pas de compte pendant les tests
-  const reset = (extra = '') => { E("cfg = Object.assign({}, DEF, {tab: 'home', n: 5, corr: 'standard', setTab: 'all'}); setQ = ''; stats = {}; sched = {}; days = {}; errors = []; plan = null; custom = []; ses = null; LANG = 'fr'; applyLang(); " + extra); jsErrors.length = 0; };
+  const reset = (extra = '') => { E("cfg = Object.assign({}, DEF, {tab: 'home', n: 5, corr: 'standard', setTab: 'all'}); setQ = ''; stats = {}; sched = {}; days = {}; errors = []; plan = null; custom = []; ses = null; LANG = 'fr'; store.set('tathbit.welcome', 1); wz = {i: 0, kind: 'quran', from: 78, to: 114, matn: 'all'}; applyLang(); " + extra); jsErrors.length = 0; };
   const $q = s => D.querySelector(s), $$q = s => [...D.querySelectorAll(s)], appText = () => D.getElementById('app').textContent;   // texte de l'écran seulement (le code de la page n'en fait pas partie)
   const click = el => { ok(el, 'élément introuvable'); el.click(); };
   const clickAct = (act, v) => { const sel = `[data-act="${act}"]${v !== undefined ? `[data-v="${v}"]` : ''}`; const el = $q(sel); if (!el) throw new Error('élément introuvable : ' + sel); click(el); };
@@ -775,7 +775,7 @@
   });
   test('Profil et menus selon la personne : simple utilisateur (ni Élève ni Enseignant), élève, enseignant, administrateur', async () => {
     reset(); const calls = []; W.__calls = calls; W.__LK = [];
-    E(`CLOUD.url = 'https://x.supabase.co'; CLOUD.anonKey = 'k'; authReady = true; me = {user: {id: 'u1', email: 'simple@x.fr'}, profile: {role: 'user', created_at: new Date().toISOString()}}; try { localStorage.clear(); } catch {}
+    E(`CLOUD.url = 'https://x.supabase.co'; CLOUD.anonKey = 'k'; authReady = true; me = {user: {id: 'u1', email: 'simple@x.fr'}, profile: {role: 'user', created_at: new Date().toISOString()}}; try { localStorage.clear(); } catch {} store.set('tathbit.welcome', 1);
       sb = {from(){ return {select(){ const p = Promise.resolve({data: [], error: null}); p.is = () => ({gt: () => p}); return p; }}; }, auth: {}, async rpc(n){ if (n === 'links_mine') return {data: window.__LK, error: null}; return {data: [], error: null}; }};`);
     const tabs = () => $$q('#nav [data-act="tab"]').map(b => b.dataset.v), chip = () => [...D.querySelectorAll('.chip')].map(x => x.textContent).join('|');
     E("go('home')"); await wait(600); ok(!tabs().includes('student') && !tabs().includes('teacher'), 'simple utilisateur : ni onglet Élève ni onglet Enseignant : ' + tabs().join(',')); eq(chip(), 'Utilisateur', 'profil : Utilisateur');
@@ -981,7 +981,7 @@
     ok(!['Plan', 'Progrès', 'Erreurs', 'Réviser'].some(n => tiles().some((b, i) => name(i) === n)), 'aucune tuile qui double la barre du bas (Plan, Progrès, Erreurs, Réviser)');
     ok(!/Plan du jour/.test(appText()) && !/Mes erreurs de la semaine/.test(appText()), 'plus de carte « Plan du jour » ni « Mes erreurs de la semaine »');
     ok(/Aujourd'hui/.test(appText()) && /jour d'affilée|jours d'affilée/.test(appText()), 'la série de jours et l’objectif restent dans « Aujourd’hui »');
-    E("sched = {'112:1': {iv: 1, due: Date.now() - 1000}}; go('home')"); ok($q('[data-act="review"]') && /Réviser mes versets dus \(1\)/.test(appText()), 'versets dus : le bouton est dans « Aujourd’hui »');
+    E("sched = {'112:1': {iv: 1, due: Date.now() - 1000}}; go('home')"); ok($q('[data-act="day-go"]') && /Ma séance du jour/.test(appText()) && /1 verset dû/.test(appText()) && !/Réviser mes versets dus/.test(appText()), 'versets dus : « Ma séance du jour » les annonce (un seul bouton)');
     tiles()[0].click(); await wait(100); ok($q('#frfrom'), 'tuile « Réciter à voix haute » ouvre la récitation libre'); E("go('home')");
     tiles()[2].click(); await wait(300); ok($q('#rdsel') || /Lecteur|Retour/.test(appText()), 'tuile « Lire » ouvre le lecteur'); E("rdStop && rdStop(); go('home')");
     E("cfg.lastM = 'ibnachir'"); E("go('home')"); ok(/Dernier : Al-Murshid al-Muʿīn/.test(st(1)), 'tuile Moutoun : dernier matn'); tiles()[1].click(); await wait(100); ok(E("cfg.scope.type") === 'matn' && E("cfg.scope.id") === 'ibnachir' && E('cfg.tab') === 'train', 'ouvre Réviser sur ce matn');
@@ -998,6 +998,43 @@
     for (const L of ['en', 'ar']){ E(`setLang('${L}'); go('home')`); ok(tiles().length === 6 && !/undefined|NaN/.test(appText()), 'accueil en ' + L); eq(E('[...missingKeys]'), [], 'clés traduites (' + L + ')'); E('renderInstall()'); ok(!/undefined|NaN/.test(appText()), 'installation en ' + L); E('IOS = true; renderInstall(); IOS = false'); eq(E('[...missingKeys]'), [], 'clés installation (' + L + ')'); }
     E("setLang('fr'); plan = null; sched = {}; tjs = {}; store.set('tathbit.frLast', null); store.set('tathbit.lastExport', 0)"); noErr('tableau de bord');
   });
+  test('Ma séance du jour : versets dus puis révision récente et ancienne du plan, enchaînées en une touche', async () => {
+    reset("plan = null; sched = {}; stats = {}"); E("go('home')"); ok(!$q('[data-act="day-go"]') && /Rien à revoir/.test(appText()), 'rien à faire : pas de bouton, message clair');
+    E("sched = {'110:1': {iv: 1, due: Date.now() - 1000}}; go('home')"); ok(/1 verset dû/.test(appText()), 'versets dus seuls : séance en une étape');
+    clickAct('day-go'); await wait(150); eq(E('ses.day.steps.length'), 1, 'une étape'); eq(E('ses.pool.length'), 1, 'le verset dû');
+    E("results()"); ok(/Séance du jour terminée/.test(appText()) && !$q('[data-act="day-next"]'), 'fin de séance : message de réussite'); E("go('home')");
+    E("const d = n => dayKey(addDays(new Date(), -n)); plan = {v: 1, from: 78, to: 114, order: 'desc', amt: 'v5', recent: 7, cycle: 14, log: [{d: d(2), s: 112, a: 1, b: 2}, {d: d(20), s: 108, a: 1, b: 3}], mptr: 0, done: {}}; sched = {'110:1': {iv: 1, due: Date.now() - 1000}, '112:1': {iv: 1, due: Date.now() - 1000}}; go('home')");
+    ok(/1 verset dû · Révision récente \(1 portion\) · Révision ancienne \(1 portion\)/.test(appText()), 'résumé : dus + récente + ancienne (le verset déjà dans une portion n’est pas compté) : ' + $q('[data-act="day-go"]').parentNode.textContent);
+    clickAct('day-go'); await wait(150); eq(E('ses.day.steps.map(x => x.k).join()'), 'due,sabqi,manzil', 'ordre des étapes'); eq(E('ses.pool.length'), 1, 'étape 1 : versets dus');
+    E("results()"); ok(/étape 1 sur 3/.test(appText()) && /Étape suivante : Révision récente/.test(appText()) && !$q('[data-act="retry"]') && !$q('[data-act="again"]'), 'fin de l’étape 1 : bouton « Étape suivante » seulement');
+    clickAct('day-next'); await wait(150); eq(E('ses.planKind'), 'sabqi', 'étape 2 : révision récente'); E("results()"); ok(E('plan.done[dayKey()].sabqi') === true && /Étape suivante : Révision ancienne/.test(appText()), 'sabqi marqué fait, étape 3 annoncée');
+    clickAct('day-next'); await wait(150); eq(E('ses.planKind'), 'manzil', 'étape 3 : révision ancienne'); E("results()"); ok(E('plan.done[dayKey()].manzil') === true && /Séance du jour terminée/.test(appText()), 'manzil marqué fait, séance terminée');
+    ok(!!$q('[data-act="plan-sabaq"]') && /Apprendre la nouvelle portion/.test(appText()), 'à la fin : la nouvelle portion du plan est proposée');
+    E("go('home')"); ok(!$q('[data-act="day-go"]') || !/Révision récente/.test($q('[data-act="day-go"]').parentNode.textContent), 'les étapes faites ne sont plus proposées');
+    for (const L of ['en', 'ar']){ E(`setLang('${L}'); plan.done = {}; sched = {'110:1': {iv: 1, due: Date.now() - 1000}}; go('home')`); ok(!/undefined|NaN/.test(appText()) && !!$q('[data-act="day-go"]'), 'séance du jour en ' + L); eq(E('[...missingKeys]'), [], 'clés traduites (' + L + ')'); }
+    E("setLang('fr'); plan = null; sched = {}"); noErr('séance du jour');
+  });
+  test('Premier lancement : 3 écrans (le but, choisir ses sourates ou un matn, premier exercice) ; pas pour un utilisateur existant', async () => {
+    reset(); E("store.set('tathbit.welcome', 0); go('home')"); ok(/Le but de Tathbīt/.test(appText()) && /1 \/ 3/.test(appText()) && /ḥifẓ/.test(appText()), 'écran 1 : le but (tathbīt, pas ḥifẓ)'); ok(!$q('#nav') || $q('#nav').hidden, 'pas de barre de menu pendant le guide');
+    clickAct('wz-next'); ok(/Ce que tu veux consolider/.test(appText()) && /2 \/ 3/.test(appText()) && !!$q('#wz-from'), 'écran 2 : choix des sourates');
+    $q('#wz-from').value = '105'; $q('#wz-to').value = '100'; clickAct('wz-next'); ok(/Ton premier exercice/.test(appText()) && /3 \/ 3/.test(appText()), 'écran 3'); eq(E('cfg.scope.from') + '-' + E('cfg.scope.to'), '100-105', 'portée enregistrée (ordre corrigé)');
+    clickAct('wz-back'); ok(/Ce que tu veux consolider/.test(appText()) && $q('#wz-from').value === '100', 'retour : le choix est conservé'); clickAct('wz-next');
+    clickAct('wz-first'); await wait(200); ok(E("store.get('tathbit.welcome', 0)") === 1 && E('!!ses') && E('ses.pool.every(r => r.s >= 100 && r.s <= 105)'), 'première série lancée sur le choix, guide terminé'); E("ses = null; go('home')"); ok(/Mon tableau de bord/.test(appText()), 'ensuite : l’accueil, plus de guide');
+    reset(); E("store.set('tathbit.welcome', 0); wz.i = 0; go('home')"); clickAct('wz-next'); clickAct('wz-kind', 'matn'); ok(!!$q('#wz-matn'), 'matn : liste des moutoun'); $q('#wz-matn').value = 'ibnachir'; clickAct('wz-next'); eq(E('cfg.scope.type + ":" + cfg.scope.id'), 'matn:ibnachir', 'matn choisi'); clickAct('wz-skip'); ok(E("store.get('tathbit.welcome', 0)") === 1 && /Mon tableau de bord/.test(appText()), '« Passer » : accueil et guide terminé');
+    reset("stats = {'112:1': [1, 0]}"); E("store.set('tathbit.welcome', 0); go('home')"); ok(!/Le but de Tathbīt/.test(appText()) && E("store.get('tathbit.welcome', 0)") === 1, 'utilisateur ayant déjà des données : pas de guide');
+    reset(); E("store.set('tathbit.welcome', 0); go('home')"); for (const L of ['en', 'ar']){ E(`setLang('${L}')`); for (let k = 0; k < 3; k++){ ok(!/undefined|NaN/.test(appText()), 'guide en ' + L + ' écran ' + (k + 1)); if (k < 2) clickAct('wz-next'); } eq(E('[...missingKeys]'), [], 'clés traduites (' + L + ')'); E("wz.i = 0; renderWelcome()"); }
+    E("setLang('fr'); store.set('tathbit.welcome', 1); wz = {i: 0, kind: 'quran', from: 78, to: 114, matn: 'all'}"); noErr('premier lancement');
+  });
+  test('Hors ligne : bandeau qui dit ce qui reste disponible ; progression renvoyée au retour du réseau', async () => {
+    reset(); const nav = W.navigator, set = v => Object.defineProperty(nav, 'onLine', {get: () => v, configurable: true});
+    set(true); ok(!$q('#offbar'), 'en ligne : pas de bandeau');
+    set(false); W.dispatchEvent(new W.Event('offline')); ok(!!$q('#offbar') && /Hors ligne/.test($q('#offbar').textContent) && /Le texte du Coran/.test($q('#offbar').textContent) && /audio que tu as téléchargées/.test($q('#offbar').textContent) && $q('#offbar').getAttribute('role') === 'status', 'bandeau visible, avec ce qui marche et ce qui ne marche pas');
+    for (const L of ['en', 'ar']){ E(`setLang('${L}')`); ok(/Offline|دون اتصال/.test($q('#offbar').textContent), 'bandeau en ' + L); eq(E('[...missingKeys]'), [], 'clés traduites (' + L + ')'); } E("setLang('fr')");
+    W.__up = 0; E("me = {user: {id: 'u'}}; sb = {from: () => ({upsert: async () => { window.__up++; return {error: null}; }})}; store.set('tathbit.cloud', {uid: 'u', dirty: true})");
+    set(true); W.dispatchEvent(new W.Event('online')); await wait(100); ok(!$q('#offbar'), 'retour du réseau : bandeau retiré'); eq(W.__up, 1, 'modifications non envoyées : renvoyées au retour du réseau');
+    E("store.set('tathbit.cloud', {uid: 'u', dirty: false})"); W.dispatchEvent(new W.Event('online')); await wait(50); eq(W.__up, 1, 'rien à envoyer : pas d’appel');
+    E("me = null; sb = null; store.set('tathbit.cloud', {})"); noErr('hors ligne');
+  });
   test('Contact : page avec adresse, sujets préremplis, copie de l’adresse ; liens depuis les Réglages et l’écran de connexion', async () => {
     reset(); E("window.TATHBIT_LEGAL = {contact: 'tathbit.app.contact@gmail.com', region: ''}; renderContact()");
     ok(appText().includes('tathbit.app.contact@gmail.com'), 'adresse affichée'); const links = $$q('a.btnlink'); eq(links.length, 5, 'cinq sujets, dont « Autre sujet »'); ok(/autre/i.test(links[4].textContent) && /autre/i.test(decodeURIComponent(links[4].getAttribute('href'))), 'le dernier sujet est « Autre sujet »');
@@ -1006,6 +1043,10 @@
     ok(!/mot de passe/i.test(u.searchParams.get('body')), 'jamais de mot de passe dans le modèle'); ok(/mot de passe dans un message/.test(appText()), 'mise en garde : pas de mot de passe dans un message');
     E("navigator.clipboard.writeText = async t => { window.__w = t; }"); clickAct('contact-copy'); await wait(100); eq(W.__w, 'tathbit.app.contact@gmail.com', 'copie de l’adresse'); ok(/copiée/.test($q('#contact-msg').textContent), 'confirmation de copie');
     for (const L of ['en', 'ar']){ E(`setLang('${L}'); renderContact()`); ok(appText().length > 200 && !/undefined/.test(appText()), 'page de contact en ' + L); eq(E('[...missingKeys]'), [], 'contact : clés traduites en ' + L); }
+    E("setLang('fr'); me = {user: {email: 'secret@exemple.fr'}}; jsErrAdd('boom-test'); renderContact()"); const dg = $q('pre.diag').textContent;
+    ok(/^Tathbīt – diagnostic/.test(dg) && /Version : .*v\d+/.test(dg) && /Appareil \/ navigateur : /.test(dg) && /Langue de l’application : fr/.test(dg) && /boom-test/.test(dg), 'diagnostic : version, appareil, langue, erreurs récentes'); ok(!/secret@exemple\.fr/.test(dg) && !/mot de passe|token|jeton/i.test(dg.replace(/mot de passe/g, '')), 'diagnostic sans e-mail ni secret');
+    E("navigator.clipboard.writeText = async t => { window.__d = t; }"); clickAct('diag-copy'); await wait(100); ok(W.__d === dg && /Diagnostic copié/.test($q('#diag-msg').textContent), 'copie du diagnostic'); ok(decodeURIComponent($$q('a.btnlink')[1].getAttribute('href')).includes('Tathbīt – diagnostic'), 'le modèle « problème » contient déjà le diagnostic');
+    E("JSERR.length = 0; me = null; setLang('en'); renderContact()"); ok(/Copy the diagnostic/.test(appText()), 'diagnostic en anglais'); E("setLang('fr')");
     E("setLang('fr'); go('settings')"); ok($q('[data-act="contact"]'), 'bouton Contact dans les Réglages'); clickAct('contact'); ok($q('a.btnlink'), 'le bouton ouvre la page');
     clickAct('contact-back'); eq(E('cfg.tab'), 'settings', 'Retour ramène aux Réglages');
     E("CLOUD.url = 'https://x.supabase.co'; CLOUD.anonKey = 'k'; sb = {}; me = null; renderAccount()"); ok($q('[data-act="contact"]'), 'lien Contact aussi sur l’écran de connexion (sans compte)'); noErr('contact');

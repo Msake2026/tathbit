@@ -146,6 +146,9 @@ sup.vn{font-family:Inter,sans-serif;font-size:.6rem;color:var(--muted);margin:0 
 .fw.mask{color:transparent!important;background:color-mix(in srgb,var(--muted) 30%,transparent);user-select:none}.fw.cur{outline:2px solid var(--accent);outline-offset:1px}.fw.hint{background:color-mix(in srgb,var(--gold,#c9a227) 30%,transparent);color:var(--ink)}
 p a[href],.ref a[href],li a[href]{display:inline-block;min-height:24px;line-height:24px}   /* liens dans une phrase : zone à toucher d'au moins 24 px de haut (WCAG 2.5.8), sans déborder sur les voisins */
 .inststeps{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}.inststeps figure{margin:0;text-align:center}.inststeps figcaption{font-size:.9rem;line-height:1.4;margin-top:4px}
+.wdots{display:flex;gap:6px;margin-top:6px}.wdot{width:22px;height:6px;border-radius:3px;background:var(--line)}.wdot.on{background:var(--accent)}
+pre.diag{margin:0 0 8px;padding:8px 10px;background:var(--bg);border:1px solid var(--line);border-radius:10px;font:.78rem/1.45 ui-monospace,Menlo,Consolas,monospace;white-space:pre-wrap;overflow-wrap:anywhere;max-height:14em;overflow:auto;direction:ltr;text-align:left}
+#offbar{position:sticky;top:0;z-index:40;background:var(--midbg);color:var(--ink);border-bottom:1px solid var(--line);padding:6px 16px;font-size:.85rem}#offbar summary{cursor:pointer;font-weight:600}#offbar ul{margin:6px 0 2px;padding-inline-start:20px;line-height:1.5}
 .sethub{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:8px 0}.sethub button{display:grid;grid-template-columns:auto minmax(0,1fr);column-gap:8px;row-gap:3px;align-items:center;align-content:start;min-width:0;min-height:0;padding:11px 12px;text-align:start;border-radius:16px;white-space:normal}.sethub .si{font-size:1.45rem;line-height:1}.sethub b{font-size:1rem;line-height:1.2}.sethub small,.sethub .sv{grid-column:1 / -1;min-width:0}.sethub small{color:var(--muted);font-weight:400;font-size:.78rem;line-height:1.3}.sethub .sv{padding-top:4px;border-top:1px dashed var(--line);color:var(--accent);font-size:.8rem;font-weight:600;line-height:1.3;overflow-wrap:anywhere}.sethub .sv.one{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 @media(min-width:700px){.sethub{grid-template-columns:repeat(3,minmax(0,1fr))}}
 .setnav{position:sticky;top:0;z-index:6;background:var(--bg);padding:8px 0}
@@ -349,6 +352,9 @@ details.rblkd:not([open]) > summary.rblk::before{content:'▸ '}
 /* ---------- utilitaires ---------- */
 const $app = document.getElementById('app');
 const $ = id => document.getElementById(id);
+const JSERR = [];   // dernières erreurs du programme (message seulement) : jointes au diagnostic de la page Contact
+const jsErrAdd = m => { JSERR.push(String(m).slice(0, 160)); if (JSERR.length > 5) JSERR.shift(); };
+addEventListener('error', e => jsErrAdd(e.message || 'erreur')); addEventListener('unhandledrejection', e => jsErrAdd((e.reason && e.reason.message) || e.reason || 'promesse rejetée'));
 let cloudDirty = () => {}; // branché plus bas : envoie la progression au compte quand elle change
 const store = {
   get(k, d){ try { const v = JSON.parse(localStorage.getItem(k)); return v ?? d; } catch { return d; } },
@@ -368,10 +374,25 @@ const fill = (s, v) => v ? s.replace(/\{(\w+)\}/g, (m, n) => n in v ? v[n] : m) 
 const tr = (k, v) => fill(lookup(k), v);                                   // texte (avec {variables})
 const trp = (n, k, v) => { const [a, b] = lookup(k).split('|'); return fill((LANG === 'fr' ? n > 1 : n !== 1) ? (b ?? a) : a, {n, ...v}); }; // « singulier|pluriel »
 const LOCALE = () => ({fr: 'fr-FR', en: 'en-GB', ar: 'ar-u-nu-latn'})[LANG];
+/* indicateur « hors ligne » : dit ce qui reste disponible (le texte, les exercices et le plan sont dans l'application ; le reste dépend du réseau) */
+function offlineSync(){
+  let b = document.getElementById('offbar');
+  if (navigator.onLine){ if (b) b.remove(); return; }
+  if (!b){ b = document.createElement('div'); b.id = 'offbar'; b.setAttribute('role', 'status'); document.body.insertBefore(b, document.body.firstChild); }
+  b.innerHTML = `<details><summary>📴 ${tr('Hors ligne : ce qui reste disponible')}</summary><ul>
+    <li>✓ ${tr('Le texte du Coran et des moutoun, les exercices, ton plan et ta progression.')}</li>
+    <li>✓ ${tr('Les sourates audio que tu as téléchargées.')}</li>
+    <li>✗ ${tr("L'audio en ligne, la reconnaissance vocale et la recherche de mises à jour.")}</li>
+    <li>✗ ${tr("Les traductions, le tafsir et les couleurs du tajwīd que tu n'as pas encore ouverts.")}</li>
+    <li>↻ ${tr('Ta progression sera envoyée à ton compte dès que le réseau revient.')}</li></ul></details>`;
+}
+addEventListener('offline', () => offlineSync());
+addEventListener('online', () => { offlineSync(); if (me && sb && cmeta().dirty) cloudPush(); });
 function applyLang(){
   document.documentElement.lang = LANG; document.documentElement.dir = LANG === 'ar' ? 'rtl' : 'ltr';
   document.title = tr('Tathbīt – Coran et moutoun');
   const b = document.getElementById('boot'); if (b) b.textContent = tr('Chargement du texte du Coran…');
+  offlineSync();
 }
 
 /* Normalisation arabe (mode souple) : on ignore voyelles, signes coraniques, variantes d'alif/ya/ta marbuta */
@@ -756,6 +777,7 @@ function home(){ // affiche l'écran du menu courant (accès réservé aux compt
   stopAudio(); ls = null;
   if (cloudOn() && !authReady) return renderLoading();
   if (cloudOn() && !me) return renderAccount();
+  if (cfg.tab === 'home' && welcomeNeeded()) return renderWelcome();
   if (!tabsNow().some(t => t[0] === cfg.tab)) cfg.tab = 'home';
   $app.innerHTML = ({home: tabHome, plan: tabPlan, train: tabTrain, progress: tabProgress, errors: tabErrors, settings: tabSettings, student: tabStudent, teacher: tabTeacher})[cfg.tab]();
   setNav(true); tchEnter(); chatBottom(); if (cfg.tab === 'settings') setTimeout(audioSpace, 0);
@@ -860,7 +882,7 @@ function renderInstall(){
 }
 async function installNow(){ if (!deferredInstall) return renderInstall(); const e = deferredInstall; deferredInstall = null; let r = null; try { e.prompt(); r = await e.userChoice; } catch { /* refusé ou non pris en charge */ } if (r && r.outcome === 'accepted') alert(tr('Tathbīt est installée : ouvre-la depuis son icône sur ton écran d’accueil.')); home(); }
 function tabHome(){
-  const due = dueRefs(), td = days[today()] || 0, st = streak();
+  const DS = daySteps(), td = days[today()] || 0, st = streak();
   return `
   <div id="upd-slot">${updBannerHtml()}</div>
   <div id="news-slot">${newsCardHtml()}</div>
@@ -874,7 +896,7 @@ function tabHome(){
     <p class="sub" style="margin:0 0 4px">🔥 ${trp(st, '{n} jour d\'affilée|{n} jours d\'affilée')} · ${tr('objectif : {a} / {b}', {a: Math.min(td, cfg.goal), b: cfg.goal})}</p>
     <div class="goal"><i style="width:${Math.min(100, 100 * td / cfg.goal)}%"></i></div>
     ${td >= cfg.goal ? `<p class="ref" style="margin:0 0 8px">${tr('Objectif atteint, machaa Allah 🎉')}</p>` : ''}
-    ${due.length ? `<button class="pri big" style="margin-top:8px" data-act="review">${tr('Réviser mes versets dus ({n})', {n: due.length})}</button>`
+    ${DS.length ? `<button class="pri big" style="margin-top:8px" data-act="day-go">▶ ${tr('Ma séance du jour')}</button><p class="ref" style="margin:6px 0 0">${daySummary(DS)}</p>`
       : `<p class="sub" style="margin:8px 0 0">${tr("Rien à revoir pour l'instant. Lance une série : les versets à retravailler reviendront ici au bon moment.")}</p>`}
   </div>
 
@@ -965,6 +987,24 @@ function startChunks(chunks, kind, rot){
   ses = {pool: refs, fixed: true, i: 0, score: 0, missed: [], used: new Set(), total: chunks.length, chunks, planKind: kind, rot};
   nextQ();
 }
+/* « Ma séance du jour » : versets dus, puis révision récente et révision ancienne du plan (celles pas encore faites aujourd'hui), enchaînés en une seule séance */
+function daySteps(){
+  const T = plan ? planToday() : null, steps = [], inChunks = new Set();
+  const ch = T ? [['sabqi', T.d.sabqi ? [] : T.rec], ['manzil', T.d.manzil ? [] : T.man]] : [];
+  ch.forEach(([, L]) => L.forEach(c => chunkRefs(c).forEach(r => inChunks.add(key(r)))));
+  const due = reviewPick(10).filter(r => !inChunks.has(key(r)));   // un verset déjà récité dans une portion n'est pas redemandé
+  if (due.length) steps.push({k: 'due', refs: due});
+  ch.forEach(([k, L]) => { if (L.length) steps.push({k, chunks: L, rot: k === 'manzil' ? T.rot : undefined}); });
+  return steps;
+}
+const DAY_NAME = {due: 'Versets dus', sabqi: 'Révision récente', manzil: 'Révision ancienne'};
+function daySummary(S){ return S.map(x => x.k === 'due' ? trp(x.refs.length, '{n} verset dû|{n} versets dus') : tr(DAY_NAME[x.k]) + ' (' + trp(x.chunks.length, '{n} portion|{n} portions') + ')').join(' · '); }
+function dayRun(day){
+  const s = day.steps[day.i];
+  if (s.k === 'due') start(shuffle(s.refs.slice())); else startChunks(s.chunks, s.k, s.rot);
+  if (ses) ses.day = day;
+}
+function dayStart(){ const S = daySteps(); if (S.length) dayRun({steps: S, i: 0}); }
 function openSabaq(){ const ch = planNextChunk(plan); if (!ch) return; sab = {ch, rep: 3, hide: false}; renderSabaq(); window.scrollTo(0, 0); }
 function renderSabaq(){
   setNav(false);
@@ -2731,6 +2771,9 @@ const onClick = e => {
       start(); break;
     }
     case 'review': start(shuffle(reviewPick(15))); break;
+    case 'day-go': dayStart(); break;
+    case 'wz-next': case 'wz-back': case 'wz-skip': case 'wz-kind': case 'wz-first': case 'wz-recite': welcomeAct(el.dataset.act, v); break;
+    case 'day-next': if (ses && ses.day){ ses.day.i++; dayRun(ses.day); } break;
     case 'tile-install': if (deferredInstall && !IS_STANDALONE()) installNow(); else renderInstall(); break;   // Android/Chrome : un toucher lance l'installation
     case 'install-now': installNow(); break;
     case 'tile-tajwid': setCat('tajwid'); saveCfg(); go('train'); break;
@@ -2811,6 +2854,7 @@ const onClick = e => {
     case 'legal': renderLegal(); break;
     case 'contact': renderContact(); break;
     case 'contact-copy': copyContact(); break;
+    case 'diag-copy': copyDiag(); break;
     case 'legal-back': case 'contact-back': if (cloudOn() && !me) renderAccount(); else go('settings'); break;
     case 'lang': setLang(v); break;
     case 'pw-eye': { const i = $(v), show = i.type === 'password'; i.type = show ? 'text' : 'password'; el.innerHTML = show ? EYE_OFF : EYE;
@@ -3140,6 +3184,12 @@ function tabErrors(){
   ${errors.length ? `<p style="text-align:end"><button class="link" data-act="hclear">${tr("Effacer l'historique")}</button></p>` : ''}`;
 }
 
+/* fin d'une étape de la séance du jour : étape suivante, ou séance terminée (et la nouvelle portion du plan si elle n'est pas faite) */
+function dayEndHtml(){
+  const d = ses.day, last = d.i >= d.steps.length - 1, T = plan ? planToday() : null;
+  if (!last) return `<p class="ref" style="margin:0 0 8px">${tr('Séance du jour : étape {i} sur {n}', {i: d.i + 1, n: d.steps.length})}</p><button class="pri big" data-act="day-next">${tr('Étape suivante : {s}', {s: tr(DAY_NAME[d.steps[d.i + 1].k])})}</button>`;
+  return `<div class="fb ok" role="status">🎉 ${tr('Séance du jour terminée, machaa Allah.')}</div>${T && T.next && !T.d.sabaq ? `<button class="pri big" style="margin-top:8px" data-act="plan-sabaq">${tr('Apprendre la nouvelle portion du plan')}</button>` : ''}`;
+}
 /* ---------- résultats ---------- */
 function results(){
   const pct = Math.round(100 * ses.score / ses.total);
@@ -3155,15 +3205,16 @@ function results(){
   ${ses.tj ? `<div class="card"><h2>${tr('Règles de cette série')}</h2>${Object.entries(ses.tj).sort((a, b) => b[1][1] - a[1][1]).map(([c, [o, k]]) => `<div class="weak"><span>${esc(tr(TJNAME[c]))}</span><span>${o} ✓ · ${k} ✗</span></div>`).join('')}${TJNOTE()}</div>` : ''}
   ${missed.length ? `<div class="card"><h2>${tr('À revoir ({n})', {n: missed.length})}</h2>
     ${missed.map(r => `<p class="ref" style="margin:10px 0 0">${rlabel(r)}</p><div class="ar" style="font-size:1.5rem">${esc(verse(r))}</div>`).join('')}</div>` : ''}
-  ${missed.length ? `<button class="pri big" data-act="retry">${tr('Refaire mes erreurs')}</button>` : ''}
+  ${missed.length && !(ses.day && ses.day.i < ses.day.steps.length - 1) ? `<button class="pri big" data-act="retry">${tr('Refaire mes erreurs')}</button>` : ''}
+  ${ses.day ? dayEndHtml() : ''}
   ${ses.planKind === 'sabaq' ? `<button class="pri big" style="margin-top:8px" data-act="plan-learned">✓ ${tr('Marquer cette portion comme apprise')}</button>` : ''}
-  ${ses.planKind ? `<button class="big" style="margin-top:8px" data-act="tab" data-v="plan">${tr('Retour au plan')}</button>`
+  ${ses.day ? '' : ses.planKind ? `<button class="big" style="margin-top:8px" data-act="tab" data-v="plan">${tr('Retour au plan')}</button>`
     : `<button class="big" style="margin-top:8px" data-act="again">${tr('Nouvelle série')}</button>`}
   <button class="big" style="margin-top:8px" data-act="tab" data-v="home">${tr('Accueil')}</button>`;
 }
 
 /* ---------- compte (Supabase) : inscription, connexion, synchronisation, espace admin ---------- */
-const APP_VERSION = '25 oct. 2026 · v95';
+const APP_VERSION = '25 oct. 2026 · v96';
 const APP_BUILD = +((/v(\d+)/.exec(APP_VERSION) || [])[1]) || 0;   // numéro de la version qui tourne ; version.json (à jour à chaque publication) donne le dernier numéro publié
 let newVer = null, verAt = 0;
 function updBannerHtml(){
@@ -3314,6 +3365,55 @@ async function cloudInit(){
   } else home();
   setTimeout(() => loadNews().then(newsSlot), 2600); setTimeout(checkVersion, 2500); document.addEventListener('visibilitychange', () => { if (!document.hidden) checkVersion(); });
   setTimeout(maybeAutoAudio, 4000); if (navigator.connection && navigator.connection.addEventListener) navigator.connection.addEventListener('change', () => setTimeout(maybeAutoAudio, 1500));
+}
+/* ---------- premier lancement guidé : le but, choisir ses sourates (ou un matn), premier exercice ---------- */
+let wz = {i: 0, kind: 'quran', from: 78, to: 114, matn: 'all'};
+function welcomeNeeded(){
+  if (store.get('tathbit.welcome', 0)) return false;
+  if (Object.keys(stats).length || Object.keys(days).length || Object.keys(sched).length || errors.length || plan){ store.set('tathbit.welcome', 1); return false; }   // utilisateur déjà installé : pas de guide
+  return true;
+}
+function welcomeApply(){   // applique le choix de l'écran 2 à la série et à la récitation libre
+  const f = +($('wz-from') ? $('wz-from').value : wz.from), t = +($('wz-to') ? $('wz-to').value : wz.to);
+  if (wz.kind === 'matn'){ if ($('wz-matn')) wz.matn = $('wz-matn').value; cfg.scope = {type: 'matn', id: wz.matn}; }
+  else { wz.from = Math.min(f, t); wz.to = Math.max(f, t); cfg.scope = {type: 'surah', from: wz.from, to: wz.to}; cfg.audFrom = wz.from; cfg.audTo = wz.to; }
+  if (cfg.mode === 'ahkam' || catOf(cfg.mode) !== 'memo') cfg.mode = 'mix';
+  saveCfg();
+}
+function welcomeEnd(then){ store.set('tathbit.welcome', 1); if (then) then(); else go('home'); }
+function renderWelcome(){
+  setNav(false); screen = 'welcome';
+  const i = wz.i, dots = [0, 1, 2].map(k => `<span class="wdot${k === i ? ' on' : ''}" aria-hidden="true"></span>`).join('');
+  const body = i === 0 ? `<div class="card"><h2>${tr('Le but de Tathbīt')}</h2>
+      <p style="margin:0 0 8px">${tr("Tathbīt (تثبيت) sert à consolider ce que tu as déjà mémorisé du Coran et des moutoun : c'est le tathbīt, et non le ḥifẓ (la première mémorisation).")}</p>
+      <p class="ref" style="margin:0">${tr("Tu choisis ce que tu connais déjà, l'application te le fait réciter, te montre où tu hésites et te le repose au bon moment.")}</p></div>
+      <button class="pri big" data-act="wz-next">${tr('Suivant')}</button>`
+    : i === 1 ? `<div class="card"><h2>${tr('Ce que tu veux consolider')}</h2>
+      <div class="chips" style="margin-bottom:8px"><button class="${wz.kind === 'quran' ? 'sel' : ''}" data-act="wz-kind" data-v="quran" aria-pressed="${wz.kind === 'quran'}">${tr('Coran')}</button><button class="${wz.kind === 'matn' ? 'sel' : ''}" data-act="wz-kind" data-v="matn" aria-pressed="${wz.kind === 'matn'}">${tr('Moutoun')}</button></div>
+      ${wz.kind === 'quran' ? `<div class="row"><div><label class="f" for="wz-from">${tr('De')}</label><select id="wz-from">${surahOpts(wz.from)}</select></div><div><label class="f" for="wz-to">${tr('À')}</label><select id="wz-to">${surahOpts(wz.to)}</select></div></div>
+        <p class="ref" style="margin:8px 0 0">${tr("Choisis les sourates que tu sais déjà. Par défaut : de la sourate 78 à la sourate 114.")}</p>`
+      : `<label class="f" for="wz-matn">${tr('Matn')}</label><select id="wz-matn">${matnOpts(wz.matn)}</select>
+        <p class="ref" style="margin:8px 0 0">${tr("Tu pourras en ajouter d'autres et changer ce choix à tout moment dans « Réviser ».")}</p>`}</div>
+      <div class="row"><button data-act="wz-back">${tr('← Retour')}</button><button class="pri" data-act="wz-next">${tr('Suivant')}</button></div>`
+    : `<div class="card"><h2>${tr('Ton premier exercice')}</h2>
+      <p style="margin:0 0 8px">${tr("Lance une première série de questions sur ce que tu as choisi : suite du verset, mots manquants, choix de la suite…")}</p>
+      <p class="ref" style="margin:0">${tr("Chaque jour, « Ma séance du jour » à l'accueil te propose ce qui est à réviser, en une touche.")}</p></div>
+      <button class="pri big" data-act="wz-first">${tr('Commencer ma première série')}</button>
+      ${SR && wz.kind === 'quran' ? `<button class="big" style="margin-top:8px" data-act="wz-recite">🎙️ ${tr('Plutôt réciter à voix haute')}</button>` : ''}
+      <div class="row" style="margin-top:8px"><button data-act="wz-back">${tr('← Retour')}</button><button data-act="wz-skip">${tr("Aller à l'accueil")}</button></div>`;
+  $app.innerHTML = `<div class="top"><span>${tr('Bienvenue')} · ${i + 1} / 3</span>${i < 2 ? `<button class="link" data-act="wz-skip">${tr('Passer')}</button>` : '<span></span>'}</div>
+    <div class="hero" style="margin-top:8px"><div class="logo"><span class="lg">تثبيت</span></div><div><h1>${tr('Bienvenue sur Tathbīt')}</h1><div class="wdots" role="img" aria-label="${tr('Étape {i} sur {n}', {i: i + 1, n: 3})}">${dots}</div></div></div>
+    ${body}`;
+  window.scrollTo(0, 0);
+}
+function welcomeAct(act, v){
+  if (act === 'wz-skip') return welcomeEnd();
+  if (wz.i === 1) welcomeApply();   // lit les listes avant de quitter l'écran 2
+  if (act === 'wz-kind'){ wz.kind = v; return renderWelcome(); }
+  if (act === 'wz-next'){ if (wz.i === 1 && wz.kind === 'matn' && $('wz-matn')) wz.matn = $('wz-matn').value; wz.i = Math.min(2, wz.i + 1); if (wz.i === 2) welcomeApply(); return renderWelcome(); }
+  if (act === 'wz-back'){ wz.i = Math.max(0, wz.i - 1); return renderWelcome(); }
+  if (act === 'wz-first') return welcomeEnd(() => { cfg.tab = 'home'; saveCfg(); start(); });
+  if (act === 'wz-recite') return welcomeEnd(() => { cfg.tab = 'home'; saveCfg(); frSetup(); });
 }
 function renderLoading(){ setNav(false); $app.innerHTML = `<p class="sub" style="margin-top:40vh;text-align:center">${tr('Chargement…')}</p>`; }
 function refreshAccount(){
@@ -3716,6 +3816,24 @@ async function remAction(act){
 const LEGAL_DATE = '2026-10-25';
 function contactAddr(){ return (Object.assign({contact: ''}, window.TATHBIT_LEGAL || {})).contact; }
 async function copyContact(){ const a = contactAddr(), m = $('contact-msg'); let ok = false; try { await navigator.clipboard.writeText(a); ok = true; } catch { /* presse-papiers refusé */ } if (m) m.textContent = ok ? tr('Adresse copiée.') : tr('Copie impossible : recopie l\'adresse à la main.'); }
+/* diagnostic à copier : version, appareil, navigateur, langue, état. Aucune donnée personnelle (ni e-mail, ni progression, ni mot de passe, ni jeton) */
+function diagText(){
+  const oui = b => b ? 'oui' : 'non', n = navigator, nav = n.connection && n.connection.effectiveType ? ' (' + n.connection.effectiveType + ')' : '';
+  let perm = 'n/a'; try { perm = 'Notification' in window ? Notification.permission : 'n/a'; } catch {}
+  return [
+    'Tathbīt – diagnostic',
+    'Version : ' + (typeof APP_VERSION === 'string' ? APP_VERSION : '?'),
+    'Installée (écran d’accueil) : ' + oui(IS_STANDALONE()),
+    'Appareil / navigateur : ' + n.userAgent,
+    'Écran : ' + (window.screen ? window.screen.width + '×' + window.screen.height : '?') + ' @' + (window.devicePixelRatio || 1),
+    'Langue de l’application : ' + LANG + ' · du navigateur : ' + (n.language || '?'),
+    'En ligne : ' + oui(n.onLine) + nav,
+    'Compte connecté : ' + oui(!!me) + (acc.syncErr ? ' · erreur de synchronisation : ' + acc.syncErr : ''),
+    'Mode hors ligne (service worker) : ' + oui('serviceWorker' in n && !!n.serviceWorker.controller),
+    'Reconnaissance vocale : ' + oui(!!SR) + ' · notifications : ' + perm + ' · rappels : ' + oui(remState().on),
+    'Erreurs récentes : ' + (JSERR.length ? JSERR.join(' | ') : 'aucune')].join('\n');
+}
+async function copyDiag(){ const m = $('diag-msg'); let ok = false; try { await navigator.clipboard.writeText(diagText()); ok = true; } catch { /* presse-papiers refusé */ } if (m) m.textContent = ok ? tr('Diagnostic copié : colle-le dans ton message.') : tr('Copie impossible : sélectionne le texte ci-dessus et copie-le à la main.'); }
 function renderContact(){
   setNav(false); screen = 'contact';
   const a = contactAddr(), v = typeof APP_VERSION === 'string' ? APP_VERSION : '';
@@ -3724,7 +3842,7 @@ function renderContact(){
     ['📖', 'Signaler une erreur dans un texte (verset, vers, traduction)', 'Tathbīt – erreur dans un texte',
       [tr('Texte (sourate ou matn) :'), tr('Numéro du verset ou du vers :'), tr('Mot ou passage concerné :'), tr('Ce que dit mon édition (titre, éditeur, page) :')]],
     ['🛠️', "Un problème avec l'application ou mon compte", 'Tathbīt – problème',
-      [tr("Ce que j'ai fait :"), tr("Ce qui s'est passé :"), tr('Mon appareil et mon navigateur (par exemple iPhone, Safari) :')]],
+      [tr("Ce que j'ai fait :"), tr("Ce qui s'est passé :"), diagText()]],
     ['💡', 'Une idée ou une remarque', 'Tathbīt – idée ou remarque', [tr('Mon message :')]],
     ['🔒', 'Une demande sur mes données (accès, rectification, suppression)', 'Tathbīt – mes données', [tr('Mon adresse e-mail de compte :'), tr('Ma demande :')]],
     ['✉️', 'Autre sujet', 'Tathbīt – autre sujet', [tr('Mon message :')]]];
@@ -3737,6 +3855,10 @@ function renderContact(){
       <p style="margin:0 0 8px"><a href="mailto:${esc(a)}">${esc(a)}</a></p>
       <button data-act="contact-copy">📋 ${tr("Copier l'adresse")}</button> <span class="ref" id="contact-msg" role="status"></span>
       <p class="ref" style="margin:10px 0 0">${tr("Si ton application de messagerie ne s'ouvre pas, copie l'adresse et écris depuis ta boîte mail.")}</p></div>
+    <div class="card"><h2>${tr('Diagnostic')}</h2>
+      <p class="ref" style="margin:0 0 8px">${tr("Pour un problème, copie ces informations et colle-les dans ton message : elles nous évitent de te poser dix questions. Elles ne contiennent ni ton e-mail, ni ta progression, ni ton mot de passe.")}</p>
+      <pre class="diag" tabindex="0" aria-label="${tr('Diagnostic')}">${esc(diagText())}</pre>
+      <button data-act="diag-copy">📋 ${tr('Copier le diagnostic')}</button> <span class="ref" id="diag-msg" role="status"></span></div>
     <div class="card"><h2>${tr('À savoir')}</h2>
       <p class="ref" style="margin:0 0 6px">${tr("Tathbīt est un projet personnel et gratuit : les réponses peuvent prendre du temps.")}</p>
       <p class="ref" style="margin:0 0 6px">${tr("Pour une erreur dans un texte, dis dans quelle édition tu l'as vérifiée : une correction ne se fait qu'à partir d'une source fiable.")}</p>
