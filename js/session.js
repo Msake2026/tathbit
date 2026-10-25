@@ -865,7 +865,7 @@ function listen(){
   const tick = () => { if (!msg.dataset.err) msg.textContent = tr('Micro ouvert : il se coupe tout seul dans {n} s.', {n: left}); };
   msg.textContent = tr("Si ton navigateur demande l'autorisation du micro, accepte. Touche « J'ai fini de réciter » quand tu as terminé."); rec.tick = setInterval(() => { left--; if (left > 0 && rec.started) tick(); }, 1000);
   rec.cap = setTimeout(() => { rec.capped = true; stopNow(); }, left * 1000);
-  btn.classList.add('rec-stop'); btn.innerHTML = `⏹ ${esc(tr("J'ai fini de réciter"))}<small>${esc(tr('Touche ici dès que tu as terminé le verset'))}</small>`;
+  btn.classList.add('rec-stop'); btn.innerHTML = `${ic('stop')} ${esc(tr("J'ai fini de réciter"))}<small>${esc(tr('Touche ici dès que tu as terminé le verset'))}</small>`;
   const old = $('mic-on'); if (old) old.remove(); btn.insertAdjacentHTML('beforebegin', `<div class="mic-on" id="mic-on" role="status"><span class="dot" aria-hidden="true"></span>${esc(tr('Micro ouvert : récite maintenant'))}</div>`);
   btn.onclick = ev => { ev.stopPropagation(); stopNow(); };   // c'est toi qui décides quand le verset est récité : le micro se coupe et la réponse est corrigée
   micRec = rec;

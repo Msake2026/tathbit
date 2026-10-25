@@ -345,7 +345,7 @@
   test('Tajwīd : liste déroulante des types de questions (règle, couleurs, trouver la partie, vrai/faux, mélange)', async () => {
     reset("cfg.mode = 'tajweed'; cfg.scope = {type: 'surah', from: 2, to: 2}; cfg.n = 5; tjs = {};");
     E("go('train')"); const sel = $q('#stjk'); ok(sel, 'liste déroulante dans les options de la série'); eq([...sel.options].map(o => o.value), ['rule', 'color', 'find', 'tf', 'read', 'mix']);
-    sel.value = 'tf'; sel.dispatchEvent(new W.Event('change')); eq(E('cfg.tjKind'), 'tf', 'le choix est enregistré'); E("go('home')"); ok(appText().includes('Vrai ou faux'), 'rappelé dans le résumé de la série');
+    sel.value = 'tf'; sel.dispatchEvent(new W.Event('change')); eq(E('cfg.tjKind'), 'tf', 'le choix est enregistré'); E("go('home'); go('train')"); ok($$q('select').some(x => x.value === 'tf'), 'le choix est rappelé dans la liste de Réviser');
     E("cfg.mode = 'cloze'; go('train')"); ok(!$q('#stjk'), 'liste absente pour les autres exercices'); E("cfg.mode = 'tajweed'; go('train')"); ok($q('#stjk'));
     const seen = new Set();
     for (const kind of ['rule', 'color', 'find', 'tf', 'read', 'mix']){
@@ -1015,6 +1015,15 @@
     E("go('home')"); ok(!$q('[data-act="day-go"]') || !/Révision récente/.test($q('[data-act="day-go"]').parentNode.textContent), 'les étapes faites ne sont plus proposées');
     for (const L of ['en', 'ar']){ E(`setLang('${L}'); plan.done = {}; sched = {'110:1': {iv: 1, due: Date.now() - 1000}}; go('home')`); ok(!/undefined|NaN/.test(appText()) && !!$q('[data-act="day-go"]'), 'séance du jour en ' + L); eq(E('[...missingKeys]'), [], 'clés traduites (' + L + ')'); }
     E("setLang('fr'); plan = null; sched = {}"); noErr('séance du jour');
+  });
+  test('Algorithme : tirage des versets (dus favorisés, bien tenus espacés), estimation de la durée, série de secours sur l’accueil', async () => {
+    reset("stats = {'112:1': [3, 1], '112:2': [3, 1], '112:3': [3, 1]}; sched = {'112:1': {iv: 1, due: Date.now() - 1000, ez: 2.2}, '112:2': {iv: 30, due: Date.now() + 20 * 864e5, ez: 2.5}, '112:3': {iv: 2, due: Date.now() + 864e5, ez: 2.2}}");
+    const n = JSON.parse(E("(() => { const c = {a: 0, b: 0, c: 0}; for (let i = 0; i < 6000; i++){ const r = pickWeighted([{s: 112, a: 1}, {s: 112, a: 2}, {s: 112, a: 3}]); c[['a', 'b', 'c'][r.a - 1]]++; } return JSON.stringify(c); })()"));
+    ok(n.a > n.c * 1.4 && n.c > n.b * 1.4, 'dû (' + n.a + ') > pas encore dû (' + n.c + ') > bien tenu et espacé (' + n.b + ')');
+    E("sched = {'110:1': {iv: 1, due: Date.now() - 1000}, '110:2': {iv: 1, due: Date.now() - 1000}, '110:3': {iv: 1, due: Date.now() - 1000}}; go('home')"); ok(/≈ 1 min/.test($q('[data-act="day-go"]').parentNode.textContent), 'durée estimée : ' + $q('[data-act="day-go"]').parentNode.textContent.replace(/\s+/g, ' ').slice(0, 160));
+    E("sched = {}; errors = []; stats = {}; cfg.n = 10; go('home')"); ok(!$q('[data-act="day-go"]') && !!$q('.today [data-act="start"]') && /10 questions/.test($q('.today').textContent), 'rien à revoir : bouton « Lancer ma série » avec sa description');
+    $q('.today [data-act="start"]').click(); await wait(150); ok(E('!!ses') && E('ses.total') === 10, 'la série de secours démarre'); E("ses = null; go('home')");
+    for (const L of ['en', 'ar']){ E(`setLang('${L}'); go('home')`); ok(!!$q('.today [data-act="start"]') && !/undefined|NaN/.test(appText()), 'accueil sans séance en ' + L); eq(E('[...missingKeys]'), [], 'clés traduites (' + L + ')'); } E("setLang('fr')"); noErr('algorithme');
   });
   test('Premier lancement : 3 écrans (le but, choisir ses sourates ou un matn, premier exercice) ; pas pour un utilisateur existant', async () => {
     reset(); E("store.set('tathbit.welcome', 0); go('home')"); ok(/Le but de Tathbīt/.test(appText()) && /1 \/ 3/.test(appText()) && /ḥifẓ/.test(appText()), 'écran 1 : le but (tathbīt, pas ḥifẓ)'); ok(!$q('#nav') || $q('#nav').hidden, 'pas de barre de menu pendant le guide');

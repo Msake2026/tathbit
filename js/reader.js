@@ -103,12 +103,12 @@ function renderReader(){
   }
   const optSel = v => v === spec ? 'selected' : '';
   const sel = `<label class="f" for="rdsel">${tr('Texte à lire')}</label><select id="rdsel">
-    <optgroup label="${tr('Coran')}"><option value="q:all" ${optSel('q:all')}>📖 ${tr('Tout le Coran (114 sourates)')}</option>${rd.sel ? `<option value="q:sel" ${optSel('q:sel')}>${tr('Ma sélection ({n} sourates)', {n: rd.sel.length})}</option>` : ''}
+    <optgroup label="${tr('Coran')}"><option value="q:all" ${optSel('q:all')}>${tr('Tout le Coran (114 sourates)')}</option>${rd.sel ? `<option value="q:sel" ${optSel('q:sel')}>${tr('Ma sélection ({n} sourates)', {n: rd.sel.length})}</option>` : ''}
       ${Q.map(x => `<option value="q:${x.n}" ${optSel('q:' + x.n)}>${x.n}. ${esc(SN(x.n))}</option>`).join('')}</optgroup>
-    <optgroup label="${tr('Moutoun')}"><option value="m:all" ${optSel('m:all')}>📜 ${tr('Tous les moutoun')}</option>
+    <optgroup label="${tr('Moutoun')}"><option value="m:all" ${optSel('m:all')}>${tr('Tous les moutoun')}</option>
       ${Object.values(MT).map(t => `<option value="m:${t.id}" ${optSel('m:' + t.id)}>${esc(MN(t.id))}</option>`).join('')}</optgroup></select>`;
   const MB = !q && !multi && MT[rd.secs[0]] && MT[rd.secs[0]].sec;    // un seul matn qui a des blocs
-  const blkSel = MB ? `<label class="f" for="rdblk">${tr('Bloc (chapitre du matn)')}</label><select id="rdblk"><option value="">📜 ${tr('Tout le matn')} (${MT[rd.secs[0]].a.length})</option>${MB.map((b, k) => `<option value="${k}" ${rd.blk === k ? 'selected' : ''}>${k + 1}. ${esc(secName(b))} (${secSize(rd.secs[0], k)})</option>`).join('')}</select>` : '';
+  const blkSel = MB ? `<label class="f" for="rdblk">${tr('Bloc (chapitre du matn)')}</label><select id="rdblk"><option value="">${tr('Tout le matn')} (${MT[rd.secs[0]].a.length})</option>${MB.map((b, k) => `<option value="${k}" ${rd.blk === k ? 'selected' : ''}>${k + 1}. ${esc(secName(b))} (${secSize(rd.secs[0], k)})</option>`).join('')}</select>` : '';
   const foldable = !q && rd.blk == null && rd.secs.some(id => MT[id] && MT[id].sec);
   const jump = multi ? `<label class="f" for="rdjump">${tr('Aller à…')}</label><select id="rdjump">${rd.secs.map(id => `<option value="${id}" ${id === rd.secs[rd.i0] ? 'selected' : ''}>${q ? id + '. ' + esc(SN(id)) : esc(MN(id))}</option>`).join('')}</select>` : '';
   const first = q ? 1 : Object.keys(MT)[0], last = q ? 114 : Object.keys(MT).slice(-1)[0];
@@ -126,8 +126,8 @@ function renderReader(){
     <div class="grades">
       <button data-act="rd-size" data-v="-1" aria-label="${tr('Réduire le texte')}">A−</button>
       <button data-act="rd-size" data-v="1" aria-label="${tr('Agrandir le texte')}">A+</button>
-      <button data-act="rd-hide">${cfg.rdHide ? '👁 ' + tr('Tout afficher') : '🙈 ' + tr('Masquer le texte')}</button>
-      ${q ? `<button id="rdplay" data-act="rd-play">▶ ${tr('Écouter')}</button>` : ''}
+      <button data-act="rd-hide">${cfg.rdHide ? ic('eye') + ' ' + tr('Tout afficher') : ic('eyeoff') + ' ' + tr('Masquer le texte')}</button>
+      ${q ? `<button id="rdplay" data-act="rd-play">${ic('play')} ${tr('Écouter')}</button>` : ''}
     </div>
     ${foldable ? `<div class="grades"><button data-act="rd-fold" data-v="1">⏫ ${tr('Tout replier')}</button><button data-act="rd-fold" data-v="0">⏬ ${tr('Tout déplier')}</button></div>` : ''}
     ${q ? `<div class="grades">
@@ -139,7 +139,7 @@ function renderReader(){
     <p class="ref" style="margin:8px 0 0">${cfg.rdHide ? tr('Touche un passage pour le dévoiler.') : q ? tr("Touche un verset pour l'écouter à partir de là.") : ''}</p>
     <p class="ref" id="audio-msg" style="margin:0"></p>
   </div>
-  ${rd.i0 > 0 ? `<button class="big" style="margin-bottom:12px" data-act="rd-more-up">⬆ ${tr('Sections précédentes')}</button>` : ''}
+  ${rd.i0 > 0 ? `<button class="big" style="margin-bottom:12px" data-act="rd-more-up">${ic('upload')} ${tr('Sections précédentes')}</button>` : ''}
   <div class="card" id="rbody">${rd.secs.slice(rd.i0, rd.upto).map(secHtml).join('')}</div>
   <div id="rmore" class="rsentinel" ${rd.upto >= rd.secs.length ? 'hidden' : ''}>…</div>`;
   if ($('rdblk')) $('rdblk').onchange = e => { rdStop(); rd.blk = e.target.value === '' ? null : +e.target.value; rd.focus = 0; renderReader(); scrollTo(0, 0); };
@@ -199,7 +199,7 @@ function tabErrors(){
     ? rows.slice(0, 80).map(a => `<div class="sib"><p class="ref" style="margin:0">${rlabel(a.r)}</p>
         <p class="ref" style="margin:0"><b>${tr('raté {n} fois', {n: a.n})}</b> · ${tr('dernière :')} ${fdate(a.last)} · ${esc([...a.modes].join(', '))}</p>
         <div class="ar" style="font-size:calc(1.35rem*var(--arz,1));line-height:2">${esc(verse(a.r))}</div>
-        <button class="link" data-act="rdopen" data-v="${a.k}">📖 ${tr('Lire tout le texte')}</button>
+        <button class="link" data-act="rdopen" data-v="${a.k}">${ic('book')} ${tr('Lire tout le texte')}</button>
         ${a.bad.length ? `<p class="ref" style="margin:0">${tr('Mots souvent faux :')} <span class="ar" style="font-size:calc(1.2rem*var(--arz,1));display:inline">${esc(a.bad.slice(0, 12).join(' · '))}</span></p>` : ''}</div>`).join('')
     : L.slice().reverse().slice(0, 100).map(e => { const r = pk(e.k);
         return `<div class="sib"><p class="ref" style="margin:0">${fdate(e.t)} · ${esc(MODE_NAME[e.m] || e.m)} · ${e.sc === 0.5 ? tr('hésité') : tr('raté')}</p>

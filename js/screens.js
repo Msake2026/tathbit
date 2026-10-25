@@ -45,19 +45,21 @@ function mapHtml(){
     if (id === null) continue;
     const e = (by[id] ||= {seen: 0, ok: 0, ko: 0}); e.seen++; e.ok += ok; e.ko += ko;
   }
-  const tabs = `<div class="seg" style="margin-bottom:10px">${[['s', 'Sourates'], ['p', 'Pages'], ['m', 'Moutoun']]
-    .map(([k, t]) => `<button class="${cfg.map === k ? 'sel' : ''}" data-act="maptab" data-v="${k}">${tr(t)}</button>`).join('')}</div>`;
+  const frag = e => !!e && e.ok + e.ko >= 3 && e.ok / (e.ok + e.ko) < 0.6, nSeen = Object.keys(by).length, onlySeen = cfg.map === 's' && cfg.mapSeen && nSeen > 0;   // « fragile » : au moins 3 réponses et moins de 60 % de réussite
+  const tabs = `<div class="seg tabs" style="margin-bottom:10px">${[['s', 'Sourates'], ['p', 'Pages'], ['m', 'Moutoun']]
+    .map(([k, t]) => `<button class="${cfg.map === k ? 'sel' : ''}" data-act="maptab" data-v="${k}">${tr(t)}</button>`).join('')}</div>
+    ${cfg.map === 's' && nSeen ? `<div class="chips" style="margin-bottom:8px"><button class="${onlySeen ? 'sel' : ''}" data-act="mapseen" aria-pressed="${onlySeen}">${tr('Seulement celles que j\'ai vues')} (${nSeen})</button></div>` : ''}`;
   let body;
-  if (cfg.map === 's') body = Q.map(S => { const lv = levelOf(by[S.n], S.a.length), e = by[S.n];
-    return `<button class="cell named l${lv}" data-act="cell" data-v="${S.n}" title="${S.n}. ${SN(S.n)}${e ? ' · ' + Math.round(100 * e.ok / (e.ok + e.ko)) + ' % · ' + e.seen + '/' + S.a.length + ' ' + tr('versets vus') : ''}"><b>${S.n}</b><small>${esc(SN(S.n))}</small></button>`; }).join('');
+  if (cfg.map === 's') body = Q.filter(S => !onlySeen || by[S.n]).map(S => { const lv = levelOf(by[S.n], S.a.length), e = by[S.n];
+    return `<button class="cell named l${lv}${frag(e) ? ' lw' : ''}" data-act="cell" data-v="${S.n}" title="${S.n}. ${SN(S.n)}${e ? ' · ' + Math.round(100 * e.ok / (e.ok + e.ko)) + ' % · ' + e.seen + '/' + S.a.length + ' ' + tr('versets vus') : ''}"><b>${S.n}</b><small>${esc(SN(S.n))}</small></button>`; }).join('');
   else if (cfg.map === 'p') body = Array.from({length: 30}, (_, j) => {
     const ps = Array.from({length: 604}, (_, i) => i + 1).filter(p => PAGE_JUZ[p] === j + 1);
     return `<div class="juzhead">${tr("Juz' {a}", {a: j + 1})}</div>` + ps.map(p => { const lv = levelOf(by[p], PAGE_LEN[p] || 1), e = by[p];
-      return `<button class="cell pg l${lv}" data-act="pcell" data-v="${p}" title="${tr('page {p}', {p})}${e ? ' · ' + Math.round(100 * e.ok / (e.ok + e.ko)) + ' %' : ''}">${p}</button>`; }).join(''); }).join('');
+      return `<button class="cell pg l${lv}${frag(e) ? ' lw' : ''}" data-act="pcell" data-v="${p}" title="${tr('page {p}', {p})}${e ? ' · ' + Math.round(100 * e.ok / (e.ok + e.ko)) + ' %' : ''}">${p}</button>`; }).join(''); }).join('');
   else body = Object.values(MT).map(t => { const e = by[t.id], lv = levelOf(e, t.a.length);
     return `<div class="weak" style="width:100%"><span>${esc(MN(t.id))}</span><span>${e ? Math.round(100 * e.ok / (e.ok + e.ko)) + ' % · ' + e.seen + '/' + t.a.length : tr('pas commencé')}</span></div>`; }).join('');
   return `${tabs}<div class="grid${cfg.map === 's' ? ' named' : ''}">${body}</div>
-    <div class="legend">${tr('pas vu')} <i class="cell" style="width:14px;height:14px"></i><i class="cell l1" style="width:14px;height:14px"></i><i class="cell l2" style="width:14px;height:14px"></i><i class="cell l3" style="width:14px;height:14px"></i><i class="cell l4" style="width:14px;height:14px"></i> ${tr('maîtrisé')}</div>
+    <div class="legend">${tr('pas vu')} <i class="cell" style="width:14px;height:14px"></i><i class="cell l1" style="width:14px;height:14px"></i><i class="cell l2" style="width:14px;height:14px"></i><i class="cell l3" style="width:14px;height:14px"></i><i class="cell l4" style="width:14px;height:14px"></i> ${tr('maîtrisé')} · <i class="cell lw" style="width:14px;height:14px"></i> ${tr('fragile')}</div>
     <p class="ref" style="margin:4px 0 0">${tr('Maîtrise = réussite × part des versets déjà vus.')}${cfg.map === 'm' ? '' : ' ' + tr('Touche une case pour réviser.')}</p>`;
 }
 function weekHtml(){
@@ -169,29 +171,28 @@ function setLang(l){ // change la langue de l'interface (le texte du Coran ne ch
 function go(tab){ homeNotice = ''; cfg.tab = tab; if (tab === 'student') tch.loaded = false; if (tab === 'teacher'){ tch.students = null; tch.detail = null; } tch.msg = ''; saveCfg(); home(); window.scrollTo(0, 0); }
 
 /* -- Accueil : l'essentiel du jour -- */
-function weakCard(full){
+function weakCard(full){ // verset fragile : « sourate · verset » en gras, la raison dessous ; sur l'accueil : 3 lignes et un bouton
   const W = weakNow(), top = W.slice(0, full ? 10 : 3);
   if (!W.length) return full ? `<div class="card"><h2>${tr('À renforcer en priorité')}</h2><p class="sub" style="margin:0">${tr('Rien à renforcer pour le moment : continue ainsi.')}</p></div>` : '';
   const why = w => [w.n30 ? trp(w.n30, '{n} erreur ces 30 derniers jours|{n} erreurs ces 30 derniers jours') : '', w.lateD >= 1 ? tr('en retard de {n} j', {n: w.lateD}) : '',
     w.pct !== null && w.pct < 75 ? tr('réussite {p} %', {p: w.pct}) : ''].filter(Boolean).join(' · ');
-  return `<div class="card"><h2>${tr('À renforcer en priorité')}</h2>
-    ${top.map(w => `<div class="weak"><span>${rlabel(pk(w.k))}${why(w) ? `<br><span class="ref">${why(w)}</span>` : ''}</span></div>`).join('')}
-    <button class="pri big" style="margin-top:8px" data-act="strengthen">${tr('Renforcer maintenant ({n})', {n: Math.min(10, W.length)})}</button>
-    ${full ? `<p class="ref" style="margin:8px 0 0">${tr("Choisis chaque jour parmi tes versets les plus fragiles : erreurs récentes (les plus récentes comptent le plus), retard de révision et taux de réussite. Un verset reste dans la liste jusqu'à ce qu'il tienne plus d'une semaine sans erreur.")}</p>`
-      : `<button class="list-btn" data-act="tab" data-v="plan"><span>${tr('Voir la liste')}</span><span>›</span></button>`}</div>`;
+  return `<div class="card${full ? '' : ' note'}"><h2>${tr('À renforcer en priorité')}</h2>
+    ${top.map(w => `<div class="weak"><span><b>${rshort(pk(w.k))}</b>${why(w) ? `<br><span class="ref">${why(w)}</span>` : ''}</span></div>`).join('')}
+    <button class="${full ? 'pri ' : ''}big" style="margin-top:10px" data-act="strengthen">${tr('Renforcer maintenant ({n})', {n: Math.min(10, W.length)})}</button>
+    ${full ? `<p class="ref" style="margin:8px 0 0">${tr("Choisis chaque jour parmi tes versets les plus fragiles : erreurs récentes (les plus récentes comptent le plus), retard de révision et taux de réussite. Un verset reste dans la liste jusqu'à ce qu'il tienne plus d'une semaine sans erreur.")}</p>` : ''}</div>`;
 }
 function homeTiles(){ // tableau de bord : seulement ce qui n'est pas déjà dans la barre du bas ni dans « Aujourd'hui » ; chaque tuile montre son état et mène à la fonction
   const tj = Object.values(tjs || {}).reduce((a, v) => [a[0] + (v[0] || 0), a[1] + (v[1] || 0), a[2] + 1], [0, 0, 0]), last = store.get('tathbit.frLast', null), exp = store.get('tathbit.lastExport', 0);
   const mt = cfg.lastM && MT[cfg.lastM] ? MN(cfg.lastM) : null, days_ = exp ? Math.floor((Date.now() - exp) / 864e5) : 0;
   const T = [
-    ['fr-setup', '', '🎙️', 'Réciter à voix haute', 'Sourates de mémoire, au micro', last ? tr('Dernière : {d} · {n}', {d: new Date(last.t).toLocaleDateString(LOCALE(), {day: 'numeric', month: 'short'}), n: trp(last.n, '{n} verset|{n} versets')}) : tr("Pas encore essayé")],
-    ['tile-matn', '', '📜', 'Moutoun', "Ibn ʿĀshir, Tuḥfa, Bayqūniyya…", mt ? tr('Dernier : {m}', {m: esc(mt)}) : trp(Object.keys(MT).length, '{n} matn|{n} moutoun')],
-    ['rdscope', '', '📖', 'Lire', 'Texte complet, tajwīd, traductions', tr('Coran ({n} sourates) et moutoun', {n: 114})],
-    ['tile-tajwid', '', '🕌', 'Tajwīd', 'Règles, couleurs, lettres, madd', tj[0] + tj[1] ? tr('{r} % de réussite · {n} règles travaillées', {r: Math.round(100 * tj[0] / (tj[0] + tj[1])), n: tj[2]}) : tr('Pas encore essayé')],
-    ['tile-backup', '', '💾', 'Sauvegarde', 'Ta progression ne doit pas se perdre', me ? tr('Synchronisée avec ton compte') : exp ? (days_ < 1 ? tr("Exportée aujourd'hui") : tr('Dernier export : il y a {n} j', {n: days_})) : tr('Jamais exportée : exporte-la')],
-    IS_STANDALONE() ? ['news-open', '', '✨', 'Nouveautés', 'Ce qui change dans l\'application', tr('Version {v}', {v: 'v' + APP_BUILD}) + (news && news.items ? ' · ' + trp(news.items.length, '{n} nouveauté|{n} nouveautés') : '')]
-      : ['tile-install', '', '📲', "Installer l'application", 'Rappels, hors ligne, plein écran', deferredInstall ? tr('Un toucher pour installer') : IOS ? tr("Partager, puis « Sur l'écran d'accueil »") : tr('Depuis le menu du navigateur')]];
-  return `<h2 style="margin:16px 0 0">${tr('Mon tableau de bord')}</h2><div class="sethub">${T.map(([a, v, ic, t, d, st]) => `<button data-act="${a}"${v ? ` data-v="${v}"` : ''}><span class="si" aria-hidden="true">${ic}</span><b>${tr(t)}</b><small>${tr(d)}</small><span class="sv">${st}</span></button>`).join('')}</div>`;
+    ['fr-setup', '', 'mic', 'Réciter à voix haute', 'Sourates de mémoire, au micro', last ? tr('Dernière : {d} · {n}', {d: new Date(last.t).toLocaleDateString(LOCALE(), {day: 'numeric', month: 'short'}), n: trp(last.n, '{n} verset|{n} versets')}) : tr("Pas encore essayé")],
+    ['tile-matn', '', 'scroll', 'Moutoun', "Ibn ʿĀshir, Tuḥfa, Bayqūniyya…", mt ? tr('Dernier : {m}', {m: esc(mt)}) : trp(Object.keys(MT).length, '{n} matn|{n} moutoun')],
+    ['rdscope', '', 'book', 'Lire', 'Texte complet, tajwīd, traductions', tr('Coran ({n} sourates) et moutoun', {n: 114})],
+    ['tile-tajwid', '', 'palette', 'Tajwīd', 'Règles, couleurs, lettres, madd', tj[0] + tj[1] ? tr('{r} % de réussite · {n} règles travaillées', {r: Math.round(100 * tj[0] / (tj[0] + tj[1])), n: tj[2]}) : tr('Pas encore essayé')],
+    ['tile-backup', '', 'save', 'Sauvegarde', 'Ta progression ne doit pas se perdre', me ? tr('Synchronisée avec ton compte') : exp ? (days_ < 1 ? tr("Exportée aujourd'hui") : tr('Dernier export : il y a {n} j', {n: days_})) : tr('Jamais exportée : exporte-la')],
+    IS_STANDALONE() ? ['news-open', '', 'sparkles', 'Nouveautés', 'Ce qui change dans l\'application', tr('Version {v}', {v: 'v' + APP_BUILD}) + (news && news.items ? ' · ' + trp(news.items.length, '{n} nouveauté|{n} nouveautés') : '')]
+      : ['tile-install', '', 'phone', "Installer l'application", 'Rappels, hors ligne, plein écran', deferredInstall ? tr('Un toucher pour installer') : IOS ? tr("Partager, puis « Sur l'écran d'accueil »") : tr('Depuis le menu du navigateur')]];
+  return `<h2 style="margin:16px 0 0">${tr('Mon tableau de bord')}</h2><div class="sethub">${T.map(([a, v, ico, t, d, st]) => `<button data-act="${a}"${v ? ` data-v="${v}"` : ''}><span class="si" aria-hidden="true">${ic(ico)}</span><b>${tr(t)}</b><small>${tr(d)}</small><span class="sv">${st}</span></button>`).join('')}</div>`;
 }
 /* ---------- installation de l'application ---------- */
 function instImg(n){ // mini-schémas de l'installation sur iPhone (sans texte : rien à traduire ; le texte est dans la légende)
@@ -208,10 +209,10 @@ function renderInstall(){
   const ios = [tr('Dans Safari, touche le bouton Partager (le carré avec une flèche vers le haut).'), tr("Fais défiler le menu et touche « Sur l'écran d'accueil », puis « Ajouter »."), tr("Ouvre Tathbīt depuis son icône sur l'écran d'accueil.")];
   const steps = [tr('Ouvre le menu du navigateur (les trois points ⋮).'), tr("Touche « Installer l'application » (ou « Ajouter à l'écran d'accueil »)."), tr("Ouvre Tathbīt depuis son icône sur l'écran d'accueil.")];
   $app.innerHTML = `<div class="top"><button class="link" data-act="tab" data-v="home">${tr('← Retour')}</button><span>${tr('Installation')}</span></div>
-    <h1 style="margin-top:8px">📲 ${tr("Installer l'application")}</h1>
+    <h1 style="margin-top:8px">${ic('phone')} ${tr("Installer l'application")}</h1>
     ${IS_STANDALONE() ? `<div class="fb ok" role="status">✓ ${tr("Tathbīt est déjà installée sur cet appareil.")}</div>` : ''}
     <div class="card"><p style="margin:0 0 8px">${tr("Installée, Tathbīt s'ouvre en plein écran, marche mieux hors ligne et peut t'envoyer tes rappels de révision.")}</p>
-      ${deferredInstall ? `<button class="pri big" data-act="install-now">📲 ${tr('Installer maintenant')}</button>`
+      ${deferredInstall ? `<button class="pri big" data-act="install-now">${ic('phone')} ${tr('Installer maintenant')}</button>`
       : IOS ? `<p class="ref" style="margin:0 0 10px">${tr("Sur iPhone et iPad, l'installation se fait depuis Safari (pas depuis un autre navigateur).")}</p><div class="inststeps">${ios.map((x, k) => `<figure>${instImg(k + 1)}<figcaption><b>${k + 1}.</b> ${x}</figcaption></figure>`).join('')}</div>`
       : `<ol class="steps" style="margin:0;padding-inline-start:20px;line-height:1.7">${steps.map(x => `<li>${x}</li>`).join('')}</ol>`}</div>
     ${IOS ? `<div class="card"><p class="ref" style="margin:0">${tr("Sur iPhone, l'application installée peut démarrer sans ta progression : exporte-la d'abord (Réglages, Données) puis importe-la dans l'application installée, ou connecte-toi à ton compte.")}</p></div>` : ''}`;
@@ -229,40 +230,34 @@ function exportNudgeDays(){
 }
 function exportNudgeHtml(){
   const d = exportNudgeDays(); if (!d) return '';
-  return `<div class="card" id="export-nudge"><h2>💾 ${tr('Pense à sauvegarder ta progression')}</h2><p class="sub" style="margin:0 0 8px">${tr("Sans compte, ta progression n'est que sur cet appareil. Elle est perdue si tu effaces les données du navigateur ou si tu changes de téléphone. Dernière sauvegarde : il y a {n} jours.", {n: d})}</p>
+  return `<div class="card" id="export-nudge"><h2>${ic('save')} ${tr('Pense à sauvegarder ta progression')}</h2><p class="sub" style="margin:0 0 8px">${tr("Sans compte, ta progression n'est que sur cet appareil. Elle est perdue si tu effaces les données du navigateur ou si tu changes de téléphone. Dernière sauvegarde : il y a {n} jours.", {n: d})}</p>
     <div class="row"><button class="pri" data-act="export">${tr('Exporter maintenant')}</button><button data-act="export-later">${tr('Plus tard')}</button></div></div>`;
 }
 function tabHome(){
-  const DS = daySteps(), td = days[today()] || 0, st = streak();
+  const DS = daySteps(), td = days[today()] || 0, st = streak(), pct = Math.min(100, Math.round(100 * td / cfg.goal));
   return `
   <div id="upd-slot">${updBannerHtml()}</div>
-  <div id="news-slot">${newsCardHtml()}</div>
+  <div class="hero"><div class="logo"><span class="lg">تثبيت</span></div><div><h1>Tathbīt</h1><p class="tag">${me ? esc(me.user.email) + ' ' + roleChips() : tr('Que ta mémorisation soit bénie.')}</p></div></div>
   ${homeNotice ? `<div class="fb ok" role="status">${esc(homeNotice)}</div>` : ''}
   ${remOfferHtml()}
-  <div class="hero"><div class="logo"><span class="lg">تثبيت</span></div><div><h1>Tathbīt</h1><p class="tag">${tr('Coran et moutoun')}</p><p>${me ? esc(me.user.email) + ' ' + roleChips() : tr('Que ta mémorisation soit bénie.')}</p></div></div>
   ${exportNudgeHtml()}
-  ${cloudOn() && !me ? `<div class="card"><h2>${tr('Sauvegarde ta progression')}</h2><p class="sub" style="margin:0 0 8px">${tr('Crée un compte gratuit pour retrouver tes séries, tes erreurs et ton historique sur tous tes appareils.')}</p>
+  ${cloudOn() && !me ? `<div class="card note"><h2>${tr('Sauvegarde ta progression')}</h2><p class="sub" style="margin:0 0 8px">${tr('Crée un compte gratuit pour retrouver tes séries, tes erreurs et ton historique sur tous tes appareils.')}</p>
     <div class="row"><button class="pri" data-act="acc-open" data-v="signup">${tr('Créer un compte')}</button><button data-act="acc-open" data-v="login">${tr('Se connecter')}</button></div></div>` : ''}
 
-  <div class="card"><h2>${tr("Aujourd'hui")}</h2>
-    <p class="sub" style="margin:0 0 4px">🔥 ${trp(st, '{n} jour d\'affilée|{n} jours d\'affilée')} · ${tr('objectif : {a} / {b}', {a: Math.min(td, cfg.goal), b: cfg.goal})}</p>
-    <div class="goal"><i style="width:${Math.min(100, 100 * td / cfg.goal)}%"></i></div>
+  <div class="card today"><h2>${tr("Aujourd'hui")}</h2>
+    <div class="tstat"><span>${ic('flame')} ${trp(st, '{n} jour d\'affilée|{n} jours d\'affilée')}</span><span>${tr('objectif : {a} / {b}', {a: Math.min(td, cfg.goal), b: cfg.goal})}</span></div>
+    <div class="goal" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}" aria-label="${tr('Objectif du jour')}"><i style="width:${pct}%"></i></div>
     ${td >= cfg.goal ? `<p class="ref" style="margin:0 0 8px">${tr('Objectif atteint, machaa Allah 🎉')}</p>` : ''}
-    ${DS.length ? `<button class="pri big" style="margin-top:8px" data-act="day-go">▶ ${tr('Ma séance du jour')}</button><p class="ref" style="margin:6px 0 0">${daySummary(DS)}</p>`
-      : `<p class="sub" style="margin:8px 0 0">${tr("Rien à revoir pour l'instant. Lance une série : les versets à retravailler reviendront ici au bon moment.")}</p>`}
+    ${DS.length ? `<button class="pri big" style="margin-top:10px" data-act="day-go">${ic('play')} ${tr('Ma séance du jour')}</button><p class="ref" style="margin:6px 0 0">${daySummary(DS)}</p>`
+      : `<p class="sub" style="margin:10px 0 0">${tr("Rien à revoir pour l'instant. Lance une série : les versets à retravailler reviendront ici au bon moment.")}</p>
+         <button class="pri big" style="margin-top:8px" data-act="start">${ic('play')} ${tr('Lancer ma série')}</button><p class="ref" style="margin:6px 0 0">${esc(scopeLabel(cfg.scope))} · ${esc(modeTitle(cfg.mode))} · ${trp(cfg.n, '{n} question|{n} questions')} · <button class="link" data-act="tab" data-v="train">${tr('Modifier')}</button></p>`}
     ${frResumeHtml()}
   </div>
 
-  ${homeTiles()}
-
+  <div id="news-slot">${newsCardHtml()}</div>
   ${weakCard(false)}
   ${goalHomeCard()}
-  <div class="card"><h2>${tr('Ma série')}</h2>
-    <div class="sumline"><span>${cfg.scope.type === 'matn' ? '📜 ' + tr('Moutoun') : '📖 ' + tr('Coran')}</span><span>${esc(scopeLabel(cfg.scope))}</span>
-      <span>${esc(modeTitle(cfg.mode))}</span>${cfg.mode === 'tajweed' ? `<span>${tr((TJKINDS.find(k => k[0] === cfg.tjKind) || TJKINDS[0])[1])}</span>` : cfg.mode === 'madd' ? `<span>${tr((MDKINDS.find(k => k[0] === cfg.mdKind) || MDKINDS[0])[1])}</span>` : cfg.mode === 'ahkam' ? `<span>${tr((AHKINDS.find(k => k[0] === cfg.ahKind) || AHKINDS[0])[1])}</span>` : cfg.mode === 'makharij' ? `<span>${tr((MKKINDS.find(k => k[0] === cfg.mkKind) || MKKINDS[0])[1])}</span>` : cfg.mode === 'sifat' ? `<span>${tr((SFKINDS.find(k => k[0] === cfg.sfKind) || SFKINDS[0])[1])}</span>` : ''}<span>${trp(cfg.n, '{n} question|{n} questions')}</span>${(MODE_OPTS[cfg.mode] || {}).input ? `<span>${tr(INPUTS[cfg.input] || '')}</span>` : ''}</div>
-    <button class="pri big" data-act="start">${tr('Commencer')}</button>
-    <div class="row" style="margin-top:8px"><button data-act="tab" data-v="train">${tr('Modifier')}</button><button data-act="lsopen">🎧 ${tr('Écouter')}</button></div>
-  </div>`;
+  ${homeTiles()}`;
 }
 
 /* -- Plan de révision : sabaq (nouveau), sabqi (révision récente), manzil (révision ancienne) -- */
@@ -351,7 +346,8 @@ function daySteps(){
   return steps;
 }
 const DAY_NAME = {due: 'Versets dus', sabqi: 'Révision récente', manzil: 'Révision ancienne'};
-function daySummary(S){ return S.map(x => x.k === 'due' ? trp(x.refs.length, '{n} verset dû|{n} versets dus') : tr(DAY_NAME[x.k]) + ' (' + trp(x.chunks.length, '{n} portion|{n} portions') + ')').join(' · '); }
+const dayMinutes = S => Math.max(1, Math.round(S.reduce((t, x) => t + (x.k === 'due' ? 20 * x.refs.length : 60 * x.chunks.length), 0) / 60));   // estimation : ~20 s par verset dû, ~1 min par portion
+function daySummary(S){ return S.map(x => x.k === 'due' ? trp(x.refs.length, '{n} verset dû|{n} versets dus') : tr(DAY_NAME[x.k]) + ' (' + trp(x.chunks.length, '{n} portion|{n} portions') + ')').join(' · ') + ' · ' + tr('≈ {n} min', {n: dayMinutes(S)}); }
 function dayRun(day){
   const s = day.steps[day.i];
   if (s.k === 'due') start(shuffle(s.refs.slice())); else startChunks(s.chunks, s.k, s.rot);
@@ -370,7 +366,7 @@ function renderSabaq(){
     <div class="rd" style="font-size:${cfg.rdSize}rem">${refs.map(r => `<span class="rv${sab.hide ? ' hid' : ''}" data-act="rv-sab">${esc(verse(r))} <span class="vend">﴿${arNum(r.a)}﴾</span></span>`).join(' ')}</div>
     <label class="f">${tr('Répétitions audio')}</label>
     <select id="sabrep">${[1, 3, 5, 10].map(n => `<option ${n === sab.rep ? 'selected' : ''}>${n}</option>`).join('')}</select>
-    <div class="grades"><button data-act="sab-play">▶ ${tr('Écouter')}</button><button data-act="sab-hide">${sab.hide ? '👁 ' + tr('Tout afficher') : '🙈 ' + tr('Masquer le texte')}</button></div>
+    <div class="grades"><button data-act="sab-play">${ic('play')} ${tr('Écouter')}</button><button data-act="sab-hide">${sab.hide ? ic('eye') + ' ' + tr('Tout afficher') : ic('eyeoff') + ' ' + tr('Masquer le texte')}</button></div>
     <p class="ref" id="audio-msg" style="margin:8px 0 0"></p>
   </div>
   <button class="pri big" data-act="sab-test">${tr('Tester ma récitation')}</button>
@@ -451,13 +447,13 @@ function tabPlan(){
     <div class="goal"><i style="width:${pct}%"></i></div>
     <p style="margin:6px 0 0"><b>${tr('{a} / {b} versets appris', {a: nL, b: units.length})}</b> · ${pct} %</p>
     <p class="ref" style="margin:4px 0 0">${rem ? tr('À ce rythme : environ {d} jours (fin vers le {date}).', {d: days, date: end}) : tr('Plan terminé 🎉')}</p></div>
-  ${weakCard(true)}
   ${T.next ? row(tr('Nouveau (sabaq)'), esc(passageLabel(chunkRefs(T.next))) + ' · ' + amtLabel(plan.amt), T.d.sabaq, 'plan-sabaq', tr('Apprendre'))
     : `<div class="card"><h2>${tr('Nouveau (sabaq)')}</h2><p class="sub" style="margin:0">${tr('Plan terminé 🎉')}</p></div>`}
   ${T.rec.length ? row(tr('Révision récente (sabqi)'), trp(T.rec.length, '{n} portion apprise ces {d} derniers jours|{n} portions apprises ces {d} derniers jours', {d: plan.recent}), T.d.sabqi, 'plan-sabqi', tr('Réviser'))
     : `<div class="card"><h2>${tr('Révision récente (sabqi)')}</h2><p class="sub" style="margin:0">${tr('Rien à réviser pour le moment.')}</p></div>`}
   ${T.man.length ? row(tr('Révision ancienne (manzil)'), trp(T.man.length, '{n} portion à revoir aujourd\'hui (cycle de {c} jours)|{n} portions à revoir aujourd\'hui (cycle de {c} jours)', {c: plan.cycle}) + (T.xtra ? ' · ' + tr('dont {n} à renforcer', {n: T.xtra}) : ''), T.d.manzil, 'plan-manzil', tr('Réviser'))
     : `<div class="card"><h2>${tr('Révision ancienne (manzil)')}</h2><p class="sub" style="margin:0">${tr('Rien à réviser pour le moment.')}</p></div>`}
+  ${weakCard(true)}
   ${planWeekHtml(plan)}
   ${planDefsHtml(false)}
   <div class="row"><button data-act="plan-edit">${tr('Modifier le plan')}</button><button data-act="plan-del" style="color:var(--ko)">${tr('Supprimer le plan')}</button></div>`;
@@ -503,28 +499,13 @@ function tabTrain(){
   <h1>${tr('Réviser')}</h1>
   <p class="sub">${tr('Choisis ce que tu veux travailler, puis lance la série.')}</p>
 
-  <div class="card"><h2>🎙️ ${tr('Réciter à voix haute')}</h2>
-    <p class="ref" style="margin:0 0 8px">${tr("Sans exercice : choisis une ou plusieurs sourates et récite-les d'une traite, de mémoire. L'application suit ta récitation.")}</p>
-    <button class="pri" data-act="fr-setup">🎤 ${tr('Réciter une ou plusieurs sourates')}</button></div>
+  <button class="list-btn" data-act="fr-setup" style="margin:0 0 14px"><span>${ic('mic')} <b>${tr('Réciter à voix haute')}</b><br><span class="ref">${tr('Sans exercice : récite une ou plusieurs sourates de mémoire.')}</span></span><span aria-hidden="true">${ic('chevron')}</span></button>
 
-  <div class="card"><h2>${tr("Type d'exercice")}</h2>
-    <select id="scat" aria-label="${tr("Type d'exercice")}">${CATS.map(([id, t]) => `<option value="${id}" ${id === cat ? 'selected' : ''}>${tr(t)}</option>`).join('')}</select>
-    <p class="ref" style="margin:8px 0 0">${tr(CATHELP[cat])}</p>
-  </div>
-
-  ${cat === 'memo' ? `<div class="card"><h2>${tr('Je veux réviser')}</h2>
-    <div class="seg">
-      <button class="${isM ? '' : 'sel'}" data-act="corpus" data-v="quran">📖 ${tr('Le Coran')}</button>
-      <button class="${isM ? 'sel' : ''}" data-act="corpus" data-v="matn">📜 ${tr('Les moutoun')}</button>
-    </div>
-  </div>
-
-  <div class="card"><h2>${tr('Exercice')}</h2>
-    <div class="modes">${MODES.filter(([id, , , w]) => catOf(id) === 'memo' && (!w || (w === 'm') === isM)).map(([id, t, d]) =>
-      `<button class="mode ${cfg.mode === id ? 'sel' : ''}" data-act="mode" data-v="${id}"><b>${tr(isM && id === 'which' ? 'Quel matn ?' : t)}</b><small>${tr(d)}</small></button>`).join('')}</div>
-  </div>` : ''}
-
-  ${showScope ? `<div class="card"><h2>${tr('Portée')}</h2>
+  ${showScope ? `<div class="card"><h2>${tr('Je veux réviser')}</h2>
+    ${cat === 'memo' ? `<div class="seg" style="margin-bottom:6px">
+      <button class="${isM ? '' : 'sel'}" data-act="corpus" data-v="quran" aria-pressed="${!isM}">${ic('book')} ${tr('Le Coran')}</button>
+      <button class="${isM ? 'sel' : ''}" data-act="corpus" data-v="matn" aria-pressed="${isM}">${ic('scroll')} ${tr('Les moutoun')}</button>
+    </div>` : ''}
     <label class="f" ${isM ? 'hidden' : ''}>${tr('Réviser…')}</label>
     <select id="stype" ${isM ? 'hidden' : ''}>
       <option value="surah" ${sc.type === 'surah' ? 'selected' : ''}>${tr('Une plage de sourates')}</option>
@@ -536,12 +517,12 @@ function tabTrain(){
       <label class="f">${tr('Matn')}</label>
       <select id="smatn"><option value="all">${tr('Tous les moutoun')}</option>${matnOpts(sc.id)}</select>
       ${isM && MT[sc.id] && MT[sc.id].sec ? `<label class="f">${tr('Bloc (chapitre du matn)')}</label>
-      <select id="ssec"><option value="" ${sc.sec == null ? 'selected' : ''}>📜 ${tr('Tout le matn')} (${MT[sc.id].a.length})</option>${MT[sc.id].sec.map((b, k) => `<option value="${k}" ${sc.sec === k ? 'selected' : ''}>${k + 1}. ${esc(secName(b))} (${secSize(sc.id, k)})</option>`).join('')}</select>
+      <select id="ssec"><option value="" ${sc.sec == null ? 'selected' : ''}>${tr('Tout le matn')} (${MT[sc.id].a.length})</option>${MT[sc.id].sec.map((b, k) => `<option value="${k}" ${sc.sec === k ? 'selected' : ''}>${k + 1}. ${esc(secName(b))} (${secSize(sc.id, k)})</option>`).join('')}</select>
       <p class="ref" style="margin:4px 0 0">${tr("Titres des blocs : ceux de la source ; le français est traduit par l'IA, pas une source officielle.")}</p>` : ''}
       ${isM ? srcNote(sc) : ''}
-      <details style="margin-top:12px"><summary>➕ ${tr('Ajouter mon propre matn')}</summary>
+      <details style="margin-top:12px"><summary>${ic('plus')} ${tr('Ajouter mon propre matn')}</summary>
         <p class="ref" style="margin:10px 0 6px">${tr('Importer le texte depuis une photo, un PDF ou un fichier Word :')}</p>
-        <div class="row"><button type="button" data-act="cm-cam">📷 ${tr('Prendre une photo')}</button><button type="button" data-act="cm-img">🖼️ ${tr('Image ou photo')}</button><button type="button" data-act="cm-doc">📄 ${tr('PDF, Word ou texte')}</button></div>
+        <div class="row"><button type="button" data-act="cm-cam">${ic('camera')} ${tr('Prendre une photo')}</button><button type="button" data-act="cm-img">${ic('image')} ${tr('Image ou photo')}</button><button type="button" data-act="cm-doc">${ic('file')} ${tr('PDF, Word ou texte')}</button></div>
         <input type="file" id="cm-f-cam" accept="image/*" capture="environment" hidden>
         <input type="file" id="cm-f-img" accept="image/*" multiple hidden>
         <input type="file" id="cm-f-doc" accept=".pdf,.docx,.txt,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain" multiple hidden>
@@ -555,9 +536,9 @@ function tabTrain(){
         <select id="cm-kind"><option value="poem">${tr('Poème (un vers par ligne, les deux moitiés séparées par *)')}</option><option value="prose">${tr('Prose (un passage par ligne)')}</option></select>
         <label class="f">${tr('Texte (copie-le depuis ton édition de référence)')}</label>
         <textarea id="cm-text" dir="rtl" lang="ar" placeholder="الحمد لله ربي * ..."></textarea>
-        <div class="row" style="margin-top:6px"><button type="button" data-act="cm-undo">↩ ${tr('Annuler le dernier ajout')}</button><button type="button" data-act="cm-rev">↔ ${tr("Inverser (texte à l'envers)")}</button><button type="button" data-act="cm-clear">🧹 ${tr('Effacer le texte')}</button></div>
+        <div class="row" style="margin-top:6px"><button type="button" data-act="cm-undo">${ic('undo')} ${tr('Annuler le dernier ajout')}</button><button type="button" data-act="cm-rev">${ic('swap')} ${tr("Inverser (texte à l'envers)")}</button><button type="button" data-act="cm-clear">${ic('eraser')} ${tr('Effacer le texte')}</button></div>
         <button class="pri" style="margin-top:8px" data-act="addcustom">${tr('Enregistrer ce matn')}</button>
-        <p class="fb mid" style="margin:8px 0 0">⚠️ ${tr("Vérifie que le texte est bien dans l'ordre du matn, de la première à la dernière ligne, surtout entre les parties importées : rien ne doit manquer ni se répéter.")}</p>
+        <p class="fb mid" style="margin:8px 0 0">${ic('alert')} ${tr("Vérifie que le texte est bien dans l'ordre du matn, de la première à la dernière ligne, surtout entre les parties importées : rien ne doit manquer ni se répéter.")}</p>
         <p class="ref">${tr("La lecture d'une photo ou d'un fichier se fait sur ton appareil : rien n'est envoyé. Vérifie et corrige le texte, surtout les voyelles : une photo ne les donne pas toujours.")}</p>
         <p class="ref">${tr("Le texte reste sur cet appareil. Si tu n'indiques pas de séparateur *, chaque vers est coupé au milieu.")}</p>
       </details>
@@ -567,6 +548,14 @@ function tabTrain(){
       <div><label class="f">${tr('À')}</label><select id="sto">${sc.type === 'juz' ? opts(30, sc.to) : sc.type === 'page' ? opts(604, sc.to) : surahOpts(sc.to)}</select></div>
     </div>
   </div>` : ''}
+
+  <div class="card"><h2>${tr('Exercice')}</h2>
+    <select id="scat" aria-label="${tr("Type d'exercice")}">${CATS.map(([id, t]) => `<option value="${id}" ${id === cat ? 'selected' : ''}>${tr(t)}</option>`).join('')}</select>
+    ${cat === 'memo' ? '' : `<p class="ref" style="margin:8px 0 0">${tr(CATHELP[cat])}</p>`}
+    ${cat !== 'memo' ? '' : (() => { const L = MODES.filter(([id, , , w]) => catOf(id) === 'memo' && (!w || (w === 'm') === isM)), cur = L.find(x => x[0] === cfg.mode);
+      return `<div class="modes">${L.map(([id, t]) => `<button class="mode ${cfg.mode === id ? 'sel' : ''}" data-act="mode" data-v="${id}" aria-pressed="${cfg.mode === id}"><b>${tr(isM && id === 'which' ? 'Quel matn ?' : t)}</b></button>`).join('')}</div>
+      ${cur ? `<p class="ref modedesc" style="margin:10px 0 0" role="status">${tr(cur[2])}</p>` : ''}`; })()}
+  </div>
 
   <div class="card"><h2>${tr('Options de la série')}</h2>
     <p class="ref" style="margin:0 0 8px">${tr(modeHelp[cfg.mode] || '')}</p>
@@ -596,11 +585,11 @@ function tabTrain(){
     <div class="seg">
       <button class="${cfg.input === 'recite' ? 'sel' : ''}" data-act="input" data-v="recite">${tr('Je récite, puis je marque mes erreurs')}</button>
       <button class="${cfg.input === 'type' ? 'sel' : ''}" data-act="input" data-v="type">${tr('Je tape en arabe')}</button>
-      ${SR ? `<button class="${cfg.input === 'voice' ? 'sel' : ''}" data-act="input" data-v="voice">🎤 ${tr('Je récite à voix haute')}</button>` : ''}
+      ${SR ? `<button class="${cfg.input === 'voice' ? 'sel' : ''}" data-act="input" data-v="voice">${ic('mic')} ${tr('Je récite à voix haute')}</button>` : ''}
     </div>${SR && IOS_APP ? `<p class="ref" style="margin:6px 0 0">${tr("Sur iPhone, la reconnaissance vocale peut ne pas marcher dans l'application installée : ouvre le site dans Safari pour l'utiliser.")}</p>` : ''}` : `<p class="ref" style="margin:10px 0 0">${tr('Pour cet exercice, tu réponds en touchant la bonne proposition.')}</p>`}
   </div>
 
-  ${showScope ? `<div class="row"><button class="big" data-act="rdscope">📖 ${tr('Lire le texte complet')}</button><button class="big" data-act="lsopen">🎧 ${tr('Écouter ma portée')}</button></div>` : ''}
+  ${showScope ? `<div class="row"><button class="big" data-act="rdscope">${ic('book')} ${tr('Lire le texte complet')}</button><button class="big" data-act="lsopen">${ic('headphones')} ${tr('Écouter ma portée')}</button></div>` : ''}
   <div class="cta"><button class="pri big" data-act="start">${tr('Commencer')}${showScope ? ' · ' + esc(scopeLabel(sc)) : ''}</button></div>`;
 }
 
@@ -659,7 +648,7 @@ function tabSettings(){
         <select id="sgoal">${[10, 20, 30, 50, 100].map(n => `<option ${n === cfg.goal ? 'selected' : ''}>${n}</option>`).join('')}</select></div>
     </div>
     <div class="row" style="margin-top:12px;align-items:end"><div><label class="f">${tr('Rappel quotidien (calendrier)')}</label><input type="time" id="rtime" value="20:00"></div>
-      <button data-act="ics">📅 ${tr('Ajouter au calendrier')}</button></div>
+      <button data-act="ics">${ic('calendar')} ${tr('Ajouter au calendrier')}</button></div>
   </div>`,
     about: `<details class="card"><summary><h2>${tr("But de l'application")}</h2></summary>
     <p class="ref" style="margin:0">${tr("Tathbīt (تثبيت) sert à consolider ce que tu as déjà mémorisé du Coran et des moutoun : c'est le tathbīt, et non le ḥifẓ (la première mémorisation).")}</p></details>`,
@@ -677,7 +666,7 @@ function tabSettings(){
     audioOff: `${audioCard()}`,
     remind: `${remindCard()}`,
     data: `<div class="card" id="card-data"><h2>${tr('Mes données')}</h2>
-    <div class="row"><button data-act="export">⬇ ${tr('Exporter ma progression')}</button><button data-act="import">⬆ ${tr('Importer')}</button></div>
+    <div class="row"><button data-act="export">${ic('download')} ${tr('Exporter ma progression')}</button><button data-act="import">${ic('upload')} ${tr('Importer')}</button></div>
     <input type="file" id="impfile" accept="application/json,.json" hidden>
     <label class="f" for="csv-kind">${tr('Exporter pour un tableur (CSV)')}</label>
     <div class="row" style="align-items:end"><select id="csv-kind">${CSVKINDS.map(([id, t]) => `<option value="${id}">${tr(t)}</option>`).join('')}</select><button data-act="csv" style="flex:0 0 auto">⬇ CSV</button></div>
@@ -686,10 +675,10 @@ function tabSettings(){
   </div>`,
     app: `<div class="card" id="card-app"><h2>${tr('Application')}</h2>
     <p class="ref" style="margin:0 0 8px">${tr("Version {v}. Une fois installée sur le téléphone, l'application se met à jour toute seule à l'ouverture quand tu es en ligne ; si tu ne vois pas les nouveautés, utilise ce bouton (ta progression n'est pas touchée).", {v: APP_VERSION})}</p>
-    <button data-act="upd">🔄 ${tr('Chercher les mises à jour')}</button> <button data-act="news-open">✨ ${tr('Voir les nouveautés')}</button></div>`,
+    <button data-act="upd">${ic('refresh')} ${tr('Chercher les mises à jour')}</button> <button data-act="news-open">${ic('sparkles')} ${tr('Voir les nouveautés')}</button></div>`,
     contact: `<div class="card"><h2>${tr('Contact')}</h2>
     <p class="ref" style="margin:0 0 8px">${tr('Une question, une erreur dans un texte, un problème, une idée : écris-nous.')}</p>
-    <button data-act="contact">✉️ ${tr('Nous contacter')}</button></div>`,
+    <button data-act="contact">${ic('mail')} ${tr('Nous contacter')}</button></div>`,
     privacy: `<div class="card"><h2>${tr('Confidentialité')}</h2>
     <p class="ref" style="margin:0 0 8px">${tr('Quelles données sont enregistrées, qui les voit, comment les supprimer.')}</p>
     <button data-act="legal">${tr('Lire la confidentialité et les conditions')}</button></div>`,
@@ -697,9 +686,9 @@ function tabSettings(){
     <p class="ref" style="margin:0">${tr("Coran : texte uthmani du projet Tanzil, embarqué dans le site et vérifié (lecture de Ḥafṣ). Audio : cdn.islamic.network (AlQuran Cloud). Lecteur : tajwīd en couleurs (Islamic Network), traductions (Tanzil : Hamidullah, Saheeh International) et tafsir al-Muyassar (Complexe du Roi Fahd). Moutoun : Wikisource arabe et hadith-api (voir l'écran Réviser pour chaque matn). Versets proches : calculés automatiquement.")}</p>
   </details>`,
   };
-  const G = [['account', '👤', 'Compte', 'Connexion, rôle, mot de passe', ['account']], ['learn', '🎓', 'Apprentissage', 'Correction de la saisie, indices', ['corr', 'hints']],
-    ['audio', '🔊', 'Audio et rappels', 'Récitateur, objectif, audio hors ligne, rappels', ['audio', 'audioOff', 'remind']], ['display', '🎨', 'Affichage', 'Langue, taille du texte arabe, thème, accessibilité', ['lang', 'arsize', 'a11y']],
-    ['data', '💾', 'Données', 'Exporter, importer, effacer', ['data']], ['help', 'ℹ️', 'Aide et infos', 'Mises à jour, contact, confidentialité, sources', ['app', 'contact', 'privacy', 'about', 'contents', 'sources']]];
+  const G = [['account', 'user', 'Compte', 'Connexion, rôle, mot de passe', ['account']], ['learn', 'cap', 'Apprentissage', 'Correction de la saisie, indices', ['corr', 'hints']],
+    ['audio', 'volume', 'Audio et rappels', 'Récitateur, objectif, audio hors ligne, rappels', ['audio', 'audioOff', 'remind']], ['display', 'palette', 'Affichage', 'Langue, taille du texte arabe, thème, accessibilité', ['lang', 'arsize', 'a11y']],
+    ['data', 'database', 'Données', 'Exporter, importer, effacer', ['data']], ['help', 'info', 'Aide et infos', 'Mises à jour, contact, confidentialité, sources', ['app', 'contact', 'privacy', 'about', 'contents', 'sources']]];
   const plain = h => h.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').toLowerCase();
   const q = setQ.trim().toLowerCase(), grp = G.some(g => g[0] === cfg.setTab) || cfg.setTab === 'all' ? cfg.setTab : 'hub';   // « hub » : les 6 blocs d'un coup d'œil (par défaut)
   const cards = G.flatMap(([g, , t, , ids]) => ids.map(id => ({g, id, t, html: C[id]})));
@@ -720,7 +709,7 @@ function tabSettings(){
   <h1>${tr('Réglages')}</h1>
   <p class="sub">${tr('Les réglages sont rangés en 6 blocs : touche-en un pour l\'ouvrir, ou cherche un réglage.')}</p>
   ${search}
-  <div class="sethub">${G.map(([g, ic, t, d]) => `<button data-act="set-grp" data-v="${g}"><span class="si" aria-hidden="true">${ic}</span><b>${tr(t)}</b><small>${tr(d)}</small><span class="sv${g === 'account' ? ' one' : ''}">${ST[g]}</span></button>`).join('')}</div>
+  <div class="sethub">${G.map(([g, ico, t, d]) => `<button data-act="set-grp" data-v="${g}"><span class="si" aria-hidden="true">${ic(ico)}</span><b>${tr(t)}</b><small>${tr(d)}</small><span class="sv${g === 'account' ? ' one' : ''}">${ST[g]}</span></button>`).join('')}</div>
   <p style="text-align:center;margin:6px 0"><button class="link" data-act="set-grp" data-v="all">☰ ${tr('Tout afficher sur une seule page')}</button></p>`;
   return `
   <h1>${tr('Réglages')}</h1>

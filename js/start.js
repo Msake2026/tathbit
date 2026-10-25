@@ -14,7 +14,7 @@ if ('serviceWorker' in navigator && location.protocol.startsWith('http')) naviga
 (async function init(){
   MT = Object.fromEntries((window.MOUTOUN?.texts || []).map(t => [t.id, t]));
   custom.forEach(t => { MT[t.id] = t; });
-  try { await loadQuran(); if (cloudOn()){ renderLoading(); await cloudInit(); } else home(); }
+  try { await loadQuran(); dropBadRefs(); if (cloudOn()){ renderLoading(); await cloudInit(); } else home(); }
   catch (err){
     $app.innerHTML = `<h1>${tr('Chargement impossible')}</h1>
       <p class="sub">${tr('Une connexion internet est nécessaire au premier lancement ({e}).', {e: esc(err.message)})}</p>

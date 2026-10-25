@@ -17,7 +17,7 @@ function frResumeHtml(){ // accueil : la dernière récitation interrompue, à r
   const E_ = Object.entries(frHist()).filter(([k, e]) => Q[k - 1] && e.stop > 0).sort((a, b) => b[1].t - a[1].t)[0];
   if (!E_) return '';
   const [k, e] = E_;
-  return `<button class="big" style="margin-top:8px" data-act="fr-resume" data-v="${k}:${e.stop}">🎙️ ${tr('Reprendre ma récitation : {s}, verset {a}', {s: esc(SN(+k)), a: e.stop})}</button>`;
+  return `<button class="big" style="margin-top:8px" data-act="fr-resume" data-v="${k}:${e.stop}">${ic('mic')} ${tr('Reprendre ma récitation : {s}, verset {a}', {s: esc(SN(+k)), a: e.stop})}</button>`;
 }
 function frHistHtml(){ // « Mes récitations » : dernière récitation de chaque sourate, ce qui est à revoir, et le bouton pour reprendre
   const E_ = Object.entries(frHist()).filter(([k]) => Q[k - 1]).sort((a, b) => b[1].t - a[1].t).slice(0, 8);
@@ -26,14 +26,14 @@ function frHistHtml(){ // « Mes récitations » : dernière récitation de chaq
   return `<div class="card" id="fr-hist"><h2>${tr('Mes récitations')}</h2>${E_.map(([k, e]) => { const n = e.a1 - e.a0 + 1;
     return `<div class="weak" style="display:block"><div><b>${k}. ${esc(SN(+k))}</b> · <span class="ref">${fd(e.t)}</span></div>
       <div class="ref" style="margin:2px 0 4px">${tr('{n} versets récités sur {t}', {n, t: e.tot})} · ${trp(e.c, '{n} sans oubli|{n} sans oubli')}${e.flag.length ? ' · ' + tr('à revoir : versets {l}', {l: e.flag.slice(0, 8).join(', ') + (e.flag.length > 8 ? '…' : '')}) : ''}</div>
-      <div class="row">${e.stop ? `<button class="pri" data-act="fr-resume" data-v="${k}:${e.stop}">▶ ${tr('Reprendre au verset {a}', {a: e.stop})}</button>` : ''}<button data-act="fr-resume" data-v="${k}:1">${e.stop ? tr('Depuis le début') : tr('Réciter encore')}</button></div></div>`; }).join('')}
+      <div class="row">${e.stop ? `<button class="pri" data-act="fr-resume" data-v="${k}:${e.stop}">${ic('play')} ${tr('Reprendre au verset {a}', {a: e.stop})}</button>` : ''}<button data-act="fr-resume" data-v="${k}:1">${e.stop ? tr('Depuis le début') : tr('Réciter encore')}</button></div></div>`; }).join('')}
     <p class="ref" style="margin:8px 0 0">${tr('Enregistré sur cet appareil. Le suivi se fait aux mots entendus : il peut se tromper.')}</p></div>`;
 }
 function frSetup(){
   if (fr && fr.rec){ fr.rec.onend = null; try { fr.rec.abort(); } catch { /* déjà arrêté */ } } fr = null; stopMic(); setNav(false);
   const from = cfg.frFrom || 78, to = cfg.frTo || 114, hide = cfg.frHide !== false;
   $app.innerHTML = `<div class="top"><button class="link" data-act="fr-quit">✕ ${tr('Quitter')}</button><span>${tr('Récitation libre')}</span></div>
-    <h1 style="margin-top:8px">🎙️ ${tr('Réciter à voix haute')}</h1>
+    <h1 style="margin-top:8px">${ic('mic')} ${tr('Réciter à voix haute')}</h1>
     <p class="sub">${tr("Sans exercice : choisis tes sourates et récite-les d'une traite. L'application suit ta récitation.")}</p>
     <div class="card"><h2>${tr('Sourates')}</h2>
       <div class="row"><div><label class="f" for="frfrom">${tr('De')}</label><select id="frfrom">${surahOpts(from)}</select></div>
@@ -43,7 +43,7 @@ function frSetup(){
     <div class="card"><p class="ref" style="margin:0 0 6px">${tr("Le micro reste ouvert jusqu'à ce que tu touches « J'ai fini de réciter » (30 minutes au plus).")}</p>
       <p class="ref" style="margin:0 0 6px">${tr("L'application suit les mots que tu dis. Elle ne vérifie ni les voyelles ni le tajwīd, et elle peut se tromper : un mot non reconnu n'est pas forcément une erreur.")}</p>
       ${SR ? '' : `<p class="ref" style="margin:0;color:var(--ko)">${tr("La reconnaissance vocale n'est pas disponible sur ce navigateur.")}</p>`}</div>
-    <button class="pri big" data-act="fr-start" ${SR ? '' : 'disabled'}>🎤 ${tr('Commencer à réciter')}</button>`;
+    <button class="pri big" data-act="fr-start" ${SR ? '' : 'disabled'}>${ic('mic')} ${tr('Commencer à réciter')}</button>`;
 }
 function frBuild(from, to, hide){
   const exp = [], meta = [], verses = [];
@@ -69,8 +69,8 @@ function frStart(res){ // res = {s, a, to} : reprise au verset a de la sourate s
     <p class="ref" style="margin:4px 0 0;font-weight:600" id="fr-heard-info" role="status"></p>
     <p class="ref" style="margin:8px 0 2px" id="fr-msg" role="status"></p>
     <div class="ar heard" id="heard" dir="rtl" lang="ar" aria-live="off"></div>
-    <div class="grades"><button data-act="fr-hint" ${fr.hide ? '' : 'hidden'}>💡 ${tr('Montrer le mot suivant')}</button><button data-act="fr-skip">⏭ ${tr('Passer ce verset')}</button></div>
-    <button class="rec-stop" data-act="fr-stop">⏹ ${esc(tr("J'ai fini de réciter"))}<small>${esc(tr('Touche ici pour terminer et voir le bilan'))}</small></button>`;
+    <div class="grades"><button data-act="fr-hint" ${fr.hide ? '' : 'hidden'}>${ic('bulb')} ${tr('Montrer le mot suivant')}</button><button data-act="fr-skip">${ic('skip')} ${tr('Passer ce verset')}</button></div>
+    <button class="rec-stop" data-act="fr-stop">${ic('stop')} ${esc(tr("J'ai fini de réciter"))}<small>${esc(tr('Touche ici pour terminer et voir le bilan'))}</small></button>`;
   frDraw(fr.meta[Math.min(fr.p, fr.exp.length - 1)].s); frPaint();
   fr.cap = setTimeout(() => frFinish('time'), FR_MAX * 1000);
   frListen();
@@ -172,17 +172,17 @@ function frShowSummary(){
       <p class="ref" style="margin:6px 0 0">${tr("L'application suit les mots entendus : elle peut se tromper. Vérifie avec ton mushaf ou ton enseignant.")}</p></div>
     ${done.length ? `<div class="card"><h2>${tr('Vérifier mes voyelles')}</h2>
       <p class="ref" style="margin:0 0 8px">${tr("La reconnaissance vocale n'entend pas les voyelles. Compare ta récitation avec ton mushaf : touche les mots dont tu n'es pas sûr des voyelles, ou que tu as mal prononcés.")}</p>
-      ${fr.vowSaved ? `<p class="ref" style="margin:0">✓ ${tr('Voyelles vérifiées')}</p>` : `<button data-act="fr-vow">✍️ ${tr('Vérifier mes voyelles')}</button>`}</div>` : ''}
+      ${fr.vowSaved ? `<p class="ref" style="margin:0">✓ ${tr('Voyelles vérifiées')}</p>` : `<button data-act="fr-vow">${ic('pen')} ${tr('Vérifier mes voyelles')}</button>`}</div>` : ''}
     ${flagged.length ? `<div class="card"><h2>${tr('À revoir')}</h2><p class="ref" style="margin:0 0 6px">${tr("Rouge : mot non entendu ou sauté ; touche-le pour voir ce que le téléphone a entendu. Ce n'est pas forcément une faute : l'application n'entend pas les voyelles.")}</p><p class="ref" style="margin:0 0 6px;font-weight:600" id="fr-heard-info" role="status"></p>${flagged.map(f => `<div class="sib"><p class="ref" style="margin:0">${esc(SN(f.v.s))} · ${f.v.a}</p><div class="ar" dir="rtl" lang="ar" style="font-size:calc(1.4rem*var(--arz,1));line-height:2;margin:4px 0 0">${wtxt(f)}</div></div>`).join('')}
       <button style="margin-top:8px" data-act="fr-err" id="fr-err">${tr('Ajouter ces versets à mes erreurs')}</button><p class="ref" id="fr-errmsg" role="status" style="margin:6px 0 0"></p></div>` : ''}
-    <button class="pri big" data-act="fr-again">🎤 ${tr('Réciter encore')}</button>
+    <button class="pri big" data-act="fr-again">${ic('mic')} ${tr('Réciter encore')}</button>
     <button class="big" style="margin-top:8px" data-act="fr-quit">${tr('Terminer')}</button>`;
   window.scrollTo(0, 0);
 }
 function frVowels(){ // autocontrôle : l'application n'entend pas les voyelles, c'est toi qui marques les mots douteux
   setNav(false);
   $app.innerHTML = `<div class="top"><button class="link" data-act="fr-vow-back">${tr('← Retour au bilan')}</button><span>${tr('Vérifier mes voyelles')}</span></div>
-    <h1 style="margin-top:8px">✍️ ${tr('Vérifier mes voyelles')}</h1>
+    <h1 style="margin-top:8px">${ic('pen')} ${tr('Vérifier mes voyelles')}</h1>
     <p class="sub">${tr("Touche les mots dont tu n'es pas sûr des voyelles, ou que tu as mal prononcés (touche encore pour annuler).")} ${tr('Les mots que tu marques passent en orange.')}</p>
     ${fr.done.map(v => { const vi = fr.verses.indexOf(v);
       return `<div class="card frvow"><p class="ref" style="margin:0">${esc(SN(v.s))} · ${v.a}</p><div class="ar" dir="rtl" lang="ar" style="font-size:${cfg.rdSize || 1.7}rem;line-height:2.2">${v.tok.map((t, j) => norm(t) ? `<span class="wd" data-act="fr-wd" data-v="${vi}:${j}">${esc(t)}</span>` : esc(t)).join(' ')}</div></div>`; }).join('')}
@@ -231,7 +231,7 @@ function lsRender(){
   <div class="card"><p class="ref">${rlabel(r)}</p>
     <div class="ar">${ls.hide ? '• • • • •' : esc(verse(r))}</div>
     <div class="grades"><button data-act="ls-prev">⏮</button><button data-act="ls-toggle">⏯</button><button data-act="ls-next">⏭</button>
-    <button data-act="ls-hide">${ls.hide ? '👁 ' + tr('Afficher') : '🙈 ' + tr('Masquer le texte')}</button></div>
+    <button data-act="ls-hide">${ls.hide ? ic('eye') + ' ' + tr('Afficher') : ic('eyeoff') + ' ' + tr('Masquer le texte')}</button></div>
     <p class="ref" id="audio-msg">${tr("Récitateur : {r}. Masque le texte pour t'entraîner à suivre de mémoire.", {r: (RECITERS.find(x => x[0] === cfg.reciter) || RECITERS[0])[1]})}</p></div>`;
 }
 

@@ -6,10 +6,10 @@ const APP_BUILD = +((/v(\d+)/.exec(APP_VERSION) || [])[1]) || 0;   // numéro de
 let newVer = null, verAt = 0;
 function updBannerHtml(){
   if (!newVer || newVer.v <= APP_BUILD) return '';
-  return `<div class="card upd" role="status"><h2>🆕 ${tr('Nouvelle version disponible')}</h2>
+  return `<div class="card upd note" role="status"><h2>${ic('refresh')} ${tr('Nouvelle version disponible')}</h2>
     <p style="margin:0 0 8px">${tr("Une nouvelle version de Tathbīt est disponible ({v}). Pour la récupérer, touche « Chercher les mises à jour ».", {v: esc(newVer.label)})}</p>
     ${newVer.note ? `<p class="ref" style="margin:0 0 8px">${esc(newVer.note)}</p>` : ''}
-    <button class="pri big" data-act="upd">🔄 ${tr('Chercher les mises à jour')}</button></div>`;
+    <button class="pri big" data-act="upd">${ic('refresh')} ${tr('Chercher les mises à jour')}</button></div>`;
 }
 /* ---------- nouveautés d'une version (news.json, mis à jour à chaque publication) ---------- */
 let news = null, newsAt = 0;
@@ -25,13 +25,13 @@ async function loadNews(force){
 }
 const newsText = o => (o && (o[LANG] || o.fr)) || '';
 const newsGo = g => { const f = NEWS_GO[g]; if (f) f(); else go('home'); };
-function newsSummary(v){ if (!news || +news.v !== +v) return ''; return news.items.slice(0, 3).map(i => (i.icon || '') + ' ' + esc(newsText(i.title))).join(' · ') + (news.items.length > 3 ? ' …' : ''); }
+function newsSummary(v){ if (!news || +news.v !== +v) return ''; return news.items.slice(0, 3).map(i => esc(newsText(i.title))).join(' · ') + (news.items.length > 3 ? ' …' : ''); }
 function newsCardHtml(){ // carte d'accueil : une fois la version installée, résumé des nouveautés (jusqu'à ce qu'on la ferme)
   if (!news || +news.v > APP_BUILD || !news.items.length) return '';
   const seen = store.get('tathbit.newsSeen', null);
   if (seen === null && !Object.keys(stats).length && !Object.keys(days).length){ store.set('tathbit.newsSeen', +news.v); return ''; }   // premier lancement : rien à « découvrir »
   if (seen !== null && +seen >= +news.v) return '';
-  return `<div class="card upd" role="status"><h2>✨ ${tr('Nouveautés de la version v{v}', {v: news.v})}</h2><p style="margin:0 0 8px">${newsSummary(news.v)}</p>
+  return `<div class="card upd note" role="status"><h2>${ic('sparkles')} ${tr('Nouveautés de la version v{v}', {v: news.v})}</h2><p style="margin:0 0 8px">${newsSummary(news.v)}</p>
     <div class="grades"><button class="pri" data-act="news-open">${tr('Voir les nouveautés')}</button><button data-act="news-dismiss">${tr('Plus tard')}</button></div></div>`;
 }
 function newsSlot(){ const el = $('news-slot'); if (el) el.innerHTML = newsCardHtml(); }
@@ -56,7 +56,7 @@ function newsHistHtml(H){
 function renderNews(){
   setNav(false); screen = 'news'; store.set('tathbit.newsSeen', +news.v);
   $app.innerHTML = `<div class="top"><button class="link" data-act="news-back">${tr('← Retour')}</button><span>${tr('Nouveautés')}</span></div>
-    <h1 style="margin-top:8px">✨ ${tr('Nouveautés de la version v{v}', {v: news.v})}</h1>
+    <h1 style="margin-top:8px">${ic('sparkles')} ${tr('Nouveautés de la version v{v}', {v: news.v})}</h1>
     <p class="sub">${tr("Touche « Essayer » pour aller directement à la fonction.")} ${AI()}</p>
     ${news.items.map(newsItemHtml).join('')}
     <div id="news-hist">${newsHist ? newsHistHtml(newsHist) : `<p class="ref" role="status">${tr('Chargement…')}</p>`}</div>`;
@@ -205,7 +205,7 @@ function renderWelcome(){
       <p style="margin:0 0 8px">${tr("Lance une première série de questions sur ce que tu as choisi : suite du verset, mots manquants, choix de la suite…")}</p>
       <p class="ref" style="margin:0">${tr("Chaque jour, « Ma séance du jour » à l'accueil te propose ce qui est à réviser, en une touche.")}</p></div>
       <button class="pri big" data-act="wz-first">${tr('Commencer ma première série')}</button>
-      ${SR && wz.kind === 'quran' ? `<button class="big" style="margin-top:8px" data-act="wz-recite">🎙️ ${tr('Plutôt réciter à voix haute')}</button>` : ''}
+      ${SR && wz.kind === 'quran' ? `<button class="big" style="margin-top:8px" data-act="wz-recite">${ic('mic')} ${tr('Plutôt réciter à voix haute')}</button>` : ''}
       <div class="row" style="margin-top:8px"><button data-act="wz-back">${tr('← Retour')}</button><button data-act="wz-skip">${tr("Aller à l'accueil")}</button></div>`;
   $app.innerHTML = `<div class="top"><span>${tr('Bienvenue')} · ${i + 1} / 3</span>${i < 2 ? `<button class="link" data-act="wz-skip">${tr('Passer')}</button>` : '<span></span>'}</div>
     <div class="hero" style="margin-top:8px"><div class="logo"><span class="lg">تثبيت</span></div><div><h1>${tr('Bienvenue sur Tathbīt')}</h1><div class="wdots" role="img" aria-label="${tr('Étape {i} sur {n}', {i: i + 1, n: 3})}">${dots}</div></div></div>
@@ -256,6 +256,7 @@ function applyRemote(d){
     if (d.cfg){ const keep = cfg.tab; Object.assign(cfg, d.cfg); cfg.tab = keep; }
     store.set('tathbit.stats', stats); store.set('tathbit.sched', sched); store.set('tathbit.days', days);
     plan = d.plan || null; store.set('tathbit.plan', plan); tjs = d.tj || {}; store.set('tathbit.tj', tjs); hfs = d.hf || {}; store.set('tathbit.hf', hfs);
+    dropBadRefs(); store.set('tathbit.stats', stats); store.set('tathbit.sched', sched);
     store.set('tathbit.errors', errors); store.set('tathbit.custom', custom); saveCfg();
   } finally { syncPause = false; }
 }
@@ -302,7 +303,7 @@ async function cloudSyncOnLogin(){
 function accountCard(){
   if (!cloudOn()) return `<div class="card"><h2>${tr('Compte')}</h2><p class="ref" style="margin:0 0 8px">${tr('Les comptes ne sont pas encore activés sur ce site.')}</p><button data-act="acc-open">${tr('En savoir plus')}</button></div>`;
   if (me) return `<div class="card"><h2>${tr('Compte')}</h2><p style="margin:0 0 8px">${tr('Connecté :')} <b>${esc(me.user.email)}</b> ${isAdmin() ? `<span class="ref">· ${tr('administrateur')}</span>` : ''}</p>
-    <div class="row"><button data-act="acc-open">${tr('Mon compte')}</button>${isAdmin() ? `<button class="pri" data-act="adm-open">🛡 ${tr('Espace admin')}</button>` : ''}</div></div>`;
+    <div class="row"><button data-act="acc-open">${tr('Mon compte')}</button>${isAdmin() ? `<button class="pri" data-act="adm-open">${ic('shield')} ${tr('Espace admin')}</button>` : ''}</div></div>`;
   return `<div class="card"><h2>${tr('Compte')}</h2><p class="ref" style="margin:0 0 8px">${tr('Sauvegarde ta progression et retrouve-la sur tous tes appareils.')}</p>
     <div class="row"><button class="pri" data-act="acc-open" data-v="signup">${tr('Créer un compte')}</button><button data-act="acc-open" data-v="login">${tr('Se connecter')}</button></div></div>`;
 }
@@ -324,7 +325,7 @@ function renderAccount(){
       ${isStudent() && (tch.links || []).length ? `<p class="ref" style="margin:0 0 4px">${tr('Mes enseignants :')} ${(tch.links || []).map(x => esc(x.email)).join(', ')}</p>` : ''}
       ${isTeacher() ? `<p class="ref" style="margin:0 0 4px">${tr('Tu peux suivre des élèves (onglet Enseignant).')}</p>` : isAdmin() ? `<p class="ref" style="margin:0 0 4px">${tr("Tu administres le site (ni élève, ni enseignant).")}</p>` : !isStudent() ? `<p class="ref" style="margin:0 0 4px">${tr("Tu n'es ni élève ni enseignant : invite un enseignant ou demande à en devenir un plus bas.")}</p>` : ''}
       <p class="ref" style="margin:0 0 10px">${acc.last ? tr('Dernière synchronisation :') + ' ' + fdate(Date.parse(acc.last)) : tr('Synchronisation automatique active')}${acc.syncErr ? ' · <span style="color:var(--ko)">' + esc(acc.syncErr) + '</span>' : ''}</p>
-      <div class="row"><button class="pri" data-act="acc-sync">🔄 ${tr('Synchroniser maintenant')}</button>${isAdmin() ? `<button data-act="adm-open">🛡 ${tr('Espace admin')}</button>` : ''}</div></div>
+      <div class="row"><button class="pri" data-act="acc-sync">${ic('refresh')} ${tr('Synchroniser maintenant')}</button>${isAdmin() ? `<button data-act="adm-open">${ic('shield')} ${tr('Espace admin')}</button>` : ''}</div></div>
       ${flashHtml()}
       ${tchStudentCard()}
       ${roleCard()}
@@ -362,7 +363,7 @@ function renderAccount(){
       <p class="ref" style="margin:0 0 6px">${tr("Le message de confirmation contient aussi un code. S'il est classé dans les indésirables, ses liens ne sont pas cliquables : ouvre-le, touche « Ce n'est pas du spam » (les liens redeviennent cliquables), ou tape le code ici.")}</p>
       ${f('ac-code', tr('Code reçu par e-mail'), 'text', 'one-time-code', 'inputmode="numeric" maxlength="12" data-enter="ac-codego"')}
       <button id="ac-codego" class="pri" style="margin-top:8px" data-act="acc-code">${tr('Valider le code')}</button></div>
-    <p style="margin:0 0 10px;text-align:center"><button class="link" data-act="acc-resend">✉ ${tr("Renvoyer l'e-mail de confirmation")}</button></p>` : ''}${body}`;
+    <p style="margin:0 0 10px;text-align:center"><button class="link" data-act="acc-resend">${ic('mail')} ${tr("Renvoyer l'e-mail de confirmation")}</button></p>` : ''}${body}`;
   clearTimeout(msgTimer);
   if (acc.msg && acc.auto) msgTimer = setTimeout(clearMsg, 3500); // « Déconnecté. », « Synchronisé. »… disparaissent seuls
 }

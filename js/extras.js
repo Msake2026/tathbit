@@ -18,8 +18,8 @@ function audioCard(){
     <div class="row" style="align-items:end"><div><label class="f" for="aud-cap">${tr('Taille maximale')}</label><select id="aud-cap">${[50, 100, 200, 500].map(n => `<option value="${n}" ${n === cfg.audCap ? 'selected' : ''}>${n} Mo</option>`).join('')}</select></div>
       <button data-act="aud-scope">${tr('Utiliser ma portée')}</button></div>
     <div class="row" style="margin-top:10px"><button data-act="aud-est" ${audioUI.busy ? 'disabled' : ''}>${tr('Calculer la taille')}</button>
-      <button class="pri" data-act="aud-dl" ${!P || !P.take.length || audioUI.busy ? 'disabled' : ''}>⬇ ${P && P.take.length ? tr('Télécharger ({n})', {n: auMo(P.used)}) : tr('Télécharger')}</button></div>
-    ${plan ? `<div class="row" style="margin-top:10px"><button data-act="aud-plan" ${audioUI.busy ? 'disabled' : ''}>📅 ${tr("Télécharger l'audio du plan du jour")}</button></div>
+      <button class="pri" data-act="aud-dl" ${!P || !P.take.length || audioUI.busy ? 'disabled' : ''}>${ic('download')} ${P && P.take.length ? tr('Télécharger ({n})', {n: auMo(P.used)}) : tr('Télécharger')}</button></div>
+    ${plan ? `<div class="row" style="margin-top:10px"><button data-act="aud-plan" ${audioUI.busy ? 'disabled' : ''}>${ic('calendar')} ${tr("Télécharger l'audio du plan du jour")}</button></div>
       <label class="consent"><input type="checkbox" id="aud-auto" ${cfg.audAuto ? 'checked' : ''} ${navigator.connection && navigator.connection.type !== undefined ? '' : 'disabled'}><span>${tr('Télécharger automatiquement le plan du jour quand je suis en Wi-Fi')}</span></label>
       ${navigator.connection && navigator.connection.type !== undefined ? '' : `<p class="ref" style="margin:0">${tr("Ce navigateur ne permet pas de savoir si tu es en Wi-Fi (c'est le cas de l'iPhone) : utilise le bouton ci-dessus quand tu es en Wi-Fi.")}</p>`}` : ''}
     <div class="goal" style="margin-top:8px"><i id="aud-bar" style="width:0%"></i></div>
@@ -111,7 +111,7 @@ const remOnMsg = r => r.two ? tr('Rappels activés à {t} et {t2}.', {t: r.time,
 function remOfferHtml(){ // 1re ouverture de l'application installée : proposer d'activer les rappels (une seule fois, geste de l'utilisateur requis pour la permission)
   if (!IS_STANDALONE() || !cloudOn() || !me || !CLOUD.vapidPublicKey || !PUSH_OK() || remState().on || store.get('tathbit.remAsked', 0) || Notification.permission === 'denied') return '';
   const r = remState();
-  return `<div class="card" id="rem-offer"><h2>🔔 ${tr('Activer les rappels de révision ?')}</h2><p class="sub" style="margin:0 0 8px">${tr("Une notification par jour à {t}, seulement si tu n'as pas encore révisé. Tu pourras changer l'heure dans Réglages.", {t: esc(r.time)})}</p>
+  return `<div class="card" id="rem-offer"><h2>${ic('bell')} ${tr('Activer les rappels de révision ?')}</h2><p class="sub" style="margin:0 0 8px">${tr("Une notification par jour à {t}, seulement si tu n'as pas encore révisé. Tu pourras changer l'heure dans Réglages.", {t: esc(r.time)})}</p>
     <div class="row"><button class="pri" data-act="rem-offer-on">${tr('Activer à {t}', {t: esc(r.time)})}</button><button data-act="rem-offer-later">${tr('Pas maintenant')}</button></div></div>`;
 }
 async function remOfferAct(on){
@@ -124,7 +124,7 @@ function remindCard(){
   const r = remState(), ok = PUSH_OK(), needInstall = IOS && !IOS_APP;
   return `<div class="card"><h2>${tr('Rappels')}</h2>
     <p class="ref" style="margin:0 0 8px">${tr("Reçois une notification chaque jour à l'heure choisie, seulement si tu n'as pas encore révisé ce jour-là.")}</p>
-    ${needInstall ? `<p class="ref" style="margin:0 0 8px">${tr("Sur iPhone, les rappels ne marchent que si l'application est installée sur l'écran d'accueil.")}</p><button class="pri" data-act="tile-install">📲 ${tr("Voir comment installer l'application")}</button>`   // avant « !ok » : Safari (hors application installée) n'expose pas les notifications
+    ${needInstall ? `<p class="ref" style="margin:0 0 8px">${tr("Sur iPhone, les rappels ne marchent que si l'application est installée sur l'écran d'accueil.")}</p><button class="pri" data-act="tile-install">${ic('phone')} ${tr("Voir comment installer l'application")}</button>`   // avant « !ok » : Safari (hors application installée) n'expose pas les notifications
     : !ok ? `<p class="ref" style="margin:0">${tr('Ton navigateur ne gère pas les notifications.')}</p>`
     : `<label class="f" for="rem-time">${tr('Heure du rappel')}</label><input type="time" id="rem-time" value="${esc(r.time)}">
        <label class="f" style="display:flex;gap:8px;align-items:center;margin-top:12px"><input type="checkbox" id="rem-two"${r.two ? ' checked' : ''}>${tr("Un 2e rappel plus tard, si je n'ai toujours pas révisé")}</label>
@@ -219,12 +219,12 @@ function renderContact(){
       ${a ? topics.map(link).join('') : `<p class="ref">${tr('(adresse à compléter)')}</p>`}</div>
     <div class="card"><h2>${tr('Adresse e-mail')}</h2>
       <p style="margin:0 0 8px"><a href="mailto:${esc(a)}">${esc(a)}</a></p>
-      <button data-act="contact-copy">📋 ${tr("Copier l'adresse")}</button> <span class="ref" id="contact-msg" role="status"></span>
+      <button data-act="contact-copy">${ic('clipboard')} ${tr("Copier l'adresse")}</button> <span class="ref" id="contact-msg" role="status"></span>
       <p class="ref" style="margin:10px 0 0">${tr("Si ton application de messagerie ne s'ouvre pas, copie l'adresse et écris depuis ta boîte mail.")}</p></div>
     <div class="card"><h2>${tr('Diagnostic')}</h2>
       <p class="ref" style="margin:0 0 8px">${tr("Pour un problème, copie ces informations et colle-les dans ton message : elles nous évitent de te poser dix questions. Elles ne contiennent ni ton e-mail, ni ta progression, ni ton mot de passe.")}</p>
       <pre class="diag" tabindex="0" aria-label="${tr('Diagnostic')}">${esc(diagText())}</pre>
-      <button data-act="diag-copy">📋 ${tr('Copier le diagnostic')}</button> <span class="ref" id="diag-msg" role="status"></span></div>
+      <button data-act="diag-copy">${ic('clipboard')} ${tr('Copier le diagnostic')}</button> <span class="ref" id="diag-msg" role="status"></span></div>
     <div class="card"><h2>${tr('À savoir')}</h2>
       <p class="ref" style="margin:0 0 6px">${tr("Tathbīt est un projet personnel et gratuit : les réponses peuvent prendre du temps.")}</p>
       <p class="ref" style="margin:0 0 6px">${tr("Pour une erreur dans un texte, dis dans quelle édition tu l'as vérifiée : une correction ne se fait qu'à partir d'une source fiable.")}</p>
@@ -582,7 +582,7 @@ function tchStudentCard(){
   const I = tch.invites, G = tch.log, fd = t => new Date(t).toLocaleDateString(LOCALE(), {day: 'numeric', month: 'short', year: 'numeric'});
   return `<div class="card"><h2>${tr('Mon enseignant')}</h2>
     <p class="ref" style="margin:0 0 8px">${tr("Tu peux inviter un enseignant à suivre ta progression. Il verra ton e-mail, ton total de réponses, tes statistiques par sourate, tes jours d'activité et tes erreurs (sans les réponses que tu as tapées). Il ne voit ni tes réglages, ni les textes que tu ajoutes. Tu génères un code, tu le lui donnes ; seul ton enseignant peut mettre fin au suivi (tu peux aussi supprimer ton compte à tout moment).")}</p>
-    <button data-act="tch-invite" ${tch.busy ? 'disabled' : ''}>✉ ${tr('Inviter un enseignant')}</button>
+    <button data-act="tch-invite" ${tch.busy ? 'disabled' : ''}>${ic('mail')} ${tr('Inviter un enseignant')}</button>
     ${tch.code ? `<div class="fb ok" style="margin-top:8px"><b style="font-size:1.4rem;letter-spacing:.15em" id="tch-code-new">${esc(tch.code.code)}</b><br><span class="ref">${tr('Valable jusqu\'au {d}. Donne ce code à ton enseignant : il ne sert qu\'une fois.', {d: fd(tch.code.expires_at)})}</span>
       <br><button class="link" data-act="tch-copy">${tr('Copier le code')}</button></div>` : ''}
     ${I && I.length ? `<h3 style="margin:12px 0 4px;font-size:1rem">${tr('Invitations en attente')}</h3>${I.map(x => `<div class="weak"><span><b>${esc(x.code)}</b> · ${tr("jusqu'au {d}", {d: fd(x.expires_at)})}</span><button class="link" data-act="tch-cancel" data-v="${esc(x.code)}">${tr('Annuler')}</button></div>`).join('')}` : ''}
@@ -688,7 +688,7 @@ const tchSorted = () => {
 function tabTeacher(){
   const S = tch.students, fdd = t => new Date(t).toLocaleDateString(LOCALE(), {day: 'numeric', month: 'short', year: 'numeric'}), idle = u => !u.last_seen ? Infinity : Math.floor((Date.now() - Date.parse(u.last_seen)) / 864e5);
   const row = u => { const open = tch.detail && tch.detail.id === u.id, pct = Number(u.answers) ? Math.round(100 * u.ok / u.answers) : null, d = idle(u);
-    return `<div class="sib"><p style="margin:0"><b>${esc(u.email)}</b>${(tch.unread || {})[u.id] ? ` <span class="tbadge">✉ ${tch.unread[u.id]}</span>` : ''}${d > 7 ? ` <span class="warn">⚠ ${d === Infinity ? tr('jamais connecté') : tr('inactif depuis {n} j', {n: d})}</span>` : ''}</p>
+    return `<div class="sib"><p style="margin:0"><b>${esc(u.email)}</b>${(tch.unread || {})[u.id] ? ` <span class="tbadge">${ic('mail')} ${tch.unread[u.id]}</span>` : ''}${d > 7 ? ` <span class="warn">${ic('alert')} ${d === Infinity ? tr('jamais connecté') : tr('inactif depuis {n} j', {n: d})}</span>` : ''}</p>
       <p class="ref" style="margin:0">${tr('depuis le {d}', {d: fdd(u.since)})} · ${tr('actif {b}', {b: when(u.last_seen)})} · ${trp(Math.round(u.answers), '{n} réponse|{n} réponses')} · ${trp(u.errors, '{n} erreur|{n} erreurs')}</p>
       ${pct === null ? '' : `<div class="bar" role="img" aria-label="${tr('réussite {p} %', {p: pct})}"><i style="width:${pct}%"></i></div><p class="ref" style="margin:0">${tr('réussite {p} %', {p: pct})}</p>`}
       <div class="grades"><button data-act="tch-detail" data-v="${u.id}">${open ? tr('Masquer') : tr('Progression et messages')}</button><button data-act="tch-del" data-v="${u.id}" style="color:var(--ko)">${tr('Retirer')}</button></div>
@@ -718,7 +718,7 @@ function renderAdmin(){
     else if (d){ const x = summarize(d); det = `<div class="sib"><p class="ref" style="margin:0">${trp(Math.round(x.tot), '{n} réponse|{n} réponses')} · ${x.tot ? Math.round(100 * x.ok / x.tot) : 0} % · ${x.seen} ${tr('versets vus')} · ${tr('{n} réponses sur 7 jours', {n: Math.round(x.wk)})}</p>
       ${x.weak.length ? `<p class="ref" style="margin:4px 0 0"><b>${tr('À retravailler :')}</b> ${x.weak.map(([s, r]) => `${esc(book(/^\d+$/.test(s) ? +s : s) ? sname(/^\d+$/.test(s) ? +s : s) : s)} (${Math.round(r * 100)} %)`).join(' · ')}</p>` : ''}
       ${x.last.length ? `<p class="ref" style="margin:4px 0 0"><b>${tr('Dernières erreurs :')}</b></p>${x.last.map(e => { const r = pk(e.k); return book(r.s) ? `<p class="ref" style="margin:0">${fdate(e.t)} · ${rlabel(r)}</p>` : ''; }).join('')}` : ''}</div>`; }
-    return `<div class="sib"><p style="margin:0"><b>${esc(u.email)}</b> ${u.role === 'admin' ? `<span class="ref">· 🛡 ${tr('admin')}</span>` : u.role === 'teacher' ? `<span class="ref">· 🎓 ${tr('enseignant')}</span>` : ''}${u.blocked ? `<span class="ref" style="color:var(--ko)"> · ${tr('suspendu')}</span>` : ''}${self ? `<span class="ref"> · ${tr('toi')}</span>` : ''}</p>
+    return `<div class="sib"><p style="margin:0"><b>${esc(u.email)}</b> ${u.role === 'admin' ? `<span class="ref">· ${ic('shield')} ${tr('admin')}</span>` : u.role === 'teacher' ? `<span class="ref">· 🎓 ${tr('enseignant')}</span>` : ''}${u.blocked ? `<span class="ref" style="color:var(--ko)"> · ${tr('suspendu')}</span>` : ''}${self ? `<span class="ref"> · ${tr('toi')}</span>` : ''}</p>
       <p class="ref" style="margin:0">${tr('Inscrit le {a} · actif {b} · {c} · réussite {d} · {e}', {a: when(u.created_at), b: when(u.last_seen), c: trp(Math.round(u.answers), '{n} réponse|{n} réponses'), d: rate, e: trp(u.errors, '{n} erreur|{n} erreurs')})}</p>
       <div class="grades"><button data-act="adm-detail" data-v="${u.id}">${adm.detail && adm.detail.id === u.id ? tr('Masquer') : tr('Progression')}</button>
         <button data-act="adm-role" data-v="${u.id}" ${self ? 'disabled' : ''}>${u.role === 'admin' ? tr('Retirer admin') : tr('Nommer admin')}</button>
@@ -738,7 +738,7 @@ function renderAdmin(){
       <button class="pri" style="margin-top:8px" data-act="adm-announce">${tr('Annoncer')}</button>
       ${adm.anns.length ? `<p class="ref" style="margin:10px 0 2px"><b>${tr('Annonces déjà faites :')}</b></p>${adm.anns.map(a => `<p class="ref" style="margin:0">${esc(a.label)} · ${a.fanout_at ? tr('cloche et notifications envoyées') : tr('en attente du prochain passage (5 min)')} · ${a.mail_done_at ? tr('e-mails terminés') : trp(Number(a.mails), '{n} e-mail envoyé|{n} e-mails envoyés')}</p>`).join('')}` : ''}</div>` : ''}
     ${(adm.reqs || []).length ? `<div class="card"><h2>🎓 ${tr("Demandes d'enseignant")}</h2>${adm.reqs.map(r => `<div class="weak"><span>${esc(r.email)} · ${when(r.created_at)}</span><span><button class="link" data-act="adm-req-ok" data-v="${r.user_id}">${tr('Accepter')}</button> <button class="link" style="color:var(--ko)" data-act="adm-req-no" data-v="${r.user_id}">${tr('Refuser')}</button></span></div>`).join('')}</div>` : ''}
-    <div class="row" style="margin-bottom:10px"><input type="text" id="adm-q" placeholder="${tr('Rechercher un e-mail')}" value="${esc(adm.q)}" autocomplete="off"><button data-act="adm-refresh" style="flex:0 0 auto">🔄 ${tr('Actualiser')}</button></div>
+    <div class="row" style="margin-bottom:10px"><input type="text" id="adm-q" placeholder="${tr('Rechercher un e-mail')}" value="${esc(adm.q)}" autocomplete="off"><button data-act="adm-refresh" style="flex:0 0 auto">${ic('refresh')} ${tr('Actualiser')}</button></div>
     <div class="card">${adm.users ? (list.map(row).join('') || `<p class="sub" style="margin:0">${tr('Aucun compte.')}</p>`) : ''}</div>`;
   const q = $('adm-q'); if (q) q.oninput = () => { adm.q = q.value; const pos = q.selectionStart; renderAdmin(); const n = $('adm-q'); n.focus(); n.setSelectionRange(pos, pos); };
 }

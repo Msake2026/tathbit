@@ -21,6 +21,7 @@ const onClick = e => {
     case 'show': cfg.show[v] = !cfg.show[v]; saveCfg(); home(); break;
     case 'input': cfg.input = v; saveCfg(); home(); break;
     case 'maptab': cfg.map = v; saveCfg(); home(); break;
+    case 'mapseen': cfg.mapSeen = !cfg.mapSeen; saveCfg(); home(); break;
     case 'cell': cfg.scope = {type: 'surah', from: +v, to: +v}; go('train'); break;
     case 'pcell': cfg.scope = {type: 'page', from: +v, to: +v}; go('train'); break;
     case 'start': {

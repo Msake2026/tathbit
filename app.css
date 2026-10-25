@@ -63,11 +63,12 @@ button:hover{border-color:var(--accent)}
 button:disabled{opacity:.5;cursor:default}
 button.pri{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:600}
 button.big{width:100%;padding:14px;font-size:1.05rem}
-.modes{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.mode{text-align:start;padding:12px}
-.mode b{display:block}
+.modes{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.mode{text-align:start;padding:10px 12px;min-height:48px;display:flex;align-items:center}
+.mode b{display:block;line-height:1.25}
 .mode small{color:var(--muted)}
 .mode.sel{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent) inset}
+.seg.tabs button{min-width:0}
 .seg{display:flex;gap:6px;flex-wrap:wrap}.seg button{flex:1;min-width:110px}.seg button.sel{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
 .ar{font-family:"Amiri Quran","Traditional Arabic",serif;direction:rtl;text-align:right;font-size:calc(1.9rem*var(--arz,1));line-height:2.3;padding:6px 2px}
 .ref{color:var(--muted);font-size:.85rem}
@@ -110,7 +111,7 @@ details.card>summary{cursor:pointer;list-style:none}details.card>summary::-webki
 .link{background:none;border:none;color:var(--muted);text-decoration:underline;padding:4px}
 .kbd{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
 .kbd button{min-width:44px;font-size:1.4rem;padding:2px 10px;font-family:"Amiri Quran",serif}
-.chips{display:flex;gap:6px;flex-wrap:wrap}.chips button.sel{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.chips{display:flex;gap:6px;flex-wrap:wrap}.chips button{padding:8px 14px;min-height:44px;font-size:.92rem}.chips button.sel{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
 .sib{border-top:1px solid var(--line);margin-top:8px;padding-top:6px}
 .sib .ar{font-size:calc(1.3rem*var(--arz,1));line-height:2}
 /* carte de progression */
@@ -139,9 +140,9 @@ details textarea{min-height:120px;margin-top:6px}
 html{scroll-padding-bottom:170px}   /* un champ qui prend le focus ne reste pas caché derrière la barre « Commencer » ni le menu (WCAG 2.4.11) */
 body.has-nav main{padding-bottom:96px}
 .cta{position:sticky;bottom:calc(66px + env(safe-area-inset-bottom));padding:10px 0 4px;background:linear-gradient(to top,var(--bg) 70%,transparent);z-index:5}
-.grid.named{display:grid;grid-template-columns:repeat(auto-fill,minmax(98px,1fr));gap:6px}
-.cell.named{width:auto;height:auto;padding:5px 6px;display:flex;flex-direction:column;align-items:flex-start;text-align:start;line-height:1.2}
-.cell.named b{font-size:.85rem}.cell.named small{font-size:.68rem;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;opacity:.85}
+.grid.named{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px}@media(min-width:520px){.grid.named{grid-template-columns:repeat(6,minmax(0,1fr))}}@media(min-width:860px){.grid.named{grid-template-columns:repeat(8,minmax(0,1fr))}}
+.cell.named{width:auto;height:auto;min-height:44px;padding:4px 6px;display:flex;flex-direction:column;align-items:flex-start;text-align:start;line-height:1.2}
+.cell.named b{font-size:.85rem}.cell.named small{font-size:.66rem;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;opacity:.85}
 /* lecteur */
 .rd{font-family:"Amiri Quran","Traditional Arabic",serif;direction:rtl;text-align:justify;line-height:2.5;padding:4px 2px}
 .rv{border-radius:8px;transition:background .2s}
@@ -183,6 +184,12 @@ body.has-nav main{padding-bottom:96px}
 .sumline{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 12px}
 .sumline span{background:var(--bg);border:1px solid var(--line);border-radius:999px;padding:3px 10px;font-size:.82rem}
 .list-btn{display:flex;justify-content:space-between;align-items:center;width:100%;text-align:start;margin-top:8px}
+.note{padding:12px 14px}.note h2{font-size:1.1rem;margin:0 0 6px}.note h2::after{display:none}.note p{font-size:.92rem}.note button{min-height:44px}.note .grades{gap:8px;margin-top:8px}.note .grades button{flex:0 1 auto;min-width:0;padding:8px 16px}
+.tstat{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;color:var(--muted);font-size:.95rem;margin:0 0 4px}.tstat span{display:inline-flex;align-items:center;gap:6px}.tstat .ic{color:var(--gold)}
+.hero{margin:0 0 12px}.hero h1{font-size:1.9rem}
+.sethub .si{color:var(--accent)}
+.ic{width:1.25em;height:1.25em;flex:none;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;vertical-align:-.22em}
+button .ic{margin-inline-end:.1em}
 /* ===== Style « mushaf » : parchemin, vert profond, filets dorés ===== */
 body{background-color:var(--bg);background-image:radial-gradient(120% 50% at 50% -8%,var(--glow),transparent 65%),var(--pattern);background-attachment:fixed}
 h1,h2{font-family:var(--serif);letter-spacing:.2px;color:var(--ink)}
@@ -218,6 +225,7 @@ button.big{border-radius:14px}
 .big-score{font-family:var(--serif);font-size:4rem;color:var(--accent);font-weight:700;text-shadow:0 2px 0 color-mix(in srgb,var(--gold) 30%,transparent)}
 .week i{background:linear-gradient(180deg,var(--gold),var(--accent))}
 .cell{border-radius:8px}
+.cell.lw{box-shadow:inset 0 -4px 0 var(--ko)}   /* fragile : au moins 3 réponses et moins de 60 % de réussite (trait rouge, en plus de la couleur de maîtrise) */
 .vend{color:var(--gold)}sup.vn{color:var(--gold)}
 /* menu du bas */
 #nav{background:color-mix(in srgb,var(--card) 90%,transparent);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-top:1px solid var(--gold-soft);box-shadow:0 -10px 24px -18px rgba(70,45,10,.5)}
