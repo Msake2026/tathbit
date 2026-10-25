@@ -293,9 +293,9 @@ function admWatch(users, now){
 function watchHtml(){
   if (!adm.users) return '';
   const w = admWatch(adm.users, Date.now()), mark = ['✓', '⚠', '⛔'][w.level], col = ['', 'var(--gold)', 'var(--ko)'][w.level];
-  return `<div class="card"><h2>${tr('Surveillance des e-mails')}</h2>
+  return `<div class="card note"><h2>${tr('Surveillance des e-mails')}</h2>
     <p class="sub" style="margin:0 0 6px;${col ? 'color:' + col : ''}"><b>${mark}</b> ${trp(w.h1, '{n} inscription cette heure|{n} inscriptions cette heure')} · ${trp(w.h24, '{n} inscription sur 24 h|{n} inscriptions sur 24 h')}</p>
-    <p class="ref" style="margin:0">${tr("Repères : limite d'envoi de Supabase (30 e-mails par heure par défaut) et plafond d'un compte Gmail (environ 500 e-mails par jour). Seules les inscriptions sont comptées : les mots de passe oubliés et les renvois s'y ajoutent.")}</p>
+    <details><summary class="ref">${tr('Repères')}</summary><p class="ref" style="margin:6px 0 0">${tr("Repères : limite d'envoi de Supabase (30 e-mails par heure par défaut) et plafond d'un compte Gmail (environ 500 e-mails par jour). Seules les inscriptions sont comptées : les mots de passe oubliés et les renvois s'y ajoutent.")}</p></details>
     ${w.level ? `<p class="fb ${w.level > 1 ? 'ko' : 'mid'}" style="margin:8px 0 0">${tr("Tu approches des limites d'envoi : prévois un nom de domaine avec Resend (supabase/README.md) avant d'inviter beaucoup de monde.")}</p>` : ''}
     ${w.domain ? `<p class="ref" style="margin:8px 0 0">${tr("Tu as {n} comptes : c'est le moment de prévoir un nom de domaine avec Resend pour que les e-mails restent fiables.", {n: w.total})}</p>` : ''}</div>`;
 }
@@ -560,7 +560,7 @@ function tabStudent(){
   const sum = tch.loaded ? [trp(nT, '{n} enseignant|{n} enseignants'), trp(nG, '{n} objectif en cours|{n} objectifs en cours'), unseen ? `<b>${trp(unseen, '{n} message non lu|{n} messages non lus')}</b>` : ''].filter(Boolean).join(' · ') : '';
   return `<h1 style="margin-top:8px">${tr('Espace élève')}</h1><p class="sub">${sum || tr('Ton enseignant, tes objectifs et tes messages.')}</p>
     ${tch.msg && cfg.tab === 'student' ? `<p class="fb tch-flash ${tch.ok ? 'ok' : 'ko'}">${esc(tch.msg)}</p>` : ''}
-    ${tch.loaded ? chatCard() + goalsCard() + teachersCard() : `<p class="sub">${tr('Chargement…')}</p>`}`;
+    ${tch.loaded ? goalsCard() + chatCard() + teachersCard() : `<p class="sub">${tr('Chargement…')}</p>`}`;
 }
 const flashHtml = () => tch.msg ? `<p class="fb tch-flash ${tch.ok ? 'ok' : 'ko'}">${esc(tch.msg)}</p>` : '';
 function roleCard(){   // demande du rôle enseignant : une affaire de compte (pas pour l'administrateur ni pour un enseignant)
@@ -571,7 +571,7 @@ function roleCard(){   // demande du rôle enseignant : une affaire de compte (p
 }
 function wkCard(){
   if (!me) return '';
-  return `<div class="card"><h2>${tr('Résumé de la semaine')}</h2>
+  return `<div class="card"><h2>${tr('Mes e-mails')}</h2>
     <label class="consent"><input type="checkbox" id="wk-on" ${tch.wk ? 'checked' : ''}><span>${tr("Recevoir chaque dimanche, par e-mail, un résumé de ma semaine (réponses, jours actifs). Je peux le désactiver à tout moment.")}</span></label>
     <label class="consent" style="margin-top:8px"><input type="checkbox" id="upd-mail" ${tch.upd !== false ? 'checked' : ''}><span>${tr("Être prévenu par e-mail quand une nouvelle version de l'application est disponible. Je peux le désactiver à tout moment.")}</span></label></div>`;
 }
@@ -688,27 +688,29 @@ const tchSorted = () => {
 function tabTeacher(){
   const S = tch.students, fdd = t => new Date(t).toLocaleDateString(LOCALE(), {day: 'numeric', month: 'short', year: 'numeric'}), idle = u => !u.last_seen ? Infinity : Math.floor((Date.now() - Date.parse(u.last_seen)) / 864e5);
   const row = u => { const open = tch.detail && tch.detail.id === u.id, pct = Number(u.answers) ? Math.round(100 * u.ok / u.answers) : null, d = idle(u);
-    return `<div class="sib"><p style="margin:0"><b>${esc(u.email)}</b>${(tch.unread || {})[u.id] ? ` <span class="tbadge">${ic('mail')} ${tch.unread[u.id]}</span>` : ''}${d > 7 ? ` <span class="warn">${ic('alert')} ${d === Infinity ? tr('jamais connecté') : tr('inactif depuis {n} j', {n: d})}</span>` : ''}</p>
-      <p class="ref" style="margin:0">${tr('depuis le {d}', {d: fdd(u.since)})} · ${tr('actif {b}', {b: when(u.last_seen)})} · ${trp(Math.round(u.answers), '{n} réponse|{n} réponses')} · ${trp(u.errors, '{n} erreur|{n} erreurs')}</p>
-      ${pct === null ? '' : `<div class="bar" role="img" aria-label="${tr('réussite {p} %', {p: pct})}"><i style="width:${pct}%"></i></div><p class="ref" style="margin:0">${tr('réussite {p} %', {p: pct})}</p>`}
-      <div class="grades"><button data-act="tch-detail" data-v="${u.id}">${open ? tr('Masquer') : tr('Progression et messages')}</button><button data-act="tch-del" data-v="${u.id}" style="color:var(--ko)">${tr('Retirer')}</button></div>
-      ${open ? (tch.detail.data ? tchDetailHtml(tch.detail.data) + tchActionsHtml(u.id) : '') : ''}</div>`; };
+    return `<div class="sib srow"><div class="shead"><b>${esc(u.email)}</b>${(tch.unread || {})[u.id] ? `<span class="tbadge">${ic('mail')} ${tch.unread[u.id]}</span>` : ''}${d > 7 ? `<span class="warn">${ic('alert')} ${d === Infinity ? tr('jamais connecté') : tr('inactif depuis {n} j', {n: d})}</span>` : ''}</div>
+      <p class="ref smeta">${tr('actif {b}', {b: when(u.last_seen)})} · ${trp(Math.round(u.answers), '{n} réponse|{n} réponses')} · ${trp(u.errors, '{n} erreur|{n} erreurs')}${pct === null ? '' : ' · ' + tr('réussite {p} %', {p: pct})}</p>
+      ${pct === null ? '' : `<div class="bar" role="img" aria-label="${tr('réussite {p} %', {p: pct})}"><i style="width:${pct}%"></i></div>`}
+      <button class="${open ? '' : 'pri '}big" data-act="tch-detail" data-v="${u.id}" aria-expanded="${!!open}">${open ? tr('Masquer') : tr('Progression et messages')}</button>
+      ${open ? (tch.detail.data ? `<p class="ref" style="margin:10px 0 0">${tr('depuis le {d}', {d: fdd(u.since)})}</p>` + tchDetailHtml(tch.detail.data) + tchActionsHtml(u.id) + `<p style="margin:12px 0 0;text-align:center"><button class="link" style="color:var(--ko)" data-act="tch-del" data-v="${u.id}">${tr('Retirer cet élève')}</button></p>` : '') : ''}</div>`; };
   const list = tchSorted();
   return `<h1 style="margin-top:8px">${tr('Espace enseignant')}</h1>
     <p class="sub">${S ? trp(S.length, '{n} élève|{n} élèves') : tr('Chargement…')}</p>
     ${tch.msg ? `<div class="fb tch-flash ${tch.ok ? 'ok' : 'ko'}">${esc(tch.msg)}</div>` : ''}
-    <div class="card"><h2>${tr('Ajouter un élève')}</h2><p class="ref" style="margin:0 0 6px">${tr("L'élève génère un code dans son onglet Élève → Inviter un enseignant. Saisis-le ici : tu ne vois que les élèves qui t'ont invité, tant qu'ils le souhaitent.")}</p>
+    <div class="card"><h2>${tr('Mes élèves')}</h2>${S && S.length > 1 ? `<div class="row"><input type="text" id="tch-q" style="flex:1 1 100%" placeholder="${tr('Rechercher un élève')}" aria-label="${tr('Rechercher un élève')}" value="${esc(tch.q || '')}" autocomplete="off"><select id="tch-sort" aria-label="${tr('Trier par')}">${[['activity', 'Activité récente'], ['unread', 'Messages non lus'], ['rate', 'Réussite (les plus fragiles d\'abord)'], ['name', 'Nom']].map(([k, t]) => `<option value="${k}" ${tch.sort === k ? 'selected' : ''}>${tr(t)}</option>`).join('')}</select></div>` : ''}
+      ${S ? (list.map(row).join('') || `<p class="sub" style="margin:0">${S.length ? tr('Aucun résultat.') : tr("Aucun élève pour l'instant.")}</p>`) : ''}</div>
+    ${S && S.length ? `<div class="card"><h2>${tr('Message à toute la classe')}</h2><div class="compose"><textarea id="tch-all" maxlength="280" rows="3" aria-label="${tr('Message à toute la classe')}" placeholder="${tr('Un mot pour tous tes élèves (280 caractères)')}" data-enter="tch-all-btn" data-count="all-count"></textarea><button class="pri" id="tch-all-btn" data-act="tch-all">${tr('Envoyer à tous')}</button></div><span class="cnt" id="all-count">0/280</span></div>` : ''}
+    ${(() => { const open = S && (!S.length || tch.addOpen); return `<button class="big" data-act="tch-add-toggle" aria-expanded="${!!open}" style="margin:0 0 12px">${ic('plus')} ${tr('Ajouter des élèves')}</button>${open ? `    <div class="card"><h2>${tr('Ajouter un élève')}</h2><p class="ref" style="margin:0 0 6px">${tr("L'élève génère un code dans son onglet Élève → Inviter un enseignant. Saisis-le ici : tu ne vois que les élèves qui t'ont invité, tant qu'ils le souhaitent.")}</p>
       <label class="f" for="tch-code">${tr("Code d'invitation")}</label><div class="row"><input type="text" id="tch-code" autocomplete="off" autocapitalize="characters" maxlength="12" style="text-transform:uppercase" data-enter="tch-go"><button id="tch-go" class="pri" data-act="tch-add" style="flex:0 0 auto">${tr('Ajouter')}</button></div></div>
     <div class="card"><h2>${tr('Groupe de classe')}</h2><p class="ref" style="margin:0 0 6px">${tr("Un code réutilisable (40 élèves, 30 jours) à donner à toute la classe. Chaque élève le saisit lui-même : il t'ouvre ainsi l'accès à sa progression.")}</p>
       ${(tch.classes || []).map(c => `<div class="weak"><span><b style="letter-spacing:.12em">${esc(c.code)}</b> · ${c.uses}/${c.max_uses} ${tr('élèves')} · ${tr("jusqu'au {d}", {d: new Date(c.expires_at).toLocaleDateString(LOCALE(), {day: 'numeric', month: 'short'})})}</span><button class="link" style="color:var(--ko)" data-act="tch-class-close" data-v="${esc(c.code)}">${tr('Fermer')}</button></div>`).join('')}
-      <button data-act="tch-class-new">${tr('Créer un code de classe')}</button></div>
-    ${S && S.length ? `<div class="card"><h2>${tr('Message à toute la classe')}</h2><div class="compose"><textarea id="tch-all" maxlength="280" rows="3" aria-label="${tr('Message à toute la classe')}" placeholder="${tr('Un mot pour tous tes élèves (280 caractères)')}" data-enter="tch-all-btn" data-count="all-count"></textarea><button class="pri" id="tch-all-btn" data-act="tch-all">${tr('Envoyer à tous')}</button></div><span class="cnt" id="all-count">0/280</span></div>` : ''}
-    <div class="card"><h2>${tr('Mes élèves')}</h2>${S && S.length > 1 ? `<div class="row"><input type="text" id="tch-q" style="flex:1 1 100%" placeholder="${tr('Rechercher un élève')}" aria-label="${tr('Rechercher un élève')}" value="${esc(tch.q || '')}" autocomplete="off"><select id="tch-sort" aria-label="${tr('Trier par')}">${[['activity', 'Activité récente'], ['unread', 'Messages non lus'], ['rate', 'Réussite (les plus fragiles d\'abord)'], ['name', 'Nom']].map(([k, t]) => `<option value="${k}" ${tch.sort === k ? 'selected' : ''}>${tr(t)}</option>`).join('')}</select></div>` : ''}
-      ${S ? (list.map(row).join('') || `<p class="sub" style="margin:0">${S.length ? tr('Aucun résultat.') : tr("Aucun élève pour l'instant.")}</p>`) : ''}</div>`;
+      <button data-act="tch-class-new">${tr('Créer un code de classe')}</button></div>` : ''}`; })()}
+`;
 }
 function renderAdmin(){
   setNav(false); screen = 'admin';
   const list = (adm.users || []).filter(u => !adm.q || u.email.toLowerCase().includes(adm.q.toLowerCase()));
+  const lastAnn = Math.max(0, ...(adm.anns || []).map(x => +((/(\d+)/.exec(x.label || '') || [])[1]) || 0)), annNew = !!adm.anns && APP_BUILD > lastAnn;   // la version qui tourne n'a pas encore été annoncée
   const active = (adm.users || []).filter(u => u.last_seen && Date.parse(u.last_seen) > Date.now() - 7 * 864e5).length;
   const row = u => {
     const self = me && u.id === me.user.id, rate = Number(u.answers) ? Math.round(100 * u.ok / u.answers) + ' %' : '—';
@@ -718,26 +720,27 @@ function renderAdmin(){
     else if (d){ const x = summarize(d); det = `<div class="sib"><p class="ref" style="margin:0">${trp(Math.round(x.tot), '{n} réponse|{n} réponses')} · ${x.tot ? Math.round(100 * x.ok / x.tot) : 0} % · ${x.seen} ${tr('versets vus')} · ${tr('{n} réponses sur 7 jours', {n: Math.round(x.wk)})}</p>
       ${x.weak.length ? `<p class="ref" style="margin:4px 0 0"><b>${tr('À retravailler :')}</b> ${x.weak.map(([s, r]) => `${esc(book(/^\d+$/.test(s) ? +s : s) ? sname(/^\d+$/.test(s) ? +s : s) : s)} (${Math.round(r * 100)} %)`).join(' · ')}</p>` : ''}
       ${x.last.length ? `<p class="ref" style="margin:4px 0 0"><b>${tr('Dernières erreurs :')}</b></p>${x.last.map(e => { const r = pk(e.k); return book(r.s) ? `<p class="ref" style="margin:0">${fdate(e.t)} · ${rlabel(r)}</p>` : ''; }).join('')}` : ''}</div>`; }
-    return `<div class="sib"><p style="margin:0"><b>${esc(u.email)}</b> ${u.role === 'admin' ? `<span class="ref">· ${ic('shield')} ${tr('admin')}</span>` : u.role === 'teacher' ? `<span class="ref">· 🎓 ${tr('enseignant')}</span>` : ''}${u.blocked ? `<span class="ref" style="color:var(--ko)"> · ${tr('suspendu')}</span>` : ''}${self ? `<span class="ref"> · ${tr('toi')}</span>` : ''}</p>
+    return `<div class="sib"><p style="margin:0"><b>${esc(u.email)}</b> ${u.role === 'admin' ? `<span class="ref">· ${ic('shield')} ${tr('admin')}</span>` : u.role === 'teacher' ? `<span class="ref">· ${ic('cap')} ${tr('enseignant')}</span>` : ''}${u.blocked ? `<span class="ref" style="color:var(--ko)"> · ${tr('suspendu')}</span>` : ''}${self ? `<span class="ref"> · ${tr('toi')}</span>` : ''}</p>
       <p class="ref" style="margin:0">${tr('Inscrit le {a} · actif {b} · {c} · réussite {d} · {e}', {a: when(u.created_at), b: when(u.last_seen), c: trp(Math.round(u.answers), '{n} réponse|{n} réponses'), d: rate, e: trp(u.errors, '{n} erreur|{n} erreurs')})}</p>
-      <div class="grades"><button data-act="adm-detail" data-v="${u.id}">${adm.detail && adm.detail.id === u.id ? tr('Masquer') : tr('Progression')}</button>
+      <div class="grades"><button data-act="adm-detail" data-v="${u.id}">${adm.detail && adm.detail.id === u.id ? tr('Masquer') : tr('Progression')}</button></div>
+      <details class="uact"><summary class="ref">${tr('Actions sur ce compte')}</summary><div class="grades">
         <button data-act="adm-role" data-v="${u.id}" ${self ? 'disabled' : ''}>${u.role === 'admin' ? tr('Retirer admin') : tr('Nommer admin')}</button>
         ${u.role === 'admin' ? '' : `<button data-act="adm-teacher" data-v="${u.id}">${u.role === 'teacher' ? tr('Retirer enseignant') : tr('Nommer enseignant')}</button>`}
         <button data-act="adm-block" data-v="${u.id}" ${self ? 'disabled' : ''}>${u.blocked ? tr('Débloquer') : tr('Bloquer')}</button>
-        <button data-act="adm-del" data-v="${u.id}" style="color:var(--ko)" ${self ? 'disabled' : ''}>${tr('Supprimer')}</button></div>${det}</div>`;
+        <button data-act="adm-del" data-v="${u.id}" style="color:var(--ko)" ${self ? 'disabled' : ''}>${tr('Supprimer')}</button></div></details>${det}</div>`;
   };
   $app.innerHTML = `<div class="top"><button class="link" data-act="acc-back">${tr('← Retour')}</button><span>${tr('Administration')}</span></div>
     <h1 style="margin-top:8px">${tr('Espace admin')}</h1>
     <p class="sub">${adm.users ? `${trp(adm.users.length, '{n} compte|{n} comptes')} · ${trp(active, '{n} actif sur 7 jours|{n} actifs sur 7 jours')}` : tr('Chargement…')}</p>
     ${adm.msg ? `<div class="fb ko">${esc(adm.msg)}</div>` : ''}
-    ${watchHtml()}
-    ${adm.anns ? `<div class="card"><h2>🆕 ${tr('Annoncer une nouvelle version')}</h2>
+    ${(adm.reqs || []).length ? `<div class="card"><h2>${ic('cap')} ${tr("Demandes d'enseignant")}</h2>${adm.reqs.map(r => `<div class="weak"><span>${esc(r.email)} · ${when(r.created_at)}</span><span><button class="link" data-act="adm-req-ok" data-v="${r.user_id}">${tr('Accepter')}</button> <button class="link" style="color:var(--ko)" data-act="adm-req-no" data-v="${r.user_id}">${tr('Refuser')}</button></span></div>`).join('')}</div>` : ''}
+    ${adm.anns ? `<details class="card" ${annNew ? 'open' : ''}><summary><h2>${ic('refresh')} ${tr('Annoncer une nouvelle version')}${annNew ? ` <span class="tbadge">v${APP_BUILD} ${tr('pas encore annoncée')}</span>` : ''}</h2></summary><div style="margin-top:10px">
       <p class="ref" style="margin:0 0 8px">${tr("Après avoir publié une version : tous les comptes reçoivent une notification dans la cloche, une notification sur les appareils qui ont activé les rappels, et un e-mail (sauf s'ils l'ont désactivé). Une seule annonce par numéro de version.")}</p>
       <div class="row"><div><label class="f" for="adm-ver">${tr('Numéro de version')}</label><input type="number" id="adm-ver" min="1" step="1" value="${APP_BUILD}" inputmode="numeric"></div></div>
       <label class="f" for="adm-note">${tr('Ce qui change (facultatif, 200 caractères)')}</label><input type="text" id="adm-note" maxlength="200" autocomplete="off">
       <button class="pri" style="margin-top:8px" data-act="adm-announce">${tr('Annoncer')}</button>
-      ${adm.anns.length ? `<p class="ref" style="margin:10px 0 2px"><b>${tr('Annonces déjà faites :')}</b></p>${adm.anns.map(a => `<p class="ref" style="margin:0">${esc(a.label)} · ${a.fanout_at ? tr('cloche et notifications envoyées') : tr('en attente du prochain passage (5 min)')} · ${a.mail_done_at ? tr('e-mails terminés') : trp(Number(a.mails), '{n} e-mail envoyé|{n} e-mails envoyés')}</p>`).join('')}` : ''}</div>` : ''}
-    ${(adm.reqs || []).length ? `<div class="card"><h2>🎓 ${tr("Demandes d'enseignant")}</h2>${adm.reqs.map(r => `<div class="weak"><span>${esc(r.email)} · ${when(r.created_at)}</span><span><button class="link" data-act="adm-req-ok" data-v="${r.user_id}">${tr('Accepter')}</button> <button class="link" style="color:var(--ko)" data-act="adm-req-no" data-v="${r.user_id}">${tr('Refuser')}</button></span></div>`).join('')}</div>` : ''}
+      ${adm.anns.length ? `<p class="ref" style="margin:10px 0 2px"><b>${tr('Annonces déjà faites :')}</b></p>${adm.anns.map(a => `<p class="ref" style="margin:0">${esc(a.label)} · ${a.fanout_at ? tr('cloche et notifications envoyées') : tr('en attente du prochain passage (5 min)')} · ${a.mail_done_at ? tr('e-mails terminés') : trp(Number(a.mails), '{n} e-mail envoyé|{n} e-mails envoyés')}</p>`).join('')}` : ''}</div></div></details>` : ''}
+    ${watchHtml()}
     <div class="row" style="margin-bottom:10px"><input type="text" id="adm-q" placeholder="${tr('Rechercher un e-mail')}" value="${esc(adm.q)}" autocomplete="off"><button data-act="adm-refresh" style="flex:0 0 auto">${ic('refresh')} ${tr('Actualiser')}</button></div>
     <div class="card">${adm.users ? (list.map(row).join('') || `<p class="sub" style="margin:0">${tr('Aucun compte.')}</p>`) : ''}</div>`;
   const q = $('adm-q'); if (q) q.oninput = () => { adm.q = q.value; const pos = q.selectionStart; renderAdmin(); const n = $('adm-q'); n.focus(); n.setSelectionRange(pos, pos); };

@@ -1,80 +1,35 @@
 {
- "v": 98,
+ "v": 99,
  "date": "2026-10-25",
  "items": [
   {
-   "id": "home2",
-   "icon": "▶️",
+   "id": "reader2",
+   "icon": "📖",
+   "go": "reader",
+   "title": {
+    "fr": "Lecteur : le texte d'abord",
+    "en": "Reader: the text first",
+    "ar": "القارئ: النص أولًا"
+   },
+   "text": {
+    "fr": "Une barre d'outils compacte (précédent, suivant, taille, masquer, écouter) remplace la pile de boutons : le texte apparaît dès l'ouverture. Tajwīd, traduction et tafsir sont rangés dans « Affichage ».",
+    "en": "A compact toolbar (previous, next, size, hide, listen) replaces the stack of buttons: the text shows as soon as you open it. Tajwīd, translation and tafsir are tucked into “Display”.",
+    "ar": "شريط أدوات مضغوط (السابق، التالي، الحجم، الإخفاء، الاستماع) بدل كومة الأزرار: يظهر النص فور الفتح. والتجويد والترجمة والتفسير في «العرض»."
+   }
+  },
+  {
+   "id": "spaces2",
+   "icon": "👥",
    "go": "home",
    "title": {
-    "fr": "Un accueil centré sur ta séance du jour",
-    "en": "A home screen built around your daily session",
-    "ar": "صفحة رئيسية تتمحور حول حصّتك اليومية"
+    "fr": "Compte, élève, enseignant : plus clairs",
+    "en": "Account, student, teacher: clearer",
+    "ar": "الحساب والطالب والمعلّم: أوضح"
    },
    "text": {
-    "fr": "Le bouton « Ma séance du jour » passe en premier, avec la durée estimée. Sans révision à faire, il te propose ta dernière série en un toucher. Moins de cartes en double, des icônes uniformes.",
-    "en": "The “My session of the day” button comes first, with an estimated duration. With nothing to review, it offers your last series in one tap. Fewer duplicate cards, consistent icons.",
-    "ar": "يأتي زر «حصّتي اليوم» أولًا مع المدة التقديرية. وإن لم يكن هناك ما يُراجَع اقترح عليك سلسلتك الأخيرة بلمسة واحدة. بطاقات مكرّرة أقل وأيقونات موحّدة."
-   }
-  },
-  {
-   "id": "train2",
-   "icon": "📖",
-   "go": "train",
-   "title": {
-    "fr": "Réviser : d'abord quoi, ensuite comment",
-    "en": "Revise: first what, then how",
-    "ar": "المراجعة: أولًا ماذا ثم كيف"
-   },
-   "text": {
-    "fr": "Tu choisis d'abord ce que tu révises (Coran ou moutoun, la portée), puis l'exercice. Les exercices sont plus compacts, avec la description du choix en dessous.",
-    "en": "You first choose what to revise (Quran or mutun, the range), then the exercise. Exercises are more compact, with the description of your choice below.",
-    "ar": "تختار أولًا ما تراجعه (القرآن أو المتون والنطاق) ثم التمرين. التمارين أكثر إيجازًا ووصف اختيارك تحتها."
-   }
-  },
-  {
-   "id": "map2",
-   "icon": "📊",
-   "go": "progress",
-   "title": {
-    "fr": "Carte des sourates : les fragiles se voient",
-    "en": "Surah map: weak spots stand out",
-    "ar": "خريطة السور: تظهر السور الهشّة"
-   },
-   "text": {
-    "fr": "Les sourates fragiles (moins de 60 % de réussite) sont soulignées en rouge. Un filtre n'affiche que celles que tu as vues, en cases plus compactes.",
-    "en": "Weak surahs (under 60% success) are underlined in red. A filter shows only those you have seen, in more compact cells.",
-    "ar": "تُسطَّر السور الهشّة (نجاح أقل من 60٪) بالأحمر. ومرشّح يعرض ما رأيته فقط في خانات أصغر."
-   }
-  },
-  {
-   "id": "plan2",
-   "icon": "📅",
-   "go": "plan",
-   "title": {
-    "fr": "Plan : tes étapes du jour d'abord",
-    "en": "Plan: today's steps first",
-    "ar": "الخطة: خطوات اليوم أولًا"
-   },
-   "text": {
-    "fr": "Sabaq, sabqi et manzil tiennent dans une seule carte, au-dessus de la liste des versets à renforcer. La prévision de la semaine est repliée.",
-    "en": "Sabaq, sabqi and manzil fit in a single card, above the list of verses to strengthen. The weekly forecast is collapsed.",
-    "ar": "السبق والسبقي والمنزل في بطاقة واحدة فوق قائمة الآيات المراد تقويتها. وتوقّع الأسبوع مطويّ."
-   }
-  },
-  {
-   "id": "draw2",
-   "icon": "🎯",
-   "go": "train",
-   "title": {
-    "fr": "Des questions mieux choisies",
-    "en": "Better-chosen questions",
-    "ar": "أسئلة أحسن اختيارًا"
-   },
-   "text": {
-    "fr": "Dans tes séries, les versets dus reviennent plus souvent et ceux que tu tiens bien, moins. Les données de progression abîmées sont écartées au lieu de faire planter l'application.",
-    "en": "In your series, due verses come back more often and those you know well less often. Damaged progress data is dropped instead of crashing the app.",
-    "ar": "في سلاسلك تعود الآيات المستحقة أكثر وما تتقنه أقل. وتُستبعد بيانات التقدّم التالفة بدل أن يتعطّل التطبيق."
+    "fr": "Compte : e-mails et mot de passe avant le reste, suppression en dernier. Élève : objectifs avant les messages. Enseignant : la liste des élèves d'abord, l'ajout derrière un bouton. Les titres ne passent plus sous la cloche.",
+    "en": "Account: e-mails and password first, deletion last. Student: goals before messages. Teacher: the list of students first, adding behind a button. Headers no longer slide under the bell.",
+    "ar": "الحساب: البريد وكلمة المرور أولًا والحذف أخيرًا. الطالب: الأهداف قبل الرسائل. المعلّم: قائمة الطلاب أولًا والإضافة خلف زر. ولا تمرّ العناوين تحت الجرس."
    }
   }
  ]

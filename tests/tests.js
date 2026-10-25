@@ -581,13 +581,14 @@
     clickAct('tch-detail', 's1'); for (let i = 0; i < 40 && !appText().includes('Régularité'); i++) await wait(50); t = appText();
     ok(calls.some(c => c === 'teacher_student_data {"target":"s1"}'), 'résumé demandé'); ok(/5 jours actifs sur 7/.test(t) && /série en cours : 5/.test(t), 'régularité : ' + t.slice(t.indexOf('Régularité'), t.indexOf('Régularité') + 90));
     eq($$q('.week div').length, 14, '14 jours affichés'); ok(t.includes('Par sourate') && t.includes('Erreurs fréquentes') && t.includes('2×'), 'progression par sourate et erreurs fréquentes'); ok(!/réponse tapée/.test(t));
+    if (!$q('#tch-code')) clickAct('tch-add-toggle'); ok(!!$q('#tch-code') && $q('[data-act="tch-add-toggle"]').getAttribute('aria-expanded') === 'true', 'bouton « Ajouter des élèves » : ouvre le formulaire d’invitation et le code de classe');
     $q('#tch-code').value = 'badcode1'; clickAct('tch-add'); await wait(300); ok(calls.some(c => c === 'invite_accept {"p_code":"badcode1"}'), 'code envoyé tel que saisi (le serveur met en majuscules)'); ok(appText().includes('Code invalide ou expiré.'), 'erreur du serveur affichée');
     $q('#tch-code').value = 'abcd2345'; clickAct('tch-add'); await wait(400); ok(appText().includes('Élève ajouté : autre@x.fr') && appText().includes('autre@x.fr'), 'élève ajouté');
     clickAct('tch-add'); await wait(200); ok(appText().includes('Saisis le code'), 'code vide refusé');
     // l'administrateur nomme un enseignant
     E(`me = {user: {id: 'ad', email: 'adm@x.fr'}, profile: {role: 'admin', created_at: '${iso(-30)}'}}; home();`); await wait(100); ok(!$q('[data-act="tab"][data-v="student"]') && !$q('[data-act="tab"][data-v="teacher"]'), 'l’administrateur n’a ni menu Élève ni menu Enseignant');
     E(` adm.users = [{id: 'ad', email: 'adm@x.fr', role: 'admin', blocked: false, created_at: '${iso(-30)}', last_seen: null, answers: 0, ok: 0, errors: 0}, {id: 'u9', email: 'futur.prof@x.fr', role: 'user', blocked: false, created_at: '${iso(-2)}', last_seen: null, answers: 0, ok: 0, errors: 0}, {id: 't1', email: 'prof@x.fr', role: 'teacher', blocked: false, created_at: '${iso(-2)}', last_seen: null, answers: 0, ok: 0, errors: 0}]; adm.detail = null; adm.q = ''; renderAdmin()`);
-    t = appText(); ok($q('[data-act="adm-teacher"][data-v="u9"]').textContent.includes('Nommer enseignant') && $q('[data-act="adm-teacher"][data-v="t1"]').textContent.includes('Retirer enseignant'), 'boutons de nomination'); ok(!$q('[data-act="adm-teacher"][data-v="ad"]'), 'pas de bouton pour un admin'); ok(t.includes('🎓') && t.includes('enseignant'), 'badge enseignant');
+    t = appText(); ok($q('[data-act="adm-teacher"][data-v="u9"]').textContent.includes('Nommer enseignant') && $q('[data-act="adm-teacher"][data-v="t1"]').textContent.includes('Retirer enseignant'), 'boutons de nomination'); ok(!$q('[data-act="adm-teacher"][data-v="ad"]'), 'pas de bouton pour un admin'); ok(/·\s+enseignant/.test(t) && !!$q('[data-act="adm-del"][data-v="u9"]').closest('details.uact'), 'badge enseignant ; la suppression est rangée dans « Actions sur ce compte »');
     E("adm.reqs = [{user_id: 'u9', email: 'futur.prof@x.fr', created_at: new Date().toISOString()}]; renderAdmin()"); ok(appText().includes("Demandes d'enseignant") && appText().includes('futur.prof@x.fr'), 'demandes affichées à l’admin');
     calls.length = 0; clickAct('adm-req-no', 'u9'); await wait(300); ok(calls.some(c => c === 'admin_teacher_decline {"target":"u9"}'), 'refus envoyé'); E("adm.reqs = [{user_id: 'u9', email: 'futur.prof@x.fr', created_at: new Date().toISOString()}]; renderAdmin()"); calls.length = 0; clickAct('adm-req-ok', 'u9'); await wait(300); ok(calls.some(c => c === 'admin_set_role {"target":"u9","new_role":"teacher"}'), 'acceptation = rôle enseignant');
     E("adm.users = [{id: 'ad', email: 'adm@x.fr', role: 'admin', blocked: false, created_at: new Date().toISOString(), last_seen: null, answers: 0, ok: 0, errors: 0}, {id: 'u9', email: 'futur.prof@x.fr', role: 'user', blocked: false, created_at: new Date().toISOString(), last_seen: null, answers: 0, ok: 0, errors: 0}]; renderAdmin()");
@@ -637,7 +638,7 @@
     E("cfg.theme = 'dark'; applyTheme()"); eq(D.documentElement.dataset.theme, 'dark', 'thème sombre forcé'); E("cfg.theme = 'light'; applyTheme()"); eq(D.documentElement.dataset.theme, 'light'); E("delete cfg.theme; applyTheme()"); ok(!D.documentElement.dataset.theme, 'thème automatique');
     // côté enseignant
     E("me = {user: {id: 't1', email: 'prof@x.fr'}, profile: {role: 'teacher'}}; go('teacher')"); for (let i = 0; i < 40 && !appText().includes('eleve@x.fr'); i++) await wait(50); await wait(200);
-    t = appText(); ok(t.includes('Groupe de classe') && t.includes('CLASSE22') && t.includes('3/40'), 'code de classe affiché');
+    if (!$q('#tch-code')) clickAct('tch-add-toggle'); t = appText(); ok(t.includes('Groupe de classe') && t.includes('CLASSE22') && t.includes('3/40'), 'code de classe affiché');
     clickAct('tch-class-new'); for (let i = 0; i < 40 && !appText().includes('NOUVEAU2'); i++) await wait(50); ok(appText().includes('NOUVEAU2'), 'code de classe créé');
     clickAct('tch-class-close', 'CLASSE22'); await wait(300); ok(calls.includes('class_close {"p_code":"CLASSE22"}') && !appText().includes('CLASSE22'), 'code de classe fermé');
     clickAct('tch-detail', 's1'); for (let i = 0; i < 40 && !$q('[data-act="tch-goal-add"]'); i++) await wait(50); ok($q('[data-act="tch-send"]') && $q('#tch-gs').options.length === 114, 'formulaires objectif et message');
@@ -911,7 +912,7 @@
     W.fetch = f0;
     // cloche
     const nfx = ref => `[{id: 1, kind: 'app_update', ref: '${ref}', actor: null, n: 1, created_at: new Date().toISOString(), read_at: null}]`;
-    ok(/Nouvelle version de l'application \(v99\)/.test(E("nfText({kind: 'app_update', ref: '99'})")), 'texte de la cloche');
+    ok(/Nouvelle version de l'application \(v1234\)/.test(E("nfText({kind: 'app_update', ref: '1234'})")), 'texte de la cloche');
     E(`newVer = null; nf = {list: ${nfx('999')}, loaded: true}; nfOpen(1)`); await wait(200); ok(E('newVer && newVer.v') === 999 && $q('.upd'), 'ouvrir la notification mène à l’accueil, avec le message');
     E("newVer = null; sb = {rpc: async (n, a) => { window.__u.push(n + ' ' + JSON.stringify(a || {})); return {data: null, error: null}; }}; me = {user: {id: 'u1', email: 'a@b.fr'}, profile: {role: 'user'}}");
     E(`nf = {list: ${nfx(1)}, loaded: true}; nfRead(1)`); E("sb.rpc = async (n, a) => { window.__u.push(n + ' ' + JSON.stringify(a || {})); return n === 'notifs_mine' ? {data: [{id: 7, kind: 'app_update', ref: '1', actor: null, n: 1, created_at: new Date().toISOString(), read_at: null}], error: null} : {data: null, error: null}; }");
@@ -1042,6 +1043,34 @@
     clickAct('mapseen'); eq($$q('.cell.named').length, 114, 'filtre retiré : 114 sourates'); const cw = $q('.cell.named').getBoundingClientRect().width; ok(cw < 120, 'cases compactes (' + Math.round(cw) + ' px)');
     for (const L of ['en', 'ar']){ E(`setLang('${L}'); cfg.mapSeen = true; go('progress')`); ok(!/undefined|NaN/.test(appText()), 'progrès en ' + L); E("go('train')"); ok(!/undefined|NaN/.test(appText()), 'réviser en ' + L); E("go('plan')"); eq(E('[...missingKeys]'), [], 'clés traduites (' + L + ')'); }
     E("setLang('fr'); plan = null; stats = {}; cfg.mapSeen = true"); noErr('présentation');
+  });
+  test('Écrans compte, enseignant, élève, admin et lecteur : l’essentiel d’abord, actions risquées rangées', async () => {
+    const cleanup = () => E("rdStop(); setLang('fr'); CLOUD.url = ''; CLOUD.anonKey = ''; me = null; sb = null; adm = {users: null, q: '', detail: null, msg: '', reqs: []}; tch.uid = null; tch.addOpen = false");
+    try {
+    reset(); const iso = n => new Date(Date.now() - n * 864e5).toISOString();
+    // lecteur : barre d'outils compacte, le texte tient dans le premier écran, options d'affichage repliées
+    E("CLOUD.url = ''; me = null; openReader('q:112')"); await wait(300);
+    eq($$q('.rdbar button').length, 6, 'barre : précédent, suivant, A−, A+, masquer, écouter'); ok($$q('.rdbar button').every(b => b.getAttribute('aria-label') || /^A[−+]$/.test(b.textContent)), 'chaque bouton a un nom accessible');
+    ok($q('#rbody').getBoundingClientRect().top < 440, 'le texte commence dans le premier écran (' + Math.round($q('#rbody').getBoundingClientRect().top) + ' px)'); ok($q('details.rdopt') && !$q('details.rdopt[open]'), 'options tajwīd / traduction / tafsir repliées'); ok(!/[\u{1F300}-\u{1FAFF}]/u.test($q('.rdtool').textContent), 'pas d’émojis dans la barre');
+    $q('details.rdopt summary').click(); await wait(80); ok(E('rd.optOpen') === true, 'ouverture mémorisée'); E("rdStop(); go('home')");
+    // élève : objectifs avant les messages
+    E(`CLOUD.url = 'https://x.supabase.co'; CLOUD.anonKey = 'k'; authReady = true; me = {user: {id: 's1', email: 's@x.fr'}, profile: {role: 'user', created_at: '${iso(10)}'}}; Object.assign(tch, {uid: 's1', loaded: true, links: [{other_id: 't1', email: 'p@x.fr', since: '${iso(5)}', as_role: 'teacher'}], goals: [{id: 1, surah: 108, surah_to: null, due: '${new Date(Date.now() + 3 * 864e5).toISOString().slice(0, 10)}', note: ''}], msgs: [{id: 1, teacher_id: 't1', teacher_email: 'p@x.fr', body: 'Courage', from_student: false, created_at: '${iso(1)}', read_at: null}], invites: [], log: []})`);
+    let h = E("tabStudent()"); ok(h.indexOf('Mes objectifs') > 0 && h.indexOf('Mes objectifs') < h.indexOf('Messages') && h.indexOf('Messages') < h.indexOf('Mes enseignants'), 'élève : Objectifs › Messages › Enseignants');
+    // enseignant : élèves d'abord, l'ajout derrière un bouton
+    E(`me = {user: {id: 't1', email: 'p@x.fr'}, profile: {role: 'teacher', created_at: '${iso(10)}'}}; Object.assign(tch, {uid: 't1', students: [{id: 's1', email: 's@x.fr', since: '${iso(5)}', last_seen: '${iso(0)}', answers: 10, ok: 8, errors: 1}], classes: [], unread: {}, detail: null, addOpen: false})`);
+    h = E("tabTeacher()"); ok(h.indexOf('Mes élèves') > 0 && h.indexOf('Mes élèves') < h.indexOf('Ajouter des élèves') && !/id="tch-code"/.test(h), 'enseignant : liste des élèves d’abord, formulaire d’ajout replié'); ok(!/data-act="tch-del"/.test(h), '« Retirer cet élève » n’est pas à côté du bouton principal');
+    E("tch.addOpen = true"); ok(/id="tch-code"/.test(E("tabTeacher()")), 'le bouton ouvre le formulaire');
+    // compte : e-mails et mot de passe avant tout ce qui concerne les enseignants ; confidentialité et suppression en dernier
+    E(`me = {user: {id: 's1', email: 's@x.fr'}, profile: {role: 'user', created_at: '${iso(10)}'}}; sb = {auth: {}, from(){ return {select(){ return Promise.resolve({data: [], error: null}); }}; }, async rpc(){ return {data: [], error: null}; }}; renderAccount()`);
+    const hs = $$q('#app h2').map(x => x.textContent.trim()); ok(hs.indexOf('Mes e-mails') > 0 && hs.indexOf('Mes e-mails') < hs.indexOf('Mot de passe') && hs.indexOf('Mot de passe') < hs.indexOf('Mon enseignant') && hs.indexOf('Mon enseignant') < hs.indexOf('Confidentialité'), 'compte : ' + hs.join(' › '));
+    // admin : demandes en premier, annonce repliable (ouverte si la version n'est pas annoncée), actions sur un compte rangées
+    E(`me = {user: {id: 'a1', email: 'a@x.fr'}, profile: {role: 'admin', created_at: '${iso(50)}'}}; adm.users = [{id: 'a1', email: 'a@x.fr', role: 'admin', blocked: false, created_at: '${iso(50)}', last_seen: '${iso(0)}', answers: 5, ok: 4, errors: 1}, {id: 'u2', email: 'u@x.fr', role: 'user', blocked: false, created_at: '${iso(9)}', last_seen: '${iso(3)}', answers: 50, ok: 30, errors: 7}]; adm.reqs = [{user_id: 'u9', email: 'c@x.fr', created_at: '${iso(1)}'}]; adm.anns = [{label: 'v1', fanout_at: '${iso(1)}', mail_done_at: '${iso(1)}', mails: 2}]; adm.detail = null; adm.q = ''; renderAdmin()`);
+    const ah = $$q('#app h2').map(x => x.textContent.trim()); ok(ah[0] === "Demandes d'enseignant" && /^Annoncer une nouvelle version/.test(ah[1]) && ah.indexOf('Surveillance des e-mails') > 1, 'admin : ' + ah.join(' › '));
+    ok($q('details.card[open] #adm-ver') && /pas encore annoncée/.test(appText()), 'version courante non annoncée : la carte est ouverte et le dit'); ok(!!$q('[data-act="adm-del"][data-v="u2"]').closest('details.uact') && !$q('details.uact[open]'), 'Supprimer, Bloquer, Nommer : rangés dans « Actions sur ce compte »');
+    E(`adm.anns = [{label: 'v' + APP_BUILD, fanout_at: '${iso(0)}', mail_done_at: '${iso(0)}', mails: 2}]; renderAdmin()`); ok(!$q('details.card[open] #adm-ver'), 'version déjà annoncée : carte repliée');
+    for (const L of ['en', 'ar']){ E(`setLang('${L}'); renderAdmin()`); ok(!/undefined|NaN/.test(appText()), 'admin en ' + L); E("tch.addOpen = true"); E("tabTeacher(); renderAccount()"); ok(!/undefined|NaN/.test(appText()), 'compte en ' + L); E("openReader('q:112')"); await wait(200); ok(!/undefined|NaN/.test(appText()), 'lecteur en ' + L); E("rdStop()"); eq(E('[...missingKeys]'), [], 'clés traduites (' + L + ')'); }
+    E("setLang('fr'); rdStop(); CLOUD.url = ''; CLOUD.anonKey = ''; me = null; sb = null; adm = {users: null, q: '', detail: null, msg: '', reqs: []}; tch.uid = null; tch.addOpen = false"); noErr('écrans compte, enseignant, admin, lecteur');
+    } finally { cleanup(); }
   });
   test('Premier lancement : 3 écrans (le but, choisir ses sourates ou un matn, premier exercice) ; pas pour un utilisateur existant', async () => {
     reset(); E("store.set('tathbit.welcome', 0); go('home')"); ok(/Le but de Tathbīt/.test(appText()) && /1 \/ 3/.test(appText()) && /ḥifẓ/.test(appText()), 'écran 1 : le but (tathbīt, pas ḥifẓ)'); ok(!$q('#nav') || $q('#nav').hidden, 'pas de barre de menu pendant le guide');

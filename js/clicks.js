@@ -151,6 +151,7 @@ const onClick = e => {
     case 'tch-add': tchAdd(); break;
     case 'tch-detail': tchDetail(v); break;
     case 'tch-del': tchDrop(v); break;
+    case 'tch-add-toggle': tch.addOpen = !tch.addOpen; renderTeacher(); break;
     case 'tch-invite': tchInvite(); break;
     case 'tch-cancel': tchCancel(v); break;
     case 'tch-copy': tchCopy(); break;

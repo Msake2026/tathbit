@@ -118,24 +118,23 @@ function renderReader(){
   $app.innerHTML = `
   <h1 class="sr-only">${tr('Lecteur')}</h1>
   <div class="top"><button class="link" data-act="rd-back">${tr('← Retour')}</button><span>${q ? tr('Coran') : tr('Moutoun')}</span></div>
-  <div class="card" style="margin-top:8px">${sel}${jump}${blkSel}
+  <div class="card rdtool" style="margin-top:8px">${sel}${jump}${blkSel}
     ${info ? `<p class="ref" style="margin:8px 0 0">${info}</p>` : ''}
-    ${multi ? '' : `<div class="grades">
-      <button data-act="rd-prev" ${id0 === first ? 'disabled' : ''}>${tr('‹ Précédent')}</button>
-      <button data-act="rd-next" ${id0 === last ? 'disabled' : ''}>${tr('Suivant ›')}</button></div>`}
-    <div class="grades">
-      <button data-act="rd-size" data-v="-1" aria-label="${tr('Réduire le texte')}">A−</button>
-      <button data-act="rd-size" data-v="1" aria-label="${tr('Agrandir le texte')}">A+</button>
-      <button data-act="rd-hide">${cfg.rdHide ? ic('eye') + ' ' + tr('Tout afficher') : ic('eyeoff') + ' ' + tr('Masquer le texte')}</button>
-      ${q ? `<button id="rdplay" data-act="rd-play">${ic('play')} ${tr('Écouter')}</button>` : ''}
+    <div class="rdbar" role="toolbar" aria-label="${tr('Outils du lecteur')}">
+      ${multi ? '' : `<button class="prev" data-act="rd-prev" aria-label="${tr('Précédent')}" title="${tr('Précédent')}" ${id0 === first ? 'disabled' : ''}>${ic('chevron')}</button><button class="next" data-act="rd-next" aria-label="${tr('Suivant')}" title="${tr('Suivant')}" ${id0 === last ? 'disabled' : ''}>${ic('chevron')}</button>`}
+      <button data-act="rd-size" data-v="-1" aria-label="${tr('Réduire le texte')}" title="${tr('Réduire le texte')}">A−</button>
+      <button data-act="rd-size" data-v="1" aria-label="${tr('Agrandir le texte')}" title="${tr('Agrandir le texte')}">A+</button>
+      <button data-act="rd-hide" aria-pressed="${!!cfg.rdHide}" aria-label="${cfg.rdHide ? tr('Tout afficher') : tr('Masquer le texte')}" title="${cfg.rdHide ? tr('Tout afficher') : tr('Masquer le texte')}">${cfg.rdHide ? ic('eye') : ic('eyeoff')}</button>
+      ${q ? `<button id="rdplay" data-act="rd-play" aria-label="${tr('Écouter')}" title="${tr('Écouter')}">${ic('play')}</button>` : ''}
     </div>
-    ${foldable ? `<div class="grades"><button data-act="rd-fold" data-v="1">⏫ ${tr('Tout replier')}</button><button data-act="rd-fold" data-v="0">⏬ ${tr('Tout déplier')}</button></div>` : ''}
-    ${q ? `<div class="grades">
-      <button data-act="rd-taj" aria-pressed="${!!cfg.rdTaj}">🎨 ${cfg.rdTaj ? tr('Couleurs du tajwīd : oui') : tr('Couleurs du tajwīd : non')}</button>
-      <button data-act="rd-tf" aria-pressed="${!!cfg.rdTf}">📚 ${cfg.rdTf ? tr('Tafsir al-Muyassar : oui') : tr('Tafsir al-Muyassar : non')}</button></div>
+    ${foldable ? `<div class="grades"><button data-act="rd-fold" data-v="1">${tr('Tout replier')}</button><button data-act="rd-fold" data-v="0">${tr('Tout déplier')}</button></div>` : ''}
+    ${q ? `<details class="rdopt" ${rd.optOpen || rd.err ? 'open' : ''}><summary>${ic('palette')} ${tr('Affichage : tajwīd, traduction, tafsir')}</summary>
+      <div class="grades">
+        <button data-act="rd-taj" aria-pressed="${!!cfg.rdTaj}">${ic('palette')} ${cfg.rdTaj ? tr('Couleurs du tajwīd : oui') : tr('Couleurs du tajwīd : non')}</button>
+        <button data-act="rd-tf" aria-pressed="${!!cfg.rdTf}">${ic('book')} ${cfg.rdTf ? tr('Tafsir al-Muyassar : oui') : tr('Tafsir al-Muyassar : non')}</button></div>
       <label class="f" for="rdtr">${tr('Traduction')}</label><select id="rdtr"><option value="">${tr('Aucune')}</option>
         <option value="fr" ${cfg.rdTr === 'fr' ? 'selected' : ''}>Français · Hamidullah</option><option value="en" ${cfg.rdTr === 'en' ? 'selected' : ''}>English · Saheeh International</option></select>
-      ${rd.err ? `<p class="ref" style="margin:8px 0 0;color:var(--ko)">${esc(rd.err)}</p>` : ''}${rdSources()}` : ''}
+      ${rd.err ? `<p class="ref" style="margin:8px 0 0;color:var(--ko)">${esc(rd.err)}</p>` : ''}${rdSources()}</details>` : ''}
     <p class="ref" style="margin:8px 0 0">${cfg.rdHide ? tr('Touche un passage pour le dévoiler.') : q ? tr("Touche un verset pour l'écouter à partir de là.") : ''}</p>
     <p class="ref" id="audio-msg" style="margin:0"></p>
   </div>
@@ -143,6 +142,7 @@ function renderReader(){
   <div class="card" id="rbody">${rd.secs.slice(rd.i0, rd.upto).map(secHtml).join('')}</div>
   <div id="rmore" class="rsentinel" ${rd.upto >= rd.secs.length ? 'hidden' : ''}>…</div>`;
   if ($('rdblk')) $('rdblk').onchange = e => { rdStop(); rd.blk = e.target.value === '' ? null : +e.target.value; rd.focus = 0; renderReader(); scrollTo(0, 0); };
+  $app.querySelectorAll('details.rdopt').forEach(d => d.addEventListener('toggle', () => { rd.optOpen = d.open; }));
   $app.querySelectorAll('details.rblkd').forEach(d => d.addEventListener('toggle', () => { rd.closed[d.open ? 'delete' : 'add'](d.dataset.k); }));
   if ($('rdtr')) $('rdtr').onchange = e => { cfg.rdTr = e.target.value; saveCfg(); rd.err = ''; const y = scrollY; rdStop(); rd.focus = 0; renderReader(); scrollTo(0, y); };
   $('rdsel').onchange = e => { const v = e.target.value; rdStop(); openReader(v, 0, v === 'q:sel' ? rd.sel : null); };
@@ -162,7 +162,7 @@ function rdMore(n = 4){ // charge la suite au défilement
   if (rd.upto >= rd.secs.length){ if (rdObs){ rdObs.disconnect(); rdObs = null; } if ($('rmore')) $('rmore').hidden = true; }
   return true;
 }
-function rdStop(){ stopAudio(); if (rd) rd.playing = false; document.querySelectorAll('.rv.playing').forEach(e => e.classList.remove('playing')); const b = $('rdplay'); if (b) b.textContent = '▶ ' + tr('Écouter'); }
+function rdStop(){ stopAudio(); if (rd) rd.playing = false; document.querySelectorAll('.rv.playing').forEach(e => e.classList.remove('playing')); const b = $('rdplay'); if (b){ b.innerHTML = ic('play'); b.setAttribute('aria-label', tr('Écouter')); } }
 function rdPlay(id, i){
   document.querySelectorAll('.rv.playing').forEach(e => e.classList.remove('playing'));
   if (!rd || !rd.spec.startsWith('q')) return rdStop();
@@ -170,7 +170,7 @@ function rdPlay(id, i){
   let el = document.querySelector(`.rv[data-s="${id}"][data-i="${i}"]`);
   while (!el && rdMore()) el = document.querySelector(`.rv[data-s="${id}"][data-i="${i}"]`);
   if (!el) return rdStop();
-  rd.playing = true; const b = $('rdplay'); if (b) b.textContent = '⏹ ' + tr('Arrêter');
+  rd.playing = true; const b = $('rdplay'); if (b){ b.innerHTML = ic('stop'); b.setAttribute('aria-label', tr('Arrêter')); }
   el.classList.remove('hid'); el.classList.add('playing'); el.scrollIntoView({block: 'center', behavior: 'smooth'});
   playUrls([audioUrl({s: id, a: i})], () => rdPlay(id, i + 1));
 }

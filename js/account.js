@@ -1,7 +1,7 @@
 /* Tathbīt — Compte (Supabase), nouveautés, premier lancement, contact, confidentialité, espace admin.
    Scripts classiques chargés dans l'ordre par index.html (même portée globale) : ne pas les réordonner. */
 /* ---------- compte (Supabase) : inscription, connexion, synchronisation, espace admin ---------- */
-const APP_VERSION = '25 oct. 2026 · v98';
+const APP_VERSION = '25 oct. 2026 · v99';
 const APP_BUILD = +((/v(\d+)/.exec(APP_VERSION) || [])[1]) || 0;   // numéro de la version qui tourne ; version.json (à jour à chaque publication) donne le dernier numéro publié
 let newVer = null, verAt = 0;
 function updBannerHtml(){
@@ -17,7 +17,7 @@ function settingsGo(tab, id){ // « Essayer » depuis les nouveautés : ouvre le
   cfg.setTab = tab; setQ = ''; saveCfg(); go('settings');
   setTimeout(() => { const el = document.getElementById(id); if (!el) return; try { el.scrollIntoView({block: 'center'}); } catch { /* ancien navigateur */ } el.classList.add('flash'); setTimeout(() => el.classList.remove('flash'), 2600); }, 50);
 }
-const NEWS_GO = {train: () => go('train'), progress: () => go('progress'), arsize: () => settingsGo('display', 'card-arsize'), backup: () => settingsGo('data', 'card-data'), appinfo: () => settingsGo('help', 'card-app'), news: () => openNews(), recite: () => frSetup(), moutoun: () => { cfg.scope = {type: 'matn', id: 'ibnachir'}; saveCfg(); go('train'); }, plan: () => go('plan'), contact: () => renderContact(), settings: () => go('settings'), home: () => go('home'), install: () => renderInstall()};
+const NEWS_GO = {reader: () => openReader('q:1'), train: () => go('train'), progress: () => go('progress'), arsize: () => settingsGo('display', 'card-arsize'), backup: () => settingsGo('data', 'card-data'), appinfo: () => settingsGo('help', 'card-app'), news: () => openNews(), recite: () => frSetup(), moutoun: () => { cfg.scope = {type: 'matn', id: 'ibnachir'}; saveCfg(); go('train'); }, plan: () => go('plan'), contact: () => renderContact(), settings: () => go('settings'), home: () => go('home'), install: () => renderInstall()};
 async function loadNews(force){
   if (!force && news && Date.now() - newsAt < 30 * 60e3) return news;
   try { const r = await fetch('news.json?t=' + Date.now(), {cache: 'no-store'}); if (r.ok){ const j = await r.json(); if (j && Array.isArray(j.items)){ news = j; newsAt = Date.now(); } } } catch { /* hors ligne ou fichier absent */ }
@@ -327,11 +327,11 @@ function renderAccount(){
       <p class="ref" style="margin:0 0 10px">${acc.last ? tr('Dernière synchronisation :') + ' ' + fdate(Date.parse(acc.last)) : tr('Synchronisation automatique active')}${acc.syncErr ? ' · <span style="color:var(--ko)">' + esc(acc.syncErr) + '</span>' : ''}</p>
       <div class="row"><button class="pri" data-act="acc-sync">${ic('refresh')} ${tr('Synchroniser maintenant')}</button>${isAdmin() ? `<button data-act="adm-open">${ic('shield')} ${tr('Espace admin')}</button>` : ''}</div></div>
       ${flashHtml()}
-      ${tchStudentCard()}
-      ${roleCard()}
       ${wkCard()}
       <div class="card"><h2>${tr('Mot de passe')}</h2>${f('ac-pass', tr('Nouveau mot de passe (8 caractères minimum)'), 'password', 'new-password', 'data-enter="ac-go"')}${PWRULE()}
       <button id="ac-go" class="pri" style="margin-top:8px" data-act="acc-newpass">${tr('Changer le mot de passe')}</button></div>
+      ${tchStudentCard()}
+      ${roleCard()}
       <div class="card"><h2>${tr('Confidentialité')}</h2><p class="ref" style="margin:0">${tr("Sont enregistrés : ton e-mail, ta date d'inscription, ta dernière activité et ta progression (statistiques, erreurs, historique). L'administrateur du site peut les consulter. Tu peux tout supprimer à tout moment.")}</p>
       <p style="margin:10px 0 0"><button class="link" data-act="legal">${tr('Confidentialité et conditions')}</button> · <button class="link" data-act="contact">${tr('Contact')}</button></p>
       <p style="margin:10px 0 0"><button class="link" data-act="acc-delete" style="color:var(--ko)">${tr('Supprimer mon compte et mes données')}</button></p></div>
@@ -359,7 +359,7 @@ function renderAccount(){
   $app.innerHTML = `${gate ? langBar : `<div class="top"><button class="link" data-act="acc-back">${tr('← Retour')}</button><span>${tr('Compte')}</span></div>`}
     ${gate ? `<div class="hero" style="margin-top:8px"><div class="logo"><span class="lg">تثبيت</span></div><div><h1>Tathbīt</h1><p class="tag">${tr('Coran et moutoun')}</p><p>${tr("Crée un compte ou connecte-toi pour accéder à l'application.")}</p><p class="ref" style="margin:2px 0 0">${tr('Consolider ce que tu as déjà mémorisé (tathbīt), pas le mémoriser pour la première fois (ḥifẓ).')}</p></div></div>` : `<h1 style="margin-top:8px">${tr('Mon compte')}</h1>`}
     ${acc.msg && cloudOn() && sb ? `<div id="acc-msg" class="fb ${acc.ok ? 'ok' : 'ko'}">${esc(acc.msg)}</div>` : ''}
-    ${acc.resend && !me && sb && !acc.mode.startsWith('newp') ? `<div class="card"><h2>🔢 ${tr("J'ai un code de confirmation")}</h2>
+    ${acc.resend && !me && sb && !acc.mode.startsWith('newp') ? `<div class="card"><h2>${tr("J'ai un code de confirmation")}</h2>
       <p class="ref" style="margin:0 0 6px">${tr("Le message de confirmation contient aussi un code. S'il est classé dans les indésirables, ses liens ne sont pas cliquables : ouvre-le, touche « Ce n'est pas du spam » (les liens redeviennent cliquables), ou tape le code ici.")}</p>
       ${f('ac-code', tr('Code reçu par e-mail'), 'text', 'one-time-code', 'inputmode="numeric" maxlength="12" data-enter="ac-codego"')}
       <button id="ac-codego" class="pri" style="margin-top:8px" data-act="acc-code">${tr('Valider le code')}</button></div>
