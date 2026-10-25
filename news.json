@@ -47,6 +47,21 @@
    }
   },
   {
+   "id": "settings",
+   "icon": "⚙️",
+   "go": "settings",
+   "title": {
+    "fr": "Réglages plus faciles à parcourir",
+    "en": "Settings that are easier to browse",
+    "ar": "إعدادات أسهل في التصفح"
+   },
+   "text": {
+    "fr": "Les réglages sont rangés en six groupes avec une barre de raccourcis, et une recherche trouve un réglage en quelques lettres.",
+    "en": "Settings are sorted into six groups with a shortcut bar, and a search finds a setting in a few letters.",
+    "ar": "رُتّبت الإعدادات في ست مجموعات مع شريط اختصارات، ويجد البحث أي إعداد ببضعة أحرف."
+   }
+  },
+  {
    "id": "contact",
    "icon": "✉️",
    "go": "contact",
