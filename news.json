@@ -1,5 +1,5 @@
 {
- "v": 94,
+ "v": 95,
  "items": [
   {
    "id": "recitation",
@@ -32,33 +32,33 @@
    }
   },
   {
-   "id": "plan",
-   "icon": "📅",
-   "go": "plan",
+   "id": "home",
+   "icon": "🧭",
+   "go": "home",
    "title": {
-    "fr": "Plan de révision plus souple",
-    "en": "A more flexible revision plan",
-    "ar": "خطة مراجعة أكثر مرونة"
+    "fr": "Un accueil qui va à l'essentiel",
+    "en": "A home screen that gets to the point",
+    "ar": "صفحة رئيسية تدخل في صلب الموضوع"
    },
    "text": {
-    "fr": "Pour la révision récente et le cycle, choisis « Autre » et écris le nombre de jours que tu veux (jusqu'à 30).",
-    "en": "For recent revision and the cycle, choose “Other” and type the number of days you want (up to 30).",
-    "ar": "للمراجعة القريبة والدورة، اختر «أخرى» واكتب عدد الأيام الذي تريده (حتى ٣٠)."
+    "fr": "Six tuiles montrent leur état et mènent droit à la fonction : récitation, moutoun, lecture, tajwīd, sauvegarde et installation. Plus d'information en double avec la barre du bas.",
+    "en": "Six tiles show their status and lead straight to the feature: recitation, mutun, reading, tajwīd, backup and installation. No more information repeated from the bottom bar.",
+    "ar": "ست بطاقات تعرض حالتها وتقودك مباشرة إلى الميزة: التسميع والمتون والقراءة والتجويد والنسخ الاحتياطي والتثبيت. لا تكرار للمعلومات الموجودة في الشريط السفلي."
    }
   },
   {
-   "id": "settings",
-   "icon": "⚙️",
-   "go": "settings",
+   "id": "install",
+   "icon": "📲",
+   "go": "install",
    "title": {
-    "fr": "Réglages plus faciles à parcourir",
-    "en": "Settings that are easier to browse",
-    "ar": "إعدادات أسهل في التصفح"
+    "fr": "Installer l'application",
+    "en": "Install the app",
+    "ar": "تثبيت التطبيق"
    },
    "text": {
-    "fr": "Les réglages sont rangés en six groupes avec une barre de raccourcis, et une recherche trouve un réglage en quelques lettres.",
-    "en": "Settings are sorted into six groups with a shortcut bar, and a search finds a setting in a few letters.",
-    "ar": "رُتّبت الإعدادات في ست مجموعات مع شريط اختصارات، ويجد البحث أي إعداد ببضعة أحرف."
+    "fr": "Un guide pas à pas (Android et iPhone) pour mettre Tathbīt sur l'écran d'accueil : plein écran, meilleur hors ligne, rappels de révision.",
+    "en": "A step-by-step guide (Android and iPhone) to put Tathbīt on your home screen: full screen, better offline, revision reminders.",
+    "ar": "دليل خطوة بخطوة (أندرويد وآيفون) لوضع «تثبيت» على الشاشة الرئيسية: بملء الشاشة وأفضل دون اتصال مع تذكيرات المراجعة."
    }
   },
   {

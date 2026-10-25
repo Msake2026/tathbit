@@ -973,23 +973,28 @@
     for (const L of ['en', 'ar']){ E(`setLang('${L}')`); for (const g of ['hub', 'account', 'learn', 'audio', 'display', 'data', 'help', 'all']){ E(`cfg.setTab = '${g}'; go('settings')`); } ok(!/undefined/.test(appText()), 'réglages en ' + L); eq(E('[...missingKeys]'), [], 'clés traduites (' + L + ')'); }
     E("setLang('fr')"); noErr('réglages');
   });
-  test('Accueil : tableau de bord de 6 tuiles (état + accès direct), sans informations en double avec les autres cartes', async () => {
-    reset("stats = {'112:1': [3, 1]}; errors = [{t: Date.now(), k: '112:1', m: 'next', sc: 0}]; days = {}; plan = null; store.set('tathbit.frLast', null);"); E("go('home')");
+  test('Accueil : tableau de bord de 6 tuiles (état + accès direct), seulement ce qui n’existe pas ailleurs sur la page', async () => {
+    reset("tjs = {}; stats = {'112:1': [3, 1]}; errors = [{t: Date.now(), k: '112:1', m: 'next', sc: 0}]; days = {}; plan = null; store.set('tathbit.frLast', null); store.set('tathbit.lastExport', 0);"); E("go('home')");
     const tiles = () => $$q('.sethub button'), st = i => tiles()[i].querySelector('.sv').textContent, name = i => tiles()[i].querySelector('b').textContent;
-    eq(tiles().map((b, i) => name(i)), ['Plan', 'Réciter à voix haute', 'Moutoun', 'Lire', 'Progrès', 'Erreurs'], 'six tuiles : Plan, Réciter, Moutoun, Lire, Progrès, Erreurs'); ok(/Mon tableau de bord/.test(appText()), 'titre du tableau de bord');
-    ok(/Pas de plan/.test(st(0)) && /Pas encore essayé/.test(st(1)) && /75 % de réussite · 4 réponses/.test(st(4)) && /1 erreur cette semaine/.test(st(5)), 'états : plan, récitation, progrès, erreurs : ' + tiles().map(b => b.querySelector('.sv').textContent).join(' | '));
-    ok(!/Plan du jour/.test(appText()) && !/Mes erreurs de la semaine/.test(appText()) && !tiles().some((b, i) => name(i) === 'Réviser'), 'plus de carte « Plan du jour », « Mes erreurs de la semaine » ni de tuile « Réviser » : même information une seule fois');
+    eq(tiles().map((b, i) => name(i)), ['Réciter à voix haute', 'Moutoun', 'Lire', 'Tajwīd', 'Sauvegarde', "Installer l'application"], 'six tuiles : Réciter, Moutoun, Lire, Tajwīd, Sauvegarde, Installer'); ok(/Mon tableau de bord/.test(appText()), 'titre du tableau de bord');
+    ok(/Pas encore essayé/.test(st(0)) && /Pas encore essayé/.test(st(3)) && /Jamais exportée/.test(st(4)), 'états : récitation, tajwīd, sauvegarde : ' + tiles().map(b => b.querySelector('.sv').textContent).join(' | '));
+    ok(!['Plan', 'Progrès', 'Erreurs', 'Réviser'].some(n => tiles().some((b, i) => name(i) === n)), 'aucune tuile qui double la barre du bas (Plan, Progrès, Erreurs, Réviser)');
+    ok(!/Plan du jour/.test(appText()) && !/Mes erreurs de la semaine/.test(appText()), 'plus de carte « Plan du jour » ni « Mes erreurs de la semaine »');
     ok(/Aujourd'hui/.test(appText()) && /jour d'affilée|jours d'affilée/.test(appText()), 'la série de jours et l’objectif restent dans « Aujourd’hui »');
     E("sched = {'112:1': {iv: 1, due: Date.now() - 1000}}; go('home')"); ok($q('[data-act="review"]') && /Réviser mes versets dus \(1\)/.test(appText()), 'versets dus : le bouton est dans « Aujourd’hui »');
-    clickAct('tab', 'progress'); ok(E('cfg.tab') === 'progress', 'tuile Progrès'); E("go('home')");
-    clickAct('tab', 'errors'); ok(E('cfg.tab') === 'errors', 'tuile Erreurs'); E("go('home')");
-    tiles()[1].click(); await wait(100); ok($q('#frfrom'), 'tuile « Réciter à voix haute » ouvre la récitation libre'); E("go('home')");
-    tiles()[3].click(); await wait(300); ok($q('#rdsel') || /Lecteur|Retour/.test(appText()), 'tuile « Lire » ouvre le lecteur'); E("rdStop && rdStop(); go('home')");
-    E("cfg.lastM = 'ibnachir'"); E("go('home')"); ok(/Dernier : Al-Murshid al-Muʿīn/.test(st(2)), 'tuile Moutoun : dernier matn'); tiles()[2].click(); await wait(100); ok(E("cfg.scope.type") === 'matn' && E("cfg.scope.id") === 'ibnachir' && E('cfg.tab') === 'train', 'ouvre Réviser sur ce matn');
-    E("plan = {v: 1, from: 78, to: 114, order: 'desc', amt: 'v5', recent: 7, cycle: 30, log: [], mptr: 0, done: {}}; go('home')"); ok(/étapes terminées aujourd'hui/.test(st(0)), 'tuile Plan avec un plan : étapes du jour');
-    E("store.set('tathbit.frLast', {t: Date.now(), n: 5, c: 4}); go('home')"); ok(/Dernière : .* · 5 versets/.test(st(1)), 'tuile Récitation : date et nombre de versets de la dernière fois');
-    for (const L of ['en', 'ar']){ E(`setLang('${L}'); go('home')`); ok(tiles().length === 6 && !/undefined|NaN/.test(appText()), 'accueil en ' + L); eq(E('[...missingKeys]'), [], 'clés traduites (' + L + ')'); }
-    E("setLang('fr'); plan = null; sched = {}; store.set('tathbit.frLast', null)"); noErr('tableau de bord');
+    tiles()[0].click(); await wait(100); ok($q('#frfrom'), 'tuile « Réciter à voix haute » ouvre la récitation libre'); E("go('home')");
+    tiles()[2].click(); await wait(300); ok($q('#rdsel') || /Lecteur|Retour/.test(appText()), 'tuile « Lire » ouvre le lecteur'); E("rdStop && rdStop(); go('home')");
+    E("cfg.lastM = 'ibnachir'"); E("go('home')"); ok(/Dernier : Al-Murshid al-Muʿīn/.test(st(1)), 'tuile Moutoun : dernier matn'); tiles()[1].click(); await wait(100); ok(E("cfg.scope.type") === 'matn' && E("cfg.scope.id") === 'ibnachir' && E('cfg.tab') === 'train', 'ouvre Réviser sur ce matn');
+    E("store.set('tathbit.frLast', {t: Date.now(), n: 5, c: 4}); go('home')"); ok(/Dernière : .* · 5 versets/.test(st(0)), 'tuile Récitation : date et nombre de versets de la dernière fois');
+    E("tjs = {'x': [3, 1], 'y': [1, 3]}; go('home')"); ok(/50 % de réussite · 2 règles travaillées/.test(st(3)), 'tuile Tajwīd : réussite et règles travaillées : ' + st(3));
+    tiles()[3].click(); await wait(100); ok(E('cfg.tab') === 'train' && E("catOf(cfg.mode)") === 'tajwid', 'tuile Tajwīd : ouvre Réviser sur le tajwīd'); E("go('home')");
+    tiles()[4].click(); await wait(100); ok(E('cfg.tab') === 'settings' && E('cfg.setTab') === 'data', 'tuile Sauvegarde : ouvre Réglages › Données'); E("go('home')");
+    E("store.set('tathbit.lastExport', Date.now()); go('home')"); ok(/Exportée aujourd'hui/.test(st(4)), 'après un export : « Exportée aujourd’hui »');
+    E("store.set('tathbit.lastExport', Date.now() - 3 * 864e5); go('home')"); ok(/il y a 3 j/.test(st(4)), 'export ancien : nombre de jours');
+    tiles()[5].click(); await wait(100); ok(/Installation/.test(appText()) && !!$q('ol.steps'), 'tuile Installer : explique comment installer (menu du navigateur)'); E("go('home')");
+    E("deferredInstall = {prompt(){ window.__ip = 1 }, userChoice: Promise.resolve({})}; go('home')"); ok(/Un toucher pour installer/.test(st(5)), 'invite du navigateur disponible : un toucher'); tiles()[5].click(); await wait(100); ok(!!$q('[data-act="install-now"]'), 'bouton « Installer maintenant »'); clickAct('install-now'); await wait(100); ok(E('window.__ip') === 1, 'déclenche l’invite d’installation'); E("deferredInstall = null; go('home')");
+    for (const L of ['en', 'ar']){ E(`setLang('${L}'); go('home')`); ok(tiles().length === 6 && !/undefined|NaN/.test(appText()), 'accueil en ' + L); eq(E('[...missingKeys]'), [], 'clés traduites (' + L + ')'); E('renderInstall()'); ok(!/undefined|NaN/.test(appText()), 'installation en ' + L); eq(E('[...missingKeys]'), [], 'clés installation (' + L + ')'); }
+    E("setLang('fr'); plan = null; sched = {}; tjs = {}; store.set('tathbit.frLast', null); store.set('tathbit.lastExport', 0)"); noErr('tableau de bord');
   });
   test('Contact : page avec adresse, sujets préremplis, copie de l’adresse ; liens depuis les Réglages et l’écran de connexion', async () => {
     reset(); E("window.TATHBIT_LEGAL = {contact: 'tathbit.app.contact@gmail.com', region: ''}; renderContact()");

@@ -820,20 +820,33 @@ function weakCard(full){
     ${full ? `<p class="ref" style="margin:8px 0 0">${tr("Choisis chaque jour parmi tes versets les plus fragiles : erreurs récentes (les plus récentes comptent le plus), retard de révision et taux de réussite. Un verset reste dans la liste jusqu'à ce qu'il tienne plus d'une semaine sans erreur.")}</p>`
       : `<button class="list-btn" data-act="tab" data-v="plan"><span>${tr('Voir la liste')}</span><span>›</span></button>`}</div>`;
 }
-function homeTiles(){ // tableau de bord : une tuile par fonction, avec son état en cours et un accès direct (la révision des versets dus et la série de jours sont dans « Aujourd'hui »)
-  const wk = errors.filter(e => e.t >= Date.now() - 7 * 864e5).length, tot = Object.values(stats).reduce((a, v) => [a[0] + (v[0] || 0), a[1] + (v[1] || 0)], [0, 0]), last = store.get('tathbit.frLast', null);
-  let planSt = tr('Pas de plan : crée-en un');
-  if (plan){ const T = planToday(), n = (T.next ? 1 : 0) + (T.rec.length ? 1 : 0) + (T.man.length ? 1 : 0), d = (T.next && T.d.sabaq ? 1 : 0) + (T.rec.length && T.d.sabqi ? 1 : 0) + (T.man.length && T.d.manzil ? 1 : 0); planSt = T.next || n ? tr("{a} / {b} étapes terminées aujourd'hui", {a: d, b: n}) : tr('Plan terminé 🎉'); }
-  const mt = cfg.lastM && MT[cfg.lastM] ? MN(cfg.lastM) : null;
+function homeTiles(){ // tableau de bord : seulement ce qui n'est pas déjà dans la barre du bas ni dans « Aujourd'hui » ; chaque tuile montre son état et mène à la fonction
+  const tj = Object.values(tjs || {}).reduce((a, v) => [a[0] + (v[0] || 0), a[1] + (v[1] || 0), a[2] + 1], [0, 0, 0]), last = store.get('tathbit.frLast', null), exp = store.get('tathbit.lastExport', 0);
+  const mt = cfg.lastM && MT[cfg.lastM] ? MN(cfg.lastM) : null, days_ = exp ? Math.floor((Date.now() - exp) / 864e5) : 0;
   const T = [
-    ['tab', 'plan', '📅', 'Plan', 'Ta routine de révision', planSt],
     ['fr-setup', '', '🎙️', 'Réciter à voix haute', 'Sourates de mémoire, au micro', last ? tr('Dernière : {d} · {n}', {d: new Date(last.t).toLocaleDateString(LOCALE(), {day: 'numeric', month: 'short'}), n: trp(last.n, '{n} verset|{n} versets')}) : tr("Pas encore essayé")],
     ['tile-matn', '', '📜', 'Moutoun', "Ibn ʿĀshir, Tuḥfa, Bayqūniyya…", mt ? tr('Dernier : {m}', {m: esc(mt)}) : trp(Object.keys(MT).length, '{n} matn|{n} moutoun')],
     ['rdscope', '', '📖', 'Lire', 'Texte complet, tajwīd, traductions', tr('Coran ({n} sourates) et moutoun', {n: 114})],
-    ['tab', 'progress', '📊', 'Progrès', 'Statistiques par sourate', tot[0] + tot[1] ? tr('{r} % de réussite · {n} réponses', {r: Math.round(100 * tot[0] / (tot[0] + tot[1])), n: Math.round(tot[0] + tot[1])}) : tr('Pas encore de réponses')],
-    ['tab', 'errors', '⚠️', 'Erreurs', 'Ce qu\'il faut renforcer', wk ? trp(wk, '{n} erreur cette semaine|{n} erreurs cette semaine') : tr('Aucune erreur cette semaine 👍')]];
+    ['tile-tajwid', '', '🕌', 'Tajwīd', 'Règles, couleurs, lettres, madd', tj[0] + tj[1] ? tr('{r} % de réussite · {n} règles travaillées', {r: Math.round(100 * tj[0] / (tj[0] + tj[1])), n: tj[2]}) : tr('Pas encore essayé')],
+    ['tile-backup', '', '💾', 'Sauvegarde', 'Ta progression ne doit pas se perdre', me ? tr('Synchronisée avec ton compte') : exp ? (days_ < 1 ? tr("Exportée aujourd'hui") : tr('Dernier export : il y a {n} j', {n: days_})) : tr('Jamais exportée : exporte-la')],
+    IS_STANDALONE() ? ['news-open', '', '✨', 'Nouveautés', 'Ce qui change dans l\'application', tr('Version {v}', {v: 'v' + APP_BUILD}) + (news && news.items ? ' · ' + trp(news.items.length, '{n} nouveauté|{n} nouveautés') : '')]
+      : ['tile-install', '', '📲', "Installer l'application", 'Rappels, hors ligne, plein écran', deferredInstall ? tr('Un toucher pour installer') : IOS ? tr("Partager, puis « Sur l'écran d'accueil »") : tr('Depuis le menu du navigateur')]];
   return `<h2 style="margin:16px 0 0">${tr('Mon tableau de bord')}</h2><div class="sethub">${T.map(([a, v, ic, t, d, st]) => `<button data-act="${a}"${v ? ` data-v="${v}"` : ''}><span class="si" aria-hidden="true">${ic}</span><b>${tr(t)}</b><small>${tr(d)}</small><span class="sv">${st}</span></button>`).join('')}</div>`;
 }
+/* ---------- installation de l'application ---------- */
+function renderInstall(){
+  setNav(false); screen = 'install';
+  const steps = IOS ? [tr('Ouvre cette page dans Safari.'), tr('Touche le bouton Partager (le carré avec une flèche vers le haut).'), tr("Touche « Sur l'écran d'accueil », puis « Ajouter »."), tr("Ouvre Tathbīt depuis son icône sur l'écran d'accueil.")]
+    : [tr('Ouvre le menu du navigateur (les trois points ⋮).'), tr("Touche « Installer l'application » (ou « Ajouter à l'écran d'accueil »)."), tr("Ouvre Tathbīt depuis son icône sur l'écran d'accueil.")];
+  $app.innerHTML = `<div class="top"><button class="link" data-act="tab" data-v="home">${tr('← Retour')}</button><span>${tr('Installation')}</span></div>
+    <h1 style="margin-top:8px">📲 ${tr("Installer l'application")}</h1>
+    ${IS_STANDALONE() ? `<div class="fb ok" role="status">✓ ${tr("Tathbīt est déjà installée sur cet appareil.")}</div>` : ''}
+    <div class="card"><p style="margin:0 0 8px">${tr("Installée, Tathbīt s'ouvre en plein écran, marche mieux hors ligne et peut t'envoyer tes rappels de révision.")}</p>
+      ${deferredInstall ? `<button class="pri big" data-act="install-now">📲 ${tr('Installer maintenant')}</button>` : `<ol class="steps" style="margin:0;padding-inline-start:20px;line-height:1.7">${steps.map(x => `<li>${x}</li>`).join('')}</ol>`}</div>
+    ${IOS ? `<div class="card"><p class="ref" style="margin:0">${tr("Sur iPhone, l'application installée peut démarrer sans ta progression : exporte-la d'abord (Réglages, Données) puis importe-la dans l'application installée, ou connecte-toi à ton compte.")}</p></div>` : ''}`;
+  window.scrollTo(0, 0);
+}
+async function installNow(){ if (!deferredInstall) return renderInstall(); const e = deferredInstall; deferredInstall = null; try { e.prompt(); await e.userChoice; } catch { /* refusé ou non pris en charge */ } renderInstall(); }
 function tabHome(){
   const due = dueRefs(), td = days[today()] || 0, st = streak();
   return `
@@ -2415,6 +2428,10 @@ function exportIcs(){
   download('rappel-tathbit.ics', ics, 'text/calendar');
 }
 const IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+const IS_STANDALONE = () => navigator.standalone === true || !!(window.matchMedia && matchMedia('(display-mode: standalone)').matches);   // application installée
+let deferredInstall = null;   // invite d'installation proposée par Chrome/Android
+window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); deferredInstall = e; });
+window.addEventListener('appinstalled', () => { deferredInstall = null; });
 const IOS_APP = navigator.standalone === true; // application installée sur l'écran d'accueil de l'iPhone
 async function download(name, text, type){
   if (IOS){ // iPhone/iPad : le téléchargement direct est peu fiable (surtout dans l'application installée) → feuille de partage
@@ -2478,6 +2495,7 @@ function exportCsv(kind){
 /* ---------- sauvegarde / restauration ---------- */
 function exportData(){
   const compte = me ? {email: me.user.email, role: me.profile && me.profile.role, enseignants: tch.links, invitations: tch.invites, messages: tch.msgs, objectifs: tch.goals, consultations: tch.log, resume_hebdo: tch.wk} : undefined;   // données de compte enregistrées sur le serveur (droit d'accès)
+  store.set('tathbit.lastExport', Date.now());
   download('tathbit-sauvegarde-' + today() + '.json', JSON.stringify({app: 'tathbit', v: 1, cfg, stats, sched, days, custom, errors, plan, compte}), 'application/json');
 }
 async function importFile(f){
@@ -2700,6 +2718,10 @@ const onClick = e => {
       start(); break;
     }
     case 'review': start(shuffle(reviewPick(15))); break;
+    case 'tile-install': renderInstall(); break;
+    case 'install-now': installNow(); break;
+    case 'tile-tajwid': setCat('tajwid'); saveCfg(); go('train'); break;
+    case 'tile-backup': cfg.setTab = 'data'; saveCfg(); go('settings'); break;
     case 'tile-matn': cfg.scope = {type: 'matn', id: cfg.lastM && MT[cfg.lastM] ? cfg.lastM : 'all'}; saveCfg(); go('train'); break;
     case 'strengthen': { const W = weakNow().slice(0, 10); if (W.length) start(shuffle(W.map(w => pk(w.k)))); } break;
     case 'ics': exportIcs(); break;
@@ -3126,7 +3148,7 @@ function results(){
 }
 
 /* ---------- compte (Supabase) : inscription, connexion, synchronisation, espace admin ---------- */
-const APP_VERSION = '25 oct. 2026 · v94';
+const APP_VERSION = '25 oct. 2026 · v95';
 const APP_BUILD = +((/v(\d+)/.exec(APP_VERSION) || [])[1]) || 0;   // numéro de la version qui tourne ; version.json (à jour à chaque publication) donne le dernier numéro publié
 let newVer = null, verAt = 0;
 function updBannerHtml(){
@@ -3138,7 +3160,7 @@ function updBannerHtml(){
 }
 /* ---------- nouveautés d'une version (news.json, mis à jour à chaque publication) ---------- */
 let news = null, newsAt = 0;
-const NEWS_GO = {news: () => openNews(), recite: () => frSetup(), moutoun: () => { cfg.scope = {type: 'matn', id: 'ibnachir'}; saveCfg(); go('train'); }, plan: () => go('plan'), contact: () => renderContact(), settings: () => go('settings')};
+const NEWS_GO = {news: () => openNews(), recite: () => frSetup(), moutoun: () => { cfg.scope = {type: 'matn', id: 'ibnachir'}; saveCfg(); go('train'); }, plan: () => go('plan'), contact: () => renderContact(), settings: () => go('settings'), home: () => go('home'), install: () => renderInstall()};
 async function loadNews(force){
   if (!force && news && Date.now() - newsAt < 30 * 60e3) return news;
   try { const r = await fetch('news.json?t=' + Date.now(), {cache: 'no-store'}); if (r.ok){ const j = await r.json(); if (j && Array.isArray(j.items)){ news = j; newsAt = Date.now(); } } } catch { /* hors ligne ou fichier absent */ }
@@ -3280,7 +3302,7 @@ async function cloudInit(){
 }
 function renderLoading(){ setNav(false); $app.innerHTML = `<p class="sub" style="margin-top:40vh;text-align:center">${tr('Chargement…')}</p>`; }
 function refreshAccount(){
-  if (screen === 'legal' || screen === 'contact' || screen === 'news') return;
+  if (screen === 'legal' || screen === 'contact' || screen === 'news' || screen === 'install') return;
   if (screen === 'account' && me && acc.fromGate){ acc.fromGate = false; return go('home'); } // connexion réussie depuis l'écran d'accueil protégé
   if (screen === 'account') renderAccount(); else if (screen === 'admin') renderAdmin(); else if (screen === 'tab' || !me) home();
 }
