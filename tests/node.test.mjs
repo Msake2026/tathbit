@@ -573,17 +573,18 @@ test('micro qui ne s’ouvre pas : chaque cause a un message d’aide précis, t
   for (const t of new Set(all.filter(Boolean))) assert.ok(i18n.includes(JSON.stringify(t).slice(1, -1).replace(/\\u2019/g, '’')), 'traduction manquante : ' + t);
 });
 
-test('récitation libre : l’alignement des mots entendus suit l’ordre, saute les petits mots sans les inventer, ignore le bruit', () => {
+test('récitation libre : l’alignement des mots entendus suit l’ordre, saute les petits mots sans les inventer, ignore le bruit, garde ce qui a été entendu à la place', () => {
   const html = read('index.html'), { frAlign } = new Function(html.slice(html.indexOf('/* FR:begin'), html.indexOf('/* FR:end */')) + '; return {frAlign};')();
-  const same = (a, b) => a === b;
+  const same = (a, b) => a === b, pm = r => ({p: r.p, miss: r.miss});
   const exp = ['بسم', 'الله', 'الرحمن', 'الرحيم', 'الحمد', 'لله', 'رب', 'العالمين'];
-  let r = frAlign(exp, 0, ['بسم', 'الله', 'الرحمن', 'الرحيم'], same); assert.deepEqual(r, {p: 4, miss: []}, 'récitation exacte');
-  r = frAlign(exp, 0, ['بسم', 'الرحمن'], same); assert.deepEqual(r, {p: 3, miss: [1]}, 'un mot oublié (3 lettres ou plus) est noté à revoir');
-  r = frAlign(exp, 0, ['بسم', 'ازدحام', 'الله', 'ضجيج'], same); assert.deepEqual(r, {p: 2, miss: []}, 'bruit ignoré, on n\'avance pas sur un mot inconnu');
+  let r = frAlign(exp, 0, ['بسم', 'الله', 'الرحمن', 'الرحيم'], same); assert.deepEqual(pm(r), {p: 4, miss: []}, 'récitation exacte'); assert.deepEqual(r.said, [], 'rien à signaler');
+  r = frAlign(exp, 0, ['بسم', 'الرحمن'], same); assert.deepEqual(pm(r), {p: 3, miss: [1]}, 'un mot oublié (3 lettres ou plus) est noté à revoir'); assert.deepEqual(r.said, [[1, []]], 'rien entendu à la place');
+  r = frAlign(exp, 0, ['بسم', 'ازدحام', 'الله', 'ضجيج'], same); assert.deepEqual(pm(r), {p: 2, miss: []}, 'bruit ignoré, on n\'avance pas sur un mot inconnu');
+  r = frAlign(exp, 0, ['بسم', 'خطأ', 'غلط', 'الرحمن'], same, 4, ['بِسْمِ', 'خطأ', 'غلط', 'الرحمن']); assert.deepEqual(pm(r), {p: 3, miss: [1]}, 'mot remplacé par autre chose'); assert.deepEqual(r.said, [[1, ['خطأ', 'غلط']]], 'les mots entendus à la place du mot sauté sont gardés, tels que le téléphone les a écrits');
   r = frAlign(exp, 0, ['رب'], same); assert.equal(r.p, 0, 'un petit mot (moins de 3 lettres) ne permet pas de sauter en avant');
-  r = frAlign(exp, 5, ['لله', 'رب', 'العالمين'], same); assert.deepEqual(r, {p: 8, miss: []}, 'on reprend à partir du point d\'arrêt');
+  r = frAlign(exp, 5, ['لله', 'رب', 'العالمين'], same); assert.deepEqual(pm(r), {p: 8, miss: []}, 'on reprend à partir du point d\'arrêt');
   r = frAlign(exp, 0, ['العالمين'], same); assert.equal(r.p, 0, 'un saut de plus de 4 mots est refusé');
-  r = frAlign(exp, 0, [], same); assert.deepEqual(r, {p: 0, miss: []}, 'rien entendu');
+  r = frAlign(exp, 0, [], same); assert.deepEqual(pm(r), {p: 0, miss: []}, 'rien entendu');
 });
 
 test('version.json : suit la version affichée par l’application (à mettre à jour à chaque publication, sinon le message « nouvelle version » se trompe)', () => {

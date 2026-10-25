@@ -878,11 +878,18 @@
     clickAct('fr-err'); eq(E("errors.length"), 1, 'pas de doublon');
     // autocontrôle des voyelles : l'utilisateur marque des mots, les versets concernés vont aux erreurs sans double compte
     ok($q('[data-act="fr-vow"]'), 'bouton « Vérifier mes voyelles » dans le bilan'); clickAct('fr-vow'); ok($$q('.wd').length > 5 && /voyelles/.test(appText()), 'écran de contrôle des voyelles');
-    clickAct('fr-wd', '0:0'); ok(/1 mot marqué/.test($q('#fr-vow-go').textContent), 'compteur : ' + $q('#fr-vow-go').textContent); clickAct('fr-wd', '1:0'); clickAct('fr-wd', '1:0'); clickAct('fr-wd', '1:1');
+    ok($q('.frvow .wd'), 'mots marqués à l’écran des voyelles : zone en orange'); clickAct('fr-wd', '0:0'); ok(/1 mot marqué/.test($q('#fr-vow-go').textContent), 'compteur : ' + $q('#fr-vow-go').textContent); clickAct('fr-wd', '1:0'); clickAct('fr-wd', '1:0'); clickAct('fr-wd', '1:1');
     ok(/2 mots marqués/.test($q('#fr-vow-go').textContent), 'toucher deux fois annule : ' + $q('#fr-vow-go').textContent);
     clickAct('fr-vow-save'); await wait(100);
     eq(E("stats['112:1']"), [0, 1], 'verset compté « sans oubli » puis marqué : annulé et compté à revoir'); eq(E("stats['112:2']"), [0, 1], 'verset déjà compté en erreur : pas compté deux fois'); eq(E("errors.length"), 3, 'une entrée d’erreur par verset marqué (en plus de la 1re)');
     ok(/Voyelles vérifiées/.test(appText()) && /2 versets avec des voyelles à revoir ajoutés/.test(appText()) && !$q('[data-act="fr-vow"]'), 'bilan : voyelles vérifiées, 2 versets ajoutés');
+    // mots non entendus : rouge, et un toucher montre ce que le téléphone a entendu
+    clickAct('fr-again'); clickAct('fr-start'); say(heard(0).split(' ').slice(0, 1).join(' ') + ' خطأ ' + heard(0).split(' ').slice(2).join(' '));
+    const mi = $q('#fr-text .fw.miss'); ok(mi && mi.dataset.act === 'fr-heard', 'le mot sauté est en rouge (classe miss) et touchable'); ok(/Rouge : mot non entendu/.test(appText()), 'légende : rouge = non entendu, pas forcément une faute');
+    clickAct('fr-heard', mi.dataset.v); ok(/Mot attendu/.test($q('#fr-heard-info').textContent) && /خطأ/.test($q('#fr-heard-info').textContent), 'toucher le mot : ce que le téléphone a entendu à sa place : ' + $q('#fr-heard-info').textContent);
+    clickAct('fr-hint'); const hw = $q('#fr-text .fw.hint'); ok(hw && hw.dataset.act === 'fr-heard', 'mot montré par l’indice : touchable'); clickAct('fr-heard', hw.dataset.v); ok(/grâce à l’indice|grâce à l'indice/.test($q('#fr-heard-info').textContent), 'indice : message dédié');
+    clickAct('fr-skip'); const sk = $q('#fr-text .fw.miss[data-act="fr-heard"]'); ok(sk, 'après « passer ce verset » : mots touchables'); clickAct('fr-stop'); await wait(100);
+    ok($q('#fr-heard-info') && $q('.card .fw.miss[data-act="fr-heard"]'), 'bilan : mots à revoir touchables avec zone d’information'); const bw = $q('.card .fw.miss[data-act="fr-heard"]'); clickAct('fr-heard', bw.dataset.v); ok(/Mot attendu/.test($q('#fr-heard-info').textContent), 'bilan : information affichée');
     // micro refusé : la récitation s'arrête avec le bon message
     clickAct('fr-again'); clickAct('fr-start'); W.__rec.onerror({error: 'not-allowed'}); W.__rec.onend(); await wait(100); ok(/Micro arrêté/.test(appText()), 'micro refusé : bilan « Micro arrêté »');
     // texte visible : aucune écriture dans la révision
