@@ -55,6 +55,16 @@ test('moutoun.js : 61 + 34 + 314 + 42 unités, chaque unité non vide, texte ara
   M.texts.forEach(t => assert.ok(I.en[t.topic] && I.ar[t.topic], 'thème « ' + t.topic + ' » traduit'));
 });
 
+test('noms arabes des sourates : aucun tatwīl parasite, quatre voyelles corrigées à la relecture (Al-Māʾida, Ar-Raḥmān, Al-Mujādila, Al-Mumtaḥana)', () => {
+  const Q = loadGlobal('quran.js', 'QURAN'), ar = n => Q.surahs[n - 1].ar;
+  assert.equal(Q.surahs.filter(s => s.ar.includes('\u0640')).length, 0, 'plus de tatwīl dans les noms');
+  assert.ok(ar(5).endsWith('\u0627\u0626\u0650\u062f\u064e\u0629\u0650'), 'المَائِدَةِ');
+  assert.ok(ar(55).endsWith('\u0646\u0650'), 'الرَّحۡمَٰنِ : kasra sur le nūn final');
+  assert.ok(ar(58).includes('\u0627\u062f\u0650\u0644'), 'المُجَادِلَةِ : kasra sur le dāl (celle qui discute)');
+  assert.ok(ar(60).includes('\u062d\u064e\u0646'), 'المُمۡتَحَنَةِ : fatha sur le ḥāʾ');
+  assert.equal(Q.surahs.length, 114);
+});
+
 test('traductions : chaque texte tr()/trp() de index.html existe en anglais et en arabe', () => {
   const src = read('index.html').match(/<script>([\s\S]*)<\/script>/)[1];
   const I = loadGlobal('i18n.js', 'I18N');

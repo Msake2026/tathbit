@@ -17,6 +17,8 @@ On a relancé chaque script `tools/build_*.py` sur une copie du dépôt, depuis 
 | `moutoun.js` | Wikisource arabe (Tuḥfat al-Aṭfāl 61 vers, Bayqūniyya 34 vers) + hadith-api (Arbaʿūn, 42 hadiths) | identique (hors Ibn ʿĀshir, ajouté le 23 oct., voir §3 bis) |
 | `mutashabihat.js` | calcul automatique sur le texte (pas la liste classique des savants ; dit dans l'application) | identique |
 
+**Noms arabes des sourates** : les lettres sont identiques aux noms de Tanzil (vérifié sur les 114). Quatre noms avaient une voyelle manquante ou un signe parasite et ont été corrigés (voyelles seules) le 25 oct. 2026 : Al-Māʾida (tatwīl retiré), Ar-Raḥmān (kasra finale), Al-Mujādila (kasra sur le dāl ; une première correction à la fatha, faite de mémoire, a été rectifiée par la relecture), Al-Mumtaḥana (fatha sur le ḥāʾ). Liste complète à relire : [NOMS-SOURATES.md](NOMS-SOURATES.md).
+
 Des tests automatiques contrôlent à chaque envoi les empreintes, l'alignement sur les 6236 versets, les sources et la cohérence des règles.
 
 ## 2. Points relevés par les scripts

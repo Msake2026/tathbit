@@ -8,6 +8,19 @@ Usage : python3 -I tools/build_quran.py
 """
 import json, os, re, hashlib, datetime, urllib.request
 
+# Quatre noms de sourates arrivent de la source avec une voyelle manquante ou un signe parasite (tatwīl) ; relecture humaine du 25 oct. 2026.
+# On ne change QUE les voyelles : la fonction vérifie que les lettres restent identiques.
+NAME_FIXES = {5: "\u0633\u064f\u0648\u0631\u064e\u0629\u064f \u0627\u0644\u0645\u064e\u0627\u0626\u0650\u062f\u064e\u0629\u0650", 55: "\u0633\u064f\u0648\u0631\u064e\u0629\u064f \u0627\u0644\u0631\u0651\u064e\u062d\u06e1\u0645\u064e\u0670\u0646\u0650", 58: "\u0633\u064f\u0648\u0631\u064e\u0629\u064f \u0627\u0644\u0645\u064f\u062c\u064e\u0627\u062f\u0650\u0644\u064e\u0629\u0650", 60: "\u0633\u064f\u0648\u0631\u064e\u0629\u064f \u0627\u0644\u0645\u064f\u0645\u06e1\u062a\u064e\u062d\u064e\u0646\u064e\u0629\u0650"}   # \u escapes : voyelles exactes
+def _letters(x):
+    import re
+    return re.sub(r"[\u064B-\u065F\u0670\u06D6-\u06ED\u0640]", "", x)
+def fix_name(n, name):
+    new = NAME_FIXES.get(n)
+    if new is None:
+        return name
+    assert _letters(new) == _letters(name), (n, name, new)
+    return new
+
 OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "quran.js")
 URL = "https://api.alquran.cloud/v1/quran/quran-uthmani"
 
@@ -24,7 +37,7 @@ for s in raw["data"]["surahs"]:
             t = " ".join(t.split()[4:])
         assert t, (s["number"], i + 1)
         ayahs.append([t, v["juz"], v["page"]])
-    surahs.append({"n": s["number"], "ar": s["name"], "en": s["englishName"], "a": ayahs})
+    surahs.append({"n": s["number"], "ar": fix_name(s["number"], s["name"]), "en": s["englishName"], "a": ayahs})
 
 # contrôles de cohérence
 assert [s["n"] for s in surahs] == list(range(1, 115))
