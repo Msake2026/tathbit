@@ -1045,6 +1045,15 @@
     ok(calls.at(-1).startsWith('push_subscribe') && calls.at(-1).includes('"p_time":"20:00"') && calls.at(-1).includes('"p_time2":"21:30"'), 'push_subscribe avec les 2 heures');
     $q('#rem-two').click(); clickAct('rem-save'); await wait(300); ok(calls.at(-1).includes('"p_time2":null'), 'sans 2e rappel : p_time2 nul');
     clickAct('rem-off'); await wait(300); ok(calls.some(c => c.startsWith('push_unsubscribe')), 'désabonnement serveur'); eq(E('remState().on'), false);
+    // première ouverture de l'application installée : proposition d'activer les rappels (une seule fois)
+    E("IS_STANDALONE = () => false; store.set('tathbit.remAsked', 0); go('home')"); ok(!$q('#rem-offer'), 'navigateur ordinaire : pas de proposition');
+    E("IS_STANDALONE = () => true; go('home')"); ok(!!$q('#rem-offer') && /Activer à 20:00/.test($q('#rem-offer').textContent), 'application installée, rappels éteints : proposition d’activer');
+    const n0 = calls.length; clickAct('rem-offer-on'); await wait(300); ok(calls.length === n0 + 1 && calls.at(-1).startsWith('push_subscribe') && calls.at(-1).includes('"p_time":"20:00"'), 'un toucher : abonnement aux rappels à 20:00'); ok(!$q('#rem-offer') && /Rappels activés à 20:00/.test(appText()) && E('remState().on') === true, 'proposition disparue, confirmation affichée');
+    E("cfg.setTab = 'all'; go('settings')"); clickAct('rem-off'); await wait(300); E("store.set('tathbit.remAsked', 0); go('home')"); ok(!!$q('#rem-offer'), 'rappels désactivés puis jamais refusés : la proposition revient');
+    const n1 = calls.length; clickAct('rem-offer-later'); await wait(100); ok(!$q('#rem-offer') && calls.length === n1 && E("store.get('tathbit.remAsked', 0)") > 0, '« Pas maintenant » : aucune inscription, proposition retirée'); E("go('home')"); ok(!$q('#rem-offer'), 'ne revient pas');
+    E("store.set('tathbit.remAsked', 0); IS_STANDALONE = () => true; go('home')"); ok(!!$q('#rem-offer'), 'proposition prête en fr');
+    for (const L of ['en', 'ar']){ E(`setLang('${L}'); go('home')`); ok(!!$q('#rem-offer') && !/undefined/.test($q('#rem-offer').textContent), 'proposition en ' + L); eq(E('[...missingKeys]'), [], 'clés traduites (' + L + ')'); }
+    E("setLang('fr'); IS_STANDALONE = () => navigator.standalone === true || !!(window.matchMedia && matchMedia('(display-mode: standalone)').matches); store.set('tathbit.remAsked', 0)");
     // iPhone dans Safari (application non installée) : pas de « navigateur incompatible » mais le guide d'installation
     E("IOS = true; cfg.setTab = 'all'; go('settings')"); ok(!/Ton navigateur ne gère pas les notifications/.test(appText()) && /les rappels ne marchent que si l'application est installée/.test(appText()), 'iPhone non installé : explication au lieu de « navigateur incompatible »');
     clickAct('tile-install'); await wait(100); ok(/Installation/.test(appText()) && $$q('.inststeps svg').length === 3, 'le bouton ouvre le guide d’installation en 3 schémas');
