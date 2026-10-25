@@ -24,7 +24,7 @@
   for (let i = 0; i < 100 && !(() => { try { return E('Q') && E('Q').length; } catch { return 0; } })(); i++) await wait(100);
   ok(E('Q') && E('Q').length === 114, "le Coran ne s'est pas chargé");
   E("CLOUD.url = ''; CLOUD.anonKey = ''; sb = null; me = null; window.confirm = () => true; window.alert = m => { window.__alerts = (window.__alerts || []).concat(String(m)); };"); // pas de compte pendant les tests
-  const reset = (extra = '') => { E("cfg = Object.assign({}, DEF, {tab: 'home', n: 5, corr: 'standard'}); stats = {}; sched = {}; days = {}; errors = []; plan = null; custom = []; ses = null; LANG = 'fr'; applyLang(); " + extra); jsErrors.length = 0; };
+  const reset = (extra = '') => { E("cfg = Object.assign({}, DEF, {tab: 'home', n: 5, corr: 'standard', setTab: 'all'}); setQ = ''; stats = {}; sched = {}; days = {}; errors = []; plan = null; custom = []; ses = null; LANG = 'fr'; applyLang(); " + extra); jsErrors.length = 0; };
   const $q = s => D.querySelector(s), $$q = s => [...D.querySelectorAll(s)], appText = () => D.getElementById('app').textContent;   // texte de l'écran seulement (le code de la page n'en fait pas partie)
   const click = el => { ok(el, 'élément introuvable'); el.click(); };
   const clickAct = (act, v) => { const sel = `[data-act="${act}"]${v !== undefined ? `[data-v="${v}"]` : ''}`; const el = $q(sel); if (!el) throw new Error('élément introuvable : ' + sel); click(el); };
@@ -939,6 +939,29 @@
     E("renderAdmin()"); $q('#adm-ver').value = String(E('APP_BUILD')); clickAct('adm-announce'); await wait(200); ok(calls.some(c => c.startsWith('admin_announce_update {"p_version":' + E('APP_BUILD') + ',"p_label":"' + E('APP_VERSION'))), 'pour la version courante : libellé complet avec la date');
     $q('#adm-ver').value = '0'; clickAct('adm-announce'); await wait(100); ok(/invalide/.test(appText()), 'numéro invalide refusé sans appel');
     E("me = null; sb = null; adm = {users: null, q: '', detail: null, msg: '', reqs: []}; nf = {list: [], loaded: false}"); noErr('nouvelle version');
+  });
+  test('Réglages : six groupes + « Tout », un groupe à la fois (page courte), recherche dans tous les réglages, groupe retenu, 3 langues', async () => {
+    reset(); E("cfg.setTab = 'account'; go('settings')");
+    const bar = () => $$q('.setbar button').map(b => b.dataset.v); eq(bar(), ['account', 'learn', 'audio', 'display', 'data', 'help', 'all'], 'barre de raccourcis : six groupes et « Tout »');
+    ok($q('.setbar button.sel').dataset.v === 'account' && $q('#set-q') && !$q('#srec') && !$q('#sth'), 'groupe Compte seul : pas les réglages d’audio ni d’affichage');
+    const hAcc = D.documentElement.scrollHeight;
+    clickAct('set-grp', 'learn'); ok($q('[data-act="corr"]') && $q('[data-act="show"]') && !$q('#srec') && E('cfg.setTab') === 'learn', 'Apprentissage : correction et indices');
+    clickAct('set-grp', 'audio'); ok($q('#srec') && $q('#sgoal') && !$q('[data-act="corr"]'), 'Audio et rappels : récitateur, objectif');
+    clickAct('set-grp', 'display'); ok($q('#sth') && $q('[data-act="lang"]') && !$q('#srec'), 'Affichage : langue, thème, accessibilité');
+    clickAct('set-grp', 'data'); ok($q('[data-act="export"]') && $q('#csv-kind'), 'Données : export, import, CSV');
+    clickAct('set-grp', 'help'); ok($q('[data-act="contact"]') && $q('[data-act="legal"]') && $q('[data-act="upd"]') && $$q('details.card').length === 3 && !$q('details.card[open]'), 'Aide et infos : application, contact, confidentialité ; sources et contenus repliés');
+    clickAct('set-grp', 'all'); ok($q('#srec') && $q('#sth') && $q('[data-act="export"]') && $q('[data-act="contact"]') && $q('[data-act="corr"]'), '« Tout » : tous les réglages comme avant'); const hAll = D.documentElement.scrollHeight;
+    ok(hAcc < hAll * 0.7, 'un groupe est bien plus court que toute la page (' + hAcc + ' px contre ' + hAll + ' px)');
+    // recherche : tous les groupes, sans toucher au groupe choisi
+    E("cfg.setTab = 'account'; go('settings')"); const sq = $q('#set-q'); sq.value = 'contraste'; sq.dispatchEvent(new Event('input')); await wait(50);
+    ok($q('#shc') && !$q('#srec') && /réglage[s]? trouvé/.test(appText()), 'recherche « contraste » : le réglage d’accessibilité apparaît (' + appText().match(/\d+ réglages? trouvés?/) + ')'); eq($$q('.setbar button.sel').length, 0, 'pendant la recherche, aucun groupe n’est sélectionné'); eq($q('#set-q').value, 'contraste', 'la saisie est conservée');
+    $q('#set-q').value = 'zzzzqx'; $q('#set-q').dispatchEvent(new Event('input')); await wait(50); ok(/Aucun réglage ne correspond/.test(appText()), 'aucun résultat : message clair');
+    $q('#set-q').value = 'rappel'; $q('#set-q').dispatchEvent(new Event('input')); await wait(50); ok(/Rappel quotidien/.test(appText()) && !$q('#sth'), 'recherche « rappel » : le réglage du rappel (audio), pas les autres groupes');
+    clickAct('set-grp', 'audio'); eq(E('setQ'), '', 'choisir un groupe efface la recherche'); eq(E('cfg.setTab'), 'audio', 'groupe retenu');
+    E("go('home'); go('settings')"); ok($q('.setbar button.sel').dataset.v === 'audio', 'au retour dans les Réglages : même groupe');
+    E("cfg.setTab = 'inconnu'; go('settings')"); ok($q('.setbar button.sel').dataset.v === 'account', 'groupe inconnu : retour au Compte');
+    for (const L of ['en', 'ar']){ E(`setLang('${L}')`); for (const g of ['account', 'learn', 'audio', 'display', 'data', 'help', 'all']){ E(`cfg.setTab = '${g}'; go('settings')`); } ok(!/undefined/.test(appText()), 'réglages en ' + L); eq(E('[...missingKeys]'), [], 'clés traduites (' + L + ')'); }
+    E("setLang('fr')"); noErr('réglages');
   });
   test('Contact : page avec adresse, sujets préremplis, copie de l’adresse ; liens depuis les Réglages et l’écran de connexion', async () => {
     reset(); E("window.TATHBIT_LEGAL = {contact: 'tathbit.app.contact@gmail.com', region: ''}; renderContact()");

@@ -105,7 +105,7 @@ h2{font-size:1.05rem;margin:0 0 .6em}
 .sub{color:var(--muted);margin:0 0 1.2em}
 .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:14px}
 label.f{display:block;font-size:.85rem;color:var(--muted);margin:10px 0 4px}
-select,input[type=number],input[type=date],input[type=text],input[type=email],input[type=password],input[type=time],textarea,.blankin{width:100%;padding:10px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:inherit}
+select,input[type=number],input[type=date],input[type=text],input[type=search],input[type=email],input[type=password],input[type=time],textarea,.blankin{width:100%;padding:10px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:inherit}
 .row{display:flex;gap:10px;flex-wrap:wrap}
 .row>*{flex:1;min-width:120px}
 button{font:inherit;cursor:pointer;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--ink);padding:10px 14px}
@@ -144,6 +144,8 @@ sup.vn{font-family:Inter,sans-serif;font-size:.6rem;color:var(--muted);margin:0 
 .fw{padding:0 .1em;border-radius:5px;transition:background .15s,color .15s}.fw.ok{color:var(--ok)}.fw.miss{background:color-mix(in srgb,var(--ko) 16%,transparent);text-decoration:underline wavy var(--ko);cursor:pointer}.fw.hint{cursor:pointer}
 .frvow .wd.bad{color:inherit;background:color-mix(in srgb,#e08a1e 28%,transparent);text-decoration:underline wavy #e08a1e}
 .fw.mask{color:transparent!important;background:color-mix(in srgb,var(--muted) 30%,transparent);user-select:none}.fw.cur{outline:2px solid var(--accent);outline-offset:1px}.fw.hint{background:color-mix(in srgb,var(--gold,#c9a227) 30%,transparent);color:var(--ink)}
+.setbar{display:flex;gap:6px;overflow-x:auto;position:sticky;top:0;z-index:6;background:var(--bg);padding:6px 0 8px;margin:0 0 6px;scrollbar-width:thin}.setbar button{white-space:nowrap;flex:0 0 auto}
+details.card>summary{cursor:pointer;list-style:none}details.card>summary::-webkit-details-marker{display:none}details.card>summary h2{display:inline}details.card>summary::before{content:'▸ ';color:var(--muted)}details.card[open]>summary::before{content:'▾ '}
 .big-score{font-size:3rem;font-weight:600;text-align:center;margin:.2em 0}
 .foot{color:var(--muted);font-size:.78rem;text-align:center;margin-top:24px}
 .link{background:none;border:none;color:var(--muted);text-decoration:underline;padding:4px}
@@ -232,7 +234,7 @@ h2::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--go
 :focus-visible{outline:2px solid var(--gold);outline-offset:2px}
 .card{border-radius:18px;padding:18px;border:1px solid var(--line);
   box-shadow:inset 0 0 0 4px var(--card),inset 0 0 0 5px var(--line-soft),0 12px 26px -20px rgba(70,45,10,.55)}
-select,input[type=number],input[type=date],input[type=text],input[type=email],input[type=password],input[type=time],textarea,.blankin{background:color-mix(in srgb,var(--card) 70%,var(--bg));border-color:var(--line);border-radius:12px}
+select,input[type=number],input[type=date],input[type=text],input[type=search],input[type=email],input[type=password],input[type=time],textarea,.blankin{background:color-mix(in srgb,var(--card) 70%,var(--bg));border-color:var(--line);border-radius:12px}
 select:focus,input:focus,textarea:focus{border-color:var(--gold);outline:none;box-shadow:0 0 0 3px color-mix(in srgb,var(--gold) 22%,transparent)}
 button{border-radius:12px;font-weight:500;border-color:var(--line);transition:border-color .15s,box-shadow .15s,transform .05s}
 button:hover:not(:disabled){border-color:var(--gold);box-shadow:0 0 0 3px color-mix(in srgb,var(--gold) 18%,transparent)}
@@ -280,7 +282,7 @@ button.big{border-radius:14px}
 .sumline span{background:color-mix(in srgb,var(--bg) 55%,var(--card));border-color:var(--line)}
 /* anciens navigateurs (iPhone avant iOS 16.2) : sans color-mix(), on garde des couleurs unies lisibles */
 @supports not (color: color-mix(in srgb, red, blue)){
-  select,input[type=number],input[type=date],input[type=text],input[type=email],input[type=password],input[type=time],textarea,.blankin{background:var(--card)}
+  select,input[type=number],input[type=date],input[type=text],input[type=search],input[type=email],input[type=password],input[type=time],textarea,.blankin{background:var(--card)}
   .mode.sel,.consent:has(input:checked){background:var(--card)}
   .bar,.goal{background:var(--line)}
   .stat div,.sumline span,.consent{background:var(--card)}
@@ -460,7 +462,7 @@ async function loadQuran(){
 
 /* ---------- état persistant ---------- */
 const DEF = {mode: 'mix', scope: {type: 'surah', from: 78, to: 114}, n: 10, input: 'recite', level: 40,
-  corr: 'standard', tjKind: 'rule', mkKind: 'zone', sfKind: 'pair', ahKind: 'nun', mdKind: 'type', audFrom: 78, audTo: 114, audCap: 100, audQ: 64, audAuto: false, lastMemo: 'mix', show: {s: true, v: true, p: true}, reciter: 'ar.alafasy', goal: 20, contLen: 5, endLen: 2, begLen: 1, map: 's', tab: 'home', rdHide: false, rdSize: 1.9, rdTaj: false, rdTr: '', rdTf: false,
+  corr: 'standard', tjKind: 'rule', mkKind: 'zone', sfKind: 'pair', ahKind: 'nun', mdKind: 'type', audFrom: 78, audTo: 114, audCap: 100, audQ: 64, audAuto: false, setTab: 'account', lastMemo: 'mix', show: {s: true, v: true, p: true}, reciter: 'ar.alafasy', goal: 20, contLen: 5, endLen: 2, begLen: 1, map: 's', tab: 'home', rdHide: false, rdSize: 1.9, rdTaj: false, rdTr: '', rdTf: false,
   lang: ['fr', 'en', 'ar'].includes((navigator.language || '').slice(0, 2)) ? navigator.language.slice(0, 2) : 'fr'};
 const stored = store.get('tathbit.cfg', {});
 let cfg = Object.assign({}, DEF, stored);
@@ -757,6 +759,8 @@ function home(){ // affiche l'écran du menu courant (accès réservé aux compt
   $app.querySelectorAll('select').forEach(el => { if (el.id.startsWith('cm-')) return;
     el.onchange = () => { syncCfg(); if (['stype', 'smatn', 'ssec', 'sgoal', 'scat', 'srec', 'aud-from', 'aud-to', 'aud-cap', 'aud-q'].includes(el.id) || el.id.startsWith('pf-')) home(); }; });
   ['pf-recent-n', 'pf-cycle-n'].forEach(id => { if ($(id)) $(id).oninput = () => { pdraft = pfRead(); }; });
+  { const on = document.querySelector('.setbar button.sel'); if (on && on.scrollIntoView) try { on.scrollIntoView({inline: 'center', block: 'nearest'}); } catch { /* ancien navigateur */ } }
+  { const sq = $('set-q'); if (sq) sq.oninput = () => { setQ = sq.value; const pos = sq.selectionStart; home(); const n = $('set-q'); if (n){ n.focus(); n.setSelectionRange(pos, pos); } }; }
   if ($('impfile')) $('impfile').onchange = e => importFile(e.target.files[0]);
   ['cm-f-cam', 'cm-f-img', 'cm-f-doc'].forEach(id => { if ($(id)) $(id).onchange = e => { queueAdd([...e.target.files]); e.target.value = ''; }; });
 }
@@ -1195,31 +1199,26 @@ function tabProgress(){
 }
 
 /* -- Réglages -- */
+let setQ = '';   // recherche dans les réglages (non enregistrée)
 function tabSettings(){
   const corrTxt = {strict: 'Chaque lettre, chaque voyelle, soukoun et chadda compris : une seule faute = raté.',
     standard: 'Lettres et voyelles exactes ; soukoun et chadda d\'assimilation (idghām) tolérés comme dans l\'écriture courante.',
     soft: 'Les voyelles sont ignorées et une petite faute de frappe est tolérée.'}[cfg.corr];
-  return `
-  <h1>${tr('Réglages')}</h1>
-  <p class="sub">${tr('Compte, correction, indices, audio, sauvegarde.')}</p>
-  ${accountCard()}
-
-  <div class="card"><h2>${tr('Langue')}</h2>
+  const C = {   // un réglage = une carte ; elles sont rangées en groupes juste en dessous
+    account: `${accountCard()}`,
+    lang: `<div class="card"><h2>${tr('Langue')}</h2>
     <div class="seg">${Object.entries(LANGS).map(([k, n]) => `<button class="${LANG === k ? 'sel' : ''}" data-act="lang" data-v="${k}" lang="${k}">${n}</button>`).join('')}</div>
-  </div>
-
-  <div class="card"><h2>${tr('Correction de la saisie (Coran)')}</h2>
+  </div>`,
+    corr: `<div class="card"><h2>${tr('Correction de la saisie (Coran)')}</h2>
     <div class="seg">${[['strict', 'Stricte'], ['standard', 'Standard'], ['soft', 'Souple']].map(([k, t]) =>
       `<button class="${cfg.corr === k ? 'sel' : ''}" data-act="corr" data-v="${k}">${tr(t)}</button>`).join('')}</div>
     <p class="ref" style="margin:8px 0 0">${tr(corrTxt)}${cfg.corr === 'soft' ? '' : ' ' + tr('La voix ne peut pas vérifier les voyelles.')} ${tr('Les moutoun gardent une correction souple.')}</p>
-  </div>
-
-  <div class="card"><h2>${tr('Indices affichés avec le verset à compléter')}</h2>
+  </div>`,
+    hints: `<div class="card"><h2>${tr('Indices affichés avec le verset à compléter')}</h2>
     <div class="chips">${[['s', 'Sourate / titre du matn'], ['v', 'N° du verset'], ['p', 'N° de page']]
       .map(([k, t]) => `<button class="${cfg.show[k] ? 'sel' : ''}" data-act="show" data-v="${k}">${cfg.show[k] ? '✓ ' : ''}${tr(t)}</button>`).join('')}</div>
-  </div>
-
-  <div class="card"><h2>${tr('Audio et objectif')}</h2>
+  </div>`,
+    audio: `<div class="card"><h2>${tr('Audio et objectif')}</h2>
     <div class="row">
       <div><label class="f">${tr('Récitateur')}</label>
         <select id="srec">${RECITERS.map(([id, n]) => `<option value="${id}" ${id === cfg.reciter ? 'selected' : ''}>${n}</option>`).join('')}</select></div>
@@ -1228,51 +1227,55 @@ function tabSettings(){
     </div>
     <div class="row" style="margin-top:12px;align-items:end"><div><label class="f">${tr('Rappel quotidien (calendrier)')}</label><input type="time" id="rtime" value="20:00"></div>
       <button data-act="ics">📅 ${tr('Ajouter au calendrier')}</button></div>
-  </div>
-
-  <div class="card"><h2>${tr("But de l'application")}</h2>
-    <p class="ref" style="margin:0">${tr("Tathbīt (تثبيت) sert à consolider ce que tu as déjà mémorisé du Coran et des moutoun : c'est le tathbīt, et non le ḥifẓ (la première mémorisation).")}</p></div>
-
-  <div class="card"><h2>${tr("D'où viennent les contenus ?")}</h2>
+  </div>`,
+    about: `<details class="card"><summary><h2>${tr("But de l'application")}</h2></summary>
+    <p class="ref" style="margin:0">${tr("Tathbīt (تثبيت) sert à consolider ce que tu as déjà mémorisé du Coran et des moutoun : c'est le tathbīt, et non le ḥifẓ (la première mémorisation).")}</p></details>`,
+    contents: `<details class="card"><summary><h2>${tr("D'où viennent les contenus ?")}</h2></summary>
     <p class="ref" style="margin:0 0 6px"><b>${tr('Sources citées et vérifiables :')}</b> ${tr('texte du Coran et traductions (Tanzil), tafsīr al-Muyassar, annotation du tajwīd (Islamic Network), moutoun (Wikisource, hadith-api ; Ibn ʿĀshir : deux transcriptions web non officielles), règles des lettres (Wikisource et Wikipédia arabe).')}</p>
     <p class="ref" style="margin:0 0 6px"><b>${tr('Rédigé par une IA, pas une source officielle :')}</b> ${tr("les textes d'explication, les consignes, les noms français des règles, les traductions anglaises et arabes de l'interface et le choix des questions. Ils sont signalés par la mention « 🤖 ». En cas de doute, demande à un enseignant qualifié.")}</p>
-    <p class="ref" style="margin:0"><a href="https://github.com/Msake2026/tathbit/blob/main/AUDIT-CONTENU.md" target="_blank" rel="noopener">${tr('Voir le détail de la vérification des contenus')}</a></p></div>
-  <div class="card"><h2>${tr('Accessibilité')}</h2>
+    <p class="ref" style="margin:0"><a href="https://github.com/Msake2026/tathbit/blob/main/AUDIT-CONTENU.md" target="_blank" rel="noopener">${tr('Voir le détail de la vérification des contenus')}</a></p></details>`,
+    a11y: `<div class="card"><h2>${tr('Accessibilité')}</h2>
     <label class="f" for="sth">${tr('Thème')}</label>
     <select id="sth"><option value="auto" ${!cfg.theme ? 'selected' : ''}>${tr('Automatique (préférence du système)')}</option><option value="light" ${cfg.theme === 'light' ? 'selected' : ''}>${tr('Clair')}</option><option value="dark" ${cfg.theme === 'dark' ? 'selected' : ''}>${tr('Sombre')}</option></select>
     <label class="f" for="shc">${tr('Contraste renforcé des couleurs du tajwīd')}</label>
     <select id="shc"><option value="auto" ${cfg.hc === undefined ? 'selected' : ''}>${tr('Automatique (préférence du système)')}</option><option value="on" ${cfg.hc === true ? 'selected' : ''}>${tr('Oui')}</option><option value="off" ${cfg.hc === false ? 'selected' : ''}>${tr('Non')}</option></select>
     <label class="consent"><input type="checkbox" id="tjp" ${cfg.tjp ? 'checked' : ''}><span>${tr('Ajouter un motif (trait, pointillé…) à chaque règle du tajwīd, en plus de la couleur')}</span></label>
-    <p class="ref" style="margin:6px 0 0">${tr("Les couleurs officielles du tajwīd ont un faible contraste sur fond clair (10 règles sur 15 ont une couleur sous la recommandation 4,5:1). Ce réglage les fonce, en gardant la même teinte.")}</p></div>
-
-  ${audioCard()}
-
-  ${remindCard()}
-
-  <div class="card"><h2>${tr('Mes données')}</h2>
+    <p class="ref" style="margin:6px 0 0">${tr("Les couleurs officielles du tajwīd ont un faible contraste sur fond clair (10 règles sur 15 ont une couleur sous la recommandation 4,5:1). Ce réglage les fonce, en gardant la même teinte.")}</p></div>`,
+    audioOff: `${audioCard()}`,
+    remind: `${remindCard()}`,
+    data: `<div class="card"><h2>${tr('Mes données')}</h2>
     <div class="row"><button data-act="export">⬇ ${tr('Exporter ma progression')}</button><button data-act="import">⬆ ${tr('Importer')}</button></div>
     <input type="file" id="impfile" accept="application/json,.json" hidden>
     <label class="f" for="csv-kind">${tr('Exporter pour un tableur (CSV)')}</label>
     <div class="row" style="align-items:end"><select id="csv-kind">${CSVKINDS.map(([id, t]) => `<option value="${id}">${tr(t)}</option>`).join('')}</select><button data-act="csv" style="flex:0 0 auto">⬇ CSV</button></div>
     <p class="ref" style="margin:8px 0 0">${tr('Tout est stocké sur cet appareil. Exporte régulièrement pour ne rien perdre en changeant de téléphone.')}</p>
     <p style="margin:6px 0 0"><button class="link" data-act="reset" style="color:var(--ko)">${tr('Réinitialiser statistiques et historique')}</button></p>
-  </div>
-
-  <div class="card"><h2>${tr('Application')}</h2>
+  </div>`,
+    app: `<div class="card"><h2>${tr('Application')}</h2>
     <p class="ref" style="margin:0 0 8px">${tr("Version {v}. Une fois installée sur le téléphone, l'application se met à jour toute seule à l'ouverture quand tu es en ligne ; si tu ne vois pas les nouveautés, utilise ce bouton (ta progression n'est pas touchée).", {v: APP_VERSION})}</p>
-    <button data-act="upd">🔄 ${tr('Chercher les mises à jour')}</button> <button data-act="news-open">✨ ${tr('Voir les nouveautés')}</button></div>
-
-  <div class="card"><h2>${tr('Contact')}</h2>
+    <button data-act="upd">🔄 ${tr('Chercher les mises à jour')}</button> <button data-act="news-open">✨ ${tr('Voir les nouveautés')}</button></div>`,
+    contact: `<div class="card"><h2>${tr('Contact')}</h2>
     <p class="ref" style="margin:0 0 8px">${tr('Une question, une erreur dans un texte, un problème, une idée : écris-nous.')}</p>
-    <button data-act="contact">✉️ ${tr('Nous contacter')}</button></div>
-
-  <div class="card"><h2>${tr('Confidentialité')}</h2>
+    <button data-act="contact">✉️ ${tr('Nous contacter')}</button></div>`,
+    privacy: `<div class="card"><h2>${tr('Confidentialité')}</h2>
     <p class="ref" style="margin:0 0 8px">${tr('Quelles données sont enregistrées, qui les voit, comment les supprimer.')}</p>
-    <button data-act="legal">${tr('Lire la confidentialité et les conditions')}</button></div>
-
-  <div class="card"><h2>${tr('Sources')}</h2>
+    <button data-act="legal">${tr('Lire la confidentialité et les conditions')}</button></div>`,
+    sources: `<details class="card"><summary><h2>${tr('Sources')}</h2></summary>
     <p class="ref" style="margin:0">${tr("Coran : texte uthmani du projet Tanzil, embarqué dans le site et vérifié (lecture de Ḥafṣ). Audio : cdn.islamic.network (AlQuran Cloud). Lecteur : tajwīd en couleurs (Islamic Network), traductions (Tanzil : Hamidullah, Saheeh International) et tafsir al-Muyassar (Complexe du Roi Fahd). Moutoun : Wikisource arabe et hadith-api (voir l'écran Réviser pour chaque matn). Versets proches : calculés automatiquement.")}</p>
-  </div>`;
+  </details>`,
+  };
+  const G = [['account', '👤', 'Compte', ['account']], ['learn', '🎓', 'Apprentissage', ['corr', 'hints']], ['audio', '🔊', 'Audio et rappels', ['audio', 'audioOff', 'remind']],
+    ['display', '🎨', 'Affichage', ['lang', 'a11y']], ['data', '💾', 'Données', ['data']], ['help', 'ℹ️', 'Aide et infos', ['app', 'contact', 'privacy', 'about', 'contents', 'sources']]];
+  const plain = h => h.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').toLowerCase();
+  const q = setQ.trim().toLowerCase(), grp = G.some(g => g[0] === cfg.setTab) ? cfg.setTab : cfg.setTab === 'all' ? 'all' : 'account';
+  const cards = G.flatMap(([g, , t, ids]) => ids.map(id => ({g, id, t, html: C[id]})));
+  const shown = q ? cards.filter(c => plain(c.html).includes(q) || tr(c.t).toLowerCase().includes(q)) : grp === 'all' ? cards : cards.filter(c => c.g === grp);
+  return `
+  <h1>${tr('Réglages')}</h1>
+  <input type="search" id="set-q" value="${esc(setQ)}" placeholder="${tr('Chercher un réglage…')}" aria-label="${tr('Chercher un réglage…')}" autocomplete="off" style="margin-bottom:8px">
+  <div class="setbar" role="group" aria-label="${tr('Groupes de réglages')}">${G.map(([g, ic, t]) => `<button class="${!q && grp === g ? 'sel' : ''}" data-act="set-grp" data-v="${g}" aria-pressed="${!q && grp === g}">${ic} ${tr(t)}</button>`).join('')}<button class="${!q && grp === 'all' ? 'sel' : ''}" data-act="set-grp" data-v="all" aria-pressed="${!q && grp === 'all'}">☰ ${tr('Tout')}</button></div>
+  ${q ? `<p class="ref" style="margin:4px 0 8px">${shown.length ? trp(shown.length, '{n} réglage trouvé|{n} réglages trouvés') : tr('Aucun réglage ne correspond à « {q} ».', {q: esc(setQ.trim())})}</p>` : ''}
+  ${shown.map(c => c.html).join('\n')}`;
 }
 const weakHtml = weak => weak.length ? `<h2 style="margin-top:14px">${tr('À retravailler')}</h2>` + weak.map(([s, r, n]) =>
   `<div class="weak"><span>${sname(pk(s + ':1').s)}</span><span>${Math.round(r * 100)} % · ${Math.round(n)} ${tr('rép.')}</span></div>`).join('') : '';
@@ -2757,6 +2760,7 @@ const onClick = e => {
     case 'acc-delete': doDeleteMe(); break;
     case 'adm-open': openAdmin(); break;
     case 'adm-refresh': adminLoad(); break;
+    case 'set-grp': cfg.setTab = v; setQ = ''; saveCfg(); home(); window.scrollTo(0, 0); break;
     case 'news-open': openNews(); break;
     case 'news-dismiss': if (news) store.set('tathbit.newsSeen', +news.v); newsSlot(); break;
     case 'news-back': go('home'); break;
@@ -3090,7 +3094,7 @@ function results(){
 }
 
 /* ---------- compte (Supabase) : inscription, connexion, synchronisation, espace admin ---------- */
-const APP_VERSION = '25 oct. 2026 · v93';
+const APP_VERSION = '25 oct. 2026 · v94';
 const APP_BUILD = +((/v(\d+)/.exec(APP_VERSION) || [])[1]) || 0;   // numéro de la version qui tourne ; version.json (à jour à chaque publication) donne le dernier numéro publié
 let newVer = null, verAt = 0;
 function updBannerHtml(){
