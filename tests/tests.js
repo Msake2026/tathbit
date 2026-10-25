@@ -946,6 +946,11 @@
     const tiles = () => $$q('.sethub button').map(b => b.dataset.v); eq(tiles(), ['account', 'learn', 'audio', 'display', 'data', 'help'], 'six tuiles dès l’ouverture');
     ok(!$q('.setbar') && /rangés en 6 blocs/.test(appText()) && $$q('.sethub button small').every(x => x.textContent.length > 8) && !$q('#srec') && !$q('#sth'), 'phrase « 6 blocs », chaque tuile dit ce qu’elle contient, aucun réglage déplié');
     const r = $q('.sethub').getBoundingClientRect(); ok(D.documentElement.scrollWidth <= W.innerWidth + 1 && $$q('.sethub button').every(b => b.getBoundingClientRect().width > 100), 'les tuiles tiennent dans la largeur sans défilement');
+    const sv = g => $q(`.sethub button[data-v="${g}"] .sv`).textContent;
+    ok(sv('account') === 'Pas de compte connecté' && /Correction : Standard · 3 indices affichés/.test(sv('learn')) && /Mishary Alafasy · Objectif : 20 · Rappels : désactivés/.test(sv('audio')) && /Thème automatique/.test(sv('display')) && /0 réponse enregistrée · 0 erreur/.test(sv('data')) && sv('help') === 'Version v' + E('APP_BUILD'), 'chaque tuile montre l’état en cours : ' + $$q('.sethub .sv').map(x => x.textContent).join(' | '));
+    E("cfg.corr = 'soft'; cfg.reciter = 'ar.husary'; cfg.goal = 50; cfg.show = {s: true, v: false, p: false}; cfg.theme = 'dark'; stats = {'1:1': [2, 1]}; errors = [{t: 1, k: '1:1', m: 'next', sc: 0}]; me = {user: {id: 'u1', email: 'a@b.fr'}, profile: {}}; go('settings')");
+    ok(sv('account') === 'a@b.fr' && /Correction : Souple · 1 indice affiché/.test(sv('learn')) && /Al-Husary · Objectif : 50/.test(sv('audio')) && /Sombre/.test(sv('display')) && /3 réponses enregistrées · 1 erreur/.test(sv('data')), 'les tuiles suivent les réglages : ' + $$q('.sethub .sv').map(x => x.textContent).join(' | '));
+    E("me = null; newVer = {v: APP_BUILD + 1, label: 'v' + (APP_BUILD + 1), note: ''}; go('settings')"); ok(/mise à jour disponible/.test(sv('help')), 'tuile Aide : signale une mise à jour disponible'); E("newVer = null; go('settings')");
     const hHub = D.documentElement.scrollHeight;
     clickAct('set-grp', 'account'); ok($q('.setnav') && $q('.setnav [data-v="hub"]') && !$q('.sethub') && !$q('#srec') && !$q('#sth'), 'Compte : bouton « Les 6 blocs » en haut, rien des autres blocs');
     clickAct('set-grp', 'hub'); eq(tiles().length, 6, 'retour aux 6 blocs');

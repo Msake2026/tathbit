@@ -145,7 +145,7 @@ sup.vn{font-family:Inter,sans-serif;font-size:.6rem;color:var(--muted);margin:0 
 .frvow .wd.bad{color:inherit;background:color-mix(in srgb,#e08a1e 28%,transparent);text-decoration:underline wavy #e08a1e}
 .fw.mask{color:transparent!important;background:color-mix(in srgb,var(--muted) 30%,transparent);user-select:none}.fw.cur{outline:2px solid var(--accent);outline-offset:1px}.fw.hint{background:color-mix(in srgb,var(--gold,#c9a227) 30%,transparent);color:var(--ink)}
 p a[href],.ref a[href],li a[href]{display:inline-block;min-height:24px;line-height:24px}   /* liens dans une phrase : zone à toucher d'au moins 24 px de haut (WCAG 2.5.8), sans déborder sur les voisins */
-.sethub{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:10px 0}.sethub button{display:flex;flex-direction:column;align-items:flex-start;gap:3px;min-height:104px;padding:14px;text-align:start;border-radius:16px;white-space:normal}.sethub .si{font-size:1.7rem;line-height:1}.sethub b{font-size:1.05rem}.sethub small{color:var(--muted);font-weight:400;line-height:1.35}
+.sethub{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:8px 0}.sethub button{display:grid;grid-template-columns:auto minmax(0,1fr);column-gap:8px;row-gap:3px;align-items:center;align-content:start;min-width:0;min-height:0;padding:11px 12px;text-align:start;border-radius:16px;white-space:normal}.sethub .si{font-size:1.45rem;line-height:1}.sethub b{font-size:1rem;line-height:1.2}.sethub small,.sethub .sv{grid-column:1 / -1;min-width:0}.sethub small{color:var(--muted);font-weight:400;font-size:.78rem;line-height:1.3}.sethub .sv{padding-top:4px;border-top:1px dashed var(--line);color:var(--accent);font-size:.8rem;font-weight:600;line-height:1.3;overflow-wrap:anywhere}.sethub .sv.one{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 @media(min-width:700px){.sethub{grid-template-columns:repeat(3,minmax(0,1fr))}}
 .setnav{position:sticky;top:0;z-index:6;background:var(--bg);padding:8px 0}
 details.card>summary{cursor:pointer;list-style:none}details.card>summary::-webkit-details-marker{display:none}details.card>summary h2{display:inline}details.card>summary::before{content:'▸ ';color:var(--muted)}details.card[open]>summary::before{content:'▾ '}
@@ -1273,6 +1273,15 @@ function tabSettings(){
   const q = setQ.trim().toLowerCase(), grp = G.some(g => g[0] === cfg.setTab) || cfg.setTab === 'all' ? cfg.setTab : 'hub';   // « hub » : les 6 blocs d'un coup d'œil (par défaut)
   const cards = G.flatMap(([g, , t, , ids]) => ids.map(id => ({g, id, t, html: C[id]})));
   const shown = q ? cards.filter(c => plain(c.html).includes(q) || tr(c.t).toLowerCase().includes(q)) : grp === 'all' ? cards : cards.filter(c => c.g === grp);
+  const nAns = Object.values(stats).reduce((a, v) => a + (v[0] || 0) + (v[1] || 0), 0), nHint = Object.values(cfg.show || {}).filter(Boolean).length;
+  const rm = remState(), theme = cfg.theme === 'light' ? tr('Clair') : cfg.theme === 'dark' ? tr('Sombre') : tr('Thème automatique');
+  const ST = {   // l'état en cours de chaque bloc, pour le voir sans l'ouvrir
+    account: me ? esc(me.user.email) : tr('Pas de compte connecté'),
+    learn: tr('Correction : {c}', {c: tr({strict: 'Stricte', standard: 'Standard', soft: 'Souple'}[cfg.corr] || 'Standard')}) + ' · ' + trp(nHint, '{n} indice affiché|{n} indices affichés'),
+    audio: esc((RECITERS.find(r => r[0] === cfg.reciter) || [])[1] || cfg.reciter) + ' · ' + tr('Objectif : {n}', {n: cfg.goal}) + ' · ' + (rm.on ? tr('Rappels : {t}', {t: rm.time}) : tr('Rappels : désactivés')),
+    display: esc(LANGS[LANG]) + ' · ' + theme,
+    data: trp(Math.round(nAns), '{n} réponse enregistrée|{n} réponses enregistrées') + ' · ' + trp(errors.length, '{n} erreur|{n} erreurs'),
+    help: tr('Version {v}', {v: 'v' + APP_BUILD}) + (newVer && newVer.v > APP_BUILD ? ' · 🆕 ' + tr('mise à jour disponible') : '')};
   const search = `<input type="search" id="set-q" value="${esc(setQ)}" placeholder="${tr('Chercher un réglage…')}" aria-label="${tr('Chercher un réglage…')}" autocomplete="off" style="margin-bottom:8px">`;
   const found = q ? `<p class="ref" style="margin:4px 0 8px">${shown.length ? trp(shown.length, '{n} réglage trouvé|{n} réglages trouvés') : tr('Aucun réglage ne correspond à « {q} ».', {q: esc(setQ.trim())})}</p>` : '';
   const g0 = G.find(g => g[0] === grp);
@@ -1280,7 +1289,7 @@ function tabSettings(){
   <h1>${tr('Réglages')}</h1>
   <p class="sub">${tr('Les réglages sont rangés en 6 blocs : touche-en un pour l\'ouvrir, ou cherche un réglage.')}</p>
   ${search}
-  <div class="sethub">${G.map(([g, ic, t, d]) => `<button data-act="set-grp" data-v="${g}"><span class="si" aria-hidden="true">${ic}</span><b>${tr(t)}</b><small>${tr(d)}</small></button>`).join('')}</div>
+  <div class="sethub">${G.map(([g, ic, t, d]) => `<button data-act="set-grp" data-v="${g}"><span class="si" aria-hidden="true">${ic}</span><b>${tr(t)}</b><small>${tr(d)}</small><span class="sv${g === 'account' ? ' one' : ''}">${ST[g]}</span></button>`).join('')}</div>
   <p style="text-align:center;margin:6px 0"><button class="link" data-act="set-grp" data-v="all">☰ ${tr('Tout afficher sur une seule page')}</button></p>`;
   return `
   <h1>${tr('Réglages')}</h1>
