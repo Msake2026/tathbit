@@ -940,27 +940,32 @@
     $q('#adm-ver').value = '0'; clickAct('adm-announce'); await wait(100); ok(/invalide/.test(appText()), 'numéro invalide refusé sans appel');
     E("me = null; sb = null; adm = {users: null, q: '', detail: null, msg: '', reqs: []}; nf = {list: [], loaded: false}"); noErr('nouvelle version');
   });
-  test('Réglages : six groupes + « Tout », un groupe à la fois (page courte), recherche dans tous les réglages, groupe retenu, 3 langues', async () => {
-    reset(); E("cfg.setTab = 'account'; go('settings')");
-    const bar = () => $$q('.setbar button').map(b => b.dataset.v); eq(bar(), ['account', 'learn', 'audio', 'display', 'data', 'help', 'all'], 'barre de raccourcis : six groupes et « Tout »');
-    ok($q('.setbar button.sel').dataset.v === 'account' && $q('#set-q') && !$q('#srec') && !$q('#sth'), 'groupe Compte seul : pas les réglages d’audio ni d’affichage');
-    const hAcc = D.documentElement.scrollHeight;
-    clickAct('set-grp', 'learn'); ok($q('[data-act="corr"]') && $q('[data-act="show"]') && !$q('#srec') && E('cfg.setTab') === 'learn', 'Apprentissage : correction et indices');
-    clickAct('set-grp', 'audio'); ok($q('#srec') && $q('#sgoal') && !$q('[data-act="corr"]'), 'Audio et rappels : récitateur, objectif');
-    clickAct('set-grp', 'display'); ok($q('#sth') && $q('[data-act="lang"]') && !$q('#srec'), 'Affichage : langue, thème, accessibilité');
-    clickAct('set-grp', 'data'); ok($q('[data-act="export"]') && $q('#csv-kind'), 'Données : export, import, CSV');
-    clickAct('set-grp', 'help'); ok($q('[data-act="contact"]') && $q('[data-act="legal"]') && $q('[data-act="upd"]') && $$q('details.card').length === 3 && !$q('details.card[open]'), 'Aide et infos : application, contact, confidentialité ; sources et contenus repliés');
-    clickAct('set-grp', 'all'); ok($q('#srec') && $q('#sth') && $q('[data-act="export"]') && $q('[data-act="contact"]') && $q('[data-act="corr"]'), '« Tout » : tous les réglages comme avant'); const hAll = D.documentElement.scrollHeight;
-    ok(hAcc < hAll * 0.7, 'un groupe est bien plus court que toute la page (' + hAcc + ' px contre ' + hAll + ' px)');
-    // recherche : tous les groupes, sans toucher au groupe choisi
-    E("cfg.setTab = 'account'; go('settings')"); const sq = $q('#set-q'); sq.value = 'contraste'; sq.dispatchEvent(new Event('input')); await wait(50);
-    ok($q('#shc') && !$q('#srec') && /réglage[s]? trouvé/.test(appText()), 'recherche « contraste » : le réglage d’accessibilité apparaît (' + appText().match(/\d+ réglages? trouvés?/) + ')'); eq($$q('.setbar button.sel').length, 0, 'pendant la recherche, aucun groupe n’est sélectionné'); eq($q('#set-q').value, 'contraste', 'la saisie est conservée');
+  test('Réglages : à l’ouverture, les 6 blocs sont visibles d’un coup (tuiles) ; un bloc à la fois ; « Tout » ; recherche ; 3 langues', async () => {
+    reset(); E("cfg.setTab = 'hub'; go('settings')");
+    const openG = g => { if ($q('[data-act="set-grp"][data-v="hub"]')) clickAct('set-grp', 'hub'); clickAct('set-grp', g); };   // d'un bloc à l'autre : on repasse par les 6 blocs
+    const tiles = () => $$q('.sethub button').map(b => b.dataset.v); eq(tiles(), ['account', 'learn', 'audio', 'display', 'data', 'help'], 'six tuiles dès l’ouverture');
+    ok(!$q('.setbar') && /rangés en 6 blocs/.test(appText()) && $$q('.sethub button small').every(x => x.textContent.length > 8) && !$q('#srec') && !$q('#sth'), 'phrase « 6 blocs », chaque tuile dit ce qu’elle contient, aucun réglage déplié');
+    const r = $q('.sethub').getBoundingClientRect(); ok(D.documentElement.scrollWidth <= W.innerWidth + 1 && $$q('.sethub button').every(b => b.getBoundingClientRect().width > 100), 'les tuiles tiennent dans la largeur sans défilement');
+    const hHub = D.documentElement.scrollHeight;
+    clickAct('set-grp', 'account'); ok($q('.setnav') && $q('.setnav [data-v="hub"]') && !$q('.sethub') && !$q('#srec') && !$q('#sth'), 'Compte : bouton « Les 6 blocs » en haut, rien des autres blocs');
+    clickAct('set-grp', 'hub'); eq(tiles().length, 6, 'retour aux 6 blocs');
+    openG('learn'); ok($q('[data-act="corr"]') && $q('[data-act="show"]') && !$q('#srec'), 'Apprentissage : correction et indices');
+    openG('audio'); ok($q('#srec') && $q('#sgoal') && !$q('[data-act="corr"]'), 'Audio et rappels : récitateur, objectif');
+    openG('display'); ok($q('#sth') && $q('[data-act="lang"]') && !$q('#srec'), 'Affichage : langue, thème, accessibilité');
+    openG('data'); ok($q('[data-act="export"]') && $q('#csv-kind'), 'Données : export, import, CSV');
+    openG('help'); ok($q('[data-act="contact"]') && $q('[data-act="legal"]') && $q('[data-act="upd"]') && $$q('details.card').length === 3 && !$q('details.card[open]'), 'Aide et infos : application, contact, confidentialité ; sources et contenus repliés');
+    openG('all'); ok($q('#srec') && $q('#sth') && $q('[data-act="export"]') && $q('[data-act="contact"]') && $q('[data-act="corr"]'), '« Tout afficher » : tous les réglages sur une page'); const hAll = D.documentElement.scrollHeight;
+    ok(hHub < hAll * 0.5, 'l’écran d’accueil des réglages est bien plus court que toute la page (' + hHub + ' px contre ' + hAll + ' px)');
+    // recherche depuis les 6 blocs
+    E("cfg.setTab = 'hub'; go('settings')"); const sq = $q('#set-q'); sq.value = 'contraste'; sq.dispatchEvent(new Event('input')); await wait(50);
+    ok($q('#shc') && !$q('.sethub') && !$q('#srec') && /réglage[s]? trouvé/.test(appText()), 'recherche « contraste » : le réglage d’accessibilité apparaît, les tuiles disparaissent'); eq($q('#set-q').value, 'contraste', 'la saisie est conservée');
     $q('#set-q').value = 'zzzzqx'; $q('#set-q').dispatchEvent(new Event('input')); await wait(50); ok(/Aucun réglage ne correspond/.test(appText()), 'aucun résultat : message clair');
-    $q('#set-q').value = 'rappel'; $q('#set-q').dispatchEvent(new Event('input')); await wait(50); ok(/Rappel quotidien/.test(appText()) && !$q('#sth'), 'recherche « rappel » : le réglage du rappel (audio), pas les autres groupes');
-    clickAct('set-grp', 'audio'); eq(E('setQ'), '', 'choisir un groupe efface la recherche'); eq(E('cfg.setTab'), 'audio', 'groupe retenu');
-    E("go('home'); go('settings')"); ok($q('.setbar button.sel').dataset.v === 'audio', 'au retour dans les Réglages : même groupe');
-    E("cfg.setTab = 'inconnu'; go('settings')"); ok($q('.setbar button.sel').dataset.v === 'account', 'groupe inconnu : retour au Compte');
-    for (const L of ['en', 'ar']){ E(`setLang('${L}')`); for (const g of ['account', 'learn', 'audio', 'display', 'data', 'help', 'all']){ E(`cfg.setTab = '${g}'; go('settings')`); } ok(!/undefined/.test(appText()), 'réglages en ' + L); eq(E('[...missingKeys]'), [], 'clés traduites (' + L + ')'); }
+    $q('#set-q').value = 'rappel'; $q('#set-q').dispatchEvent(new Event('input')); await wait(50); ok(/Rappel quotidien/.test(appText()) && !$q('#sth'), 'recherche « rappel » : le réglage du rappel (audio), pas les autres blocs');
+    $q('#set-q').value = ''; $q('#set-q').dispatchEvent(new Event('input')); await wait(50); eq(tiles().length, 6, 'recherche effacée : retour aux 6 blocs');
+    // toucher l'onglet Réglages ramène toujours aux 6 blocs ; groupe inconnu = 6 blocs
+    E("cfg.setTab = 'audio'; go('home')"); clickAct('tab', 'settings'); eq(tiles().length, 6, 'en touchant « Réglages » dans le menu : on retrouve les 6 blocs');
+    E("cfg.setTab = 'inconnu'; go('settings')"); eq(tiles().length, 6, 'groupe inconnu : les 6 blocs');
+    for (const L of ['en', 'ar']){ E(`setLang('${L}')`); for (const g of ['hub', 'account', 'learn', 'audio', 'display', 'data', 'help', 'all']){ E(`cfg.setTab = '${g}'; go('settings')`); } ok(!/undefined/.test(appText()), 'réglages en ' + L); eq(E('[...missingKeys]'), [], 'clés traduites (' + L + ')'); }
     E("setLang('fr')"); noErr('réglages');
   });
   test('Contact : page avec adresse, sujets préremplis, copie de l’adresse ; liens depuis les Réglages et l’écran de connexion', async () => {

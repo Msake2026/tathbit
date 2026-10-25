@@ -145,7 +145,9 @@ sup.vn{font-family:Inter,sans-serif;font-size:.6rem;color:var(--muted);margin:0 
 .frvow .wd.bad{color:inherit;background:color-mix(in srgb,#e08a1e 28%,transparent);text-decoration:underline wavy #e08a1e}
 .fw.mask{color:transparent!important;background:color-mix(in srgb,var(--muted) 30%,transparent);user-select:none}.fw.cur{outline:2px solid var(--accent);outline-offset:1px}.fw.hint{background:color-mix(in srgb,var(--gold,#c9a227) 30%,transparent);color:var(--ink)}
 p a[href],.ref a[href],li a[href]{display:inline-block;min-height:24px;line-height:24px}   /* liens dans une phrase : zone à toucher d'au moins 24 px de haut (WCAG 2.5.8), sans déborder sur les voisins */
-.setbar{display:flex;gap:6px;overflow-x:auto;position:sticky;top:0;z-index:6;background:var(--bg);padding:6px 0 8px;margin:0 0 6px;scrollbar-width:thin}.setbar button{white-space:nowrap;flex:0 0 auto}
+.sethub{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:10px 0}.sethub button{display:flex;flex-direction:column;align-items:flex-start;gap:3px;min-height:104px;padding:14px;text-align:start;border-radius:16px;white-space:normal}.sethub .si{font-size:1.7rem;line-height:1}.sethub b{font-size:1.05rem}.sethub small{color:var(--muted);font-weight:400;line-height:1.35}
+@media(min-width:700px){.sethub{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.setnav{position:sticky;top:0;z-index:6;background:var(--bg);padding:8px 0}
 details.card>summary{cursor:pointer;list-style:none}details.card>summary::-webkit-details-marker{display:none}details.card>summary h2{display:inline}details.card>summary::before{content:'▸ ';color:var(--muted)}details.card[open]>summary::before{content:'▾ '}
 .big-score{font-size:3rem;font-weight:600;text-align:center;margin:.2em 0}
 .foot{color:var(--muted);font-size:.78rem;text-align:center;margin-top:24px}
@@ -463,7 +465,7 @@ async function loadQuran(){
 
 /* ---------- état persistant ---------- */
 const DEF = {mode: 'mix', scope: {type: 'surah', from: 78, to: 114}, n: 10, input: 'recite', level: 40,
-  corr: 'standard', tjKind: 'rule', mkKind: 'zone', sfKind: 'pair', ahKind: 'nun', mdKind: 'type', audFrom: 78, audTo: 114, audCap: 100, audQ: 64, audAuto: false, setTab: 'account', lastMemo: 'mix', show: {s: true, v: true, p: true}, reciter: 'ar.alafasy', goal: 20, contLen: 5, endLen: 2, begLen: 1, map: 's', tab: 'home', rdHide: false, rdSize: 1.9, rdTaj: false, rdTr: '', rdTf: false,
+  corr: 'standard', tjKind: 'rule', mkKind: 'zone', sfKind: 'pair', ahKind: 'nun', mdKind: 'type', audFrom: 78, audTo: 114, audCap: 100, audQ: 64, audAuto: false, setTab: 'hub', lastMemo: 'mix', show: {s: true, v: true, p: true}, reciter: 'ar.alafasy', goal: 20, contLen: 5, endLen: 2, begLen: 1, map: 's', tab: 'home', rdHide: false, rdSize: 1.9, rdTaj: false, rdTr: '', rdTf: false,
   lang: ['fr', 'en', 'ar'].includes((navigator.language || '').slice(0, 2)) ? navigator.language.slice(0, 2) : 'fr'};
 const stored = store.get('tathbit.cfg', {});
 let cfg = Object.assign({}, DEF, stored);
@@ -760,7 +762,6 @@ function home(){ // affiche l'écran du menu courant (accès réservé aux compt
   $app.querySelectorAll('select').forEach(el => { if (el.id.startsWith('cm-')) return;
     el.onchange = () => { syncCfg(); if (['stype', 'smatn', 'ssec', 'sgoal', 'scat', 'srec', 'aud-from', 'aud-to', 'aud-cap', 'aud-q'].includes(el.id) || el.id.startsWith('pf-')) home(); }; });
   ['pf-recent-n', 'pf-cycle-n'].forEach(id => { if ($(id)) $(id).oninput = () => { pdraft = pfRead(); }; });
-  { const on = document.querySelector('.setbar button.sel'); if (on && on.scrollIntoView) try { on.scrollIntoView({inline: 'center', block: 'nearest'}); } catch { /* ancien navigateur */ } }
   { const sq = $('set-q'); if (sq) sq.oninput = () => { setQ = sq.value; const pos = sq.selectionStart; home(); const n = $('set-q'); if (n){ n.focus(); n.setSelectionRange(pos, pos); } }; }
   if ($('impfile')) $('impfile').onchange = e => importFile(e.target.files[0]);
   ['cm-f-cam', 'cm-f-img', 'cm-f-doc'].forEach(id => { if ($(id)) $(id).onchange = e => { queueAdd([...e.target.files]); e.target.value = ''; }; });
@@ -1265,18 +1266,28 @@ function tabSettings(){
     <p class="ref" style="margin:0">${tr("Coran : texte uthmani du projet Tanzil, embarqué dans le site et vérifié (lecture de Ḥafṣ). Audio : cdn.islamic.network (AlQuran Cloud). Lecteur : tajwīd en couleurs (Islamic Network), traductions (Tanzil : Hamidullah, Saheeh International) et tafsir al-Muyassar (Complexe du Roi Fahd). Moutoun : Wikisource arabe et hadith-api (voir l'écran Réviser pour chaque matn). Versets proches : calculés automatiquement.")}</p>
   </details>`,
   };
-  const G = [['account', '👤', 'Compte', ['account']], ['learn', '🎓', 'Apprentissage', ['corr', 'hints']], ['audio', '🔊', 'Audio et rappels', ['audio', 'audioOff', 'remind']],
-    ['display', '🎨', 'Affichage', ['lang', 'a11y']], ['data', '💾', 'Données', ['data']], ['help', 'ℹ️', 'Aide et infos', ['app', 'contact', 'privacy', 'about', 'contents', 'sources']]];
+  const G = [['account', '👤', 'Compte', 'Connexion, rôle, mot de passe', ['account']], ['learn', '🎓', 'Apprentissage', 'Correction de la saisie, indices', ['corr', 'hints']],
+    ['audio', '🔊', 'Audio et rappels', 'Récitateur, objectif, audio hors ligne, rappels', ['audio', 'audioOff', 'remind']], ['display', '🎨', 'Affichage', 'Langue, thème, accessibilité', ['lang', 'a11y']],
+    ['data', '💾', 'Données', 'Exporter, importer, effacer', ['data']], ['help', 'ℹ️', 'Aide et infos', 'Mises à jour, contact, confidentialité, sources', ['app', 'contact', 'privacy', 'about', 'contents', 'sources']]];
   const plain = h => h.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').toLowerCase();
-  const q = setQ.trim().toLowerCase(), grp = G.some(g => g[0] === cfg.setTab) ? cfg.setTab : cfg.setTab === 'all' ? 'all' : 'account';
-  const cards = G.flatMap(([g, , t, ids]) => ids.map(id => ({g, id, t, html: C[id]})));
+  const q = setQ.trim().toLowerCase(), grp = G.some(g => g[0] === cfg.setTab) || cfg.setTab === 'all' ? cfg.setTab : 'hub';   // « hub » : les 6 blocs d'un coup d'œil (par défaut)
+  const cards = G.flatMap(([g, , t, , ids]) => ids.map(id => ({g, id, t, html: C[id]})));
   const shown = q ? cards.filter(c => plain(c.html).includes(q) || tr(c.t).toLowerCase().includes(q)) : grp === 'all' ? cards : cards.filter(c => c.g === grp);
+  const search = `<input type="search" id="set-q" value="${esc(setQ)}" placeholder="${tr('Chercher un réglage…')}" aria-label="${tr('Chercher un réglage…')}" autocomplete="off" style="margin-bottom:8px">`;
+  const found = q ? `<p class="ref" style="margin:4px 0 8px">${shown.length ? trp(shown.length, '{n} réglage trouvé|{n} réglages trouvés') : tr('Aucun réglage ne correspond à « {q} ».', {q: esc(setQ.trim())})}</p>` : '';
+  const g0 = G.find(g => g[0] === grp);
+  if (!q && grp === 'hub') return `
+  <h1>${tr('Réglages')}</h1>
+  <p class="sub">${tr('Les réglages sont rangés en 6 blocs : touche-en un pour l\'ouvrir, ou cherche un réglage.')}</p>
+  ${search}
+  <div class="sethub">${G.map(([g, ic, t, d]) => `<button data-act="set-grp" data-v="${g}"><span class="si" aria-hidden="true">${ic}</span><b>${tr(t)}</b><small>${tr(d)}</small></button>`).join('')}</div>
+  <p style="text-align:center;margin:6px 0"><button class="link" data-act="set-grp" data-v="all">☰ ${tr('Tout afficher sur une seule page')}</button></p>`;
   return `
   <h1>${tr('Réglages')}</h1>
-  <input type="search" id="set-q" value="${esc(setQ)}" placeholder="${tr('Chercher un réglage…')}" aria-label="${tr('Chercher un réglage…')}" autocomplete="off" style="margin-bottom:8px">
-  <div class="setbar" role="group" aria-label="${tr('Groupes de réglages')}">${G.map(([g, ic, t]) => `<button class="${!q && grp === g ? 'sel' : ''}" data-act="set-grp" data-v="${g}" aria-pressed="${!q && grp === g}">${ic} ${tr(t)}</button>`).join('')}<button class="${!q && grp === 'all' ? 'sel' : ''}" data-act="set-grp" data-v="all" aria-pressed="${!q && grp === 'all'}">☰ ${tr('Tout')}</button></div>
-  ${q ? `<p class="ref" style="margin:4px 0 8px">${shown.length ? trp(shown.length, '{n} réglage trouvé|{n} réglages trouvés') : tr('Aucun réglage ne correspond à « {q} ».', {q: esc(setQ.trim())})}</p>` : ''}
-  ${shown.map(c => c.html).join('\n')}`;
+  ${search}
+  ${q ? found : `<div class="top setnav"><button class="link" data-act="set-grp" data-v="hub">← ${tr('Les 6 blocs')}</button><span>${g0 ? g0[1] + ' ' + tr(g0[2]) : '☰ ' + tr('Tout')}</span></div>`}
+  ${shown.map(c => c.html).join('\n')}
+  ${!q ? `<p style="text-align:center;margin:10px 0"><button class="link" data-act="set-grp" data-v="hub">← ${tr('Les 6 blocs')}</button></p>` : ''}`;
 }
 const weakHtml = weak => weak.length ? `<h2 style="margin-top:14px">${tr('À retravailler')}</h2>` + weak.map(([s, r, n]) =>
   `<div class="weak"><span>${sname(pk(s + ':1').s)}</span><span>${Math.round(r * 100)} % · ${Math.round(n)} ${tr('rép.')}</span></div>`).join('') : '';
@@ -2702,7 +2713,8 @@ const onClick = e => {
     case 'ls-toggle': if (player.paused && player.src) player.play(); else player.pause(); break;
     case 'ls-hide': ls.hide = !ls.hide; lsRender(); break;
     case 'home': home(); break;
-    case 'tab': go(v); break;
+    case 'tab': if (v === 'settings') { cfg.setTab = 'hub'; setQ = ''; } go(v); break;   // en touchant « Réglages », on retrouve toujours les 6 blocs
+
     case 'upd': forceUpdate(el); break;
     case 'aud-scope': audioScope(); break;
     case 'aud-plan': audioPlanToday(false); break;
