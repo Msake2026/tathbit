@@ -913,7 +913,22 @@
     E(`newVer = null; nf = {list: ${nfx('999')}, loaded: true}; nfOpen(1)`); await wait(200); ok(E('newVer && newVer.v') === 999 && $q('.upd'), 'ouvrir la notification mène à l’accueil, avec le message');
     E("newVer = null; sb = {rpc: async (n, a) => { window.__u.push(n + ' ' + JSON.stringify(a || {})); return {data: null, error: null}; }}; me = {user: {id: 'u1', email: 'a@b.fr'}, profile: {role: 'user'}}");
     E(`nf = {list: ${nfx(1)}, loaded: true}; nfRead(1)`); E("sb.rpc = async (n, a) => { window.__u.push(n + ' ' + JSON.stringify(a || {})); return n === 'notifs_mine' ? {data: [{id: 7, kind: 'app_update', ref: '1', actor: null, n: 1, created_at: new Date().toISOString(), read_at: null}], error: null} : {data: null, error: null}; }");
-    E("nfLoad()"); await wait(300); ok(calls.includes('notif_read {"p_id":7}'), 'une annonce de version déjà installée est traitée toute seule'); ok(E('newVer') === null, 'et ne déclenche pas de message');
+    E("nfLoad()"); await wait(400); ok(!calls.includes('notif_read {"p_id":7}'), 'une version déjà installée n’est plus « traitée » toute seule : ses nouveautés restent dans la cloche'); ok(E('newVer') === null, 'et ne déclenche pas le message « nouvelle version »');
+    // nouveautés : résumé dans la cloche et sur l'accueil, écran des nouveautés, boutons « Essayer », lien d'un e-mail
+    const item = (id, go, ti) => ({id, icon: '✨', go, title: {fr: ti, en: ti + ' (en)', ar: ti + ' (ar)'}, text: {fr: 'Texte ' + id, en: 'Text ' + id, ar: 'نص ' + id}});
+    W.__news = {v: E('APP_BUILD'), items: [item('a', 'recite', 'Réciter à voix haute'), item('b', 'contact', 'Page de contact')]};
+    E("window.fetch = async u => ({ok: true, json: async () => String(u).startsWith('news.json') ? window.__news : {v: APP_BUILD}}); news = null; newsAt = 0; stats = {'1:1': [1, 0]}; store.set('tathbit.newsSeen', 0)"); await E("loadNews(true)");
+    ok(/Nouveautés de la version v1/.test(E("nfText({kind: 'app_update', ref: '1'})")) && /Nouveautés de la version/.test(E("nfText({kind: 'app_update', ref: String(APP_BUILD)})")), 'cloche : « Nouveautés de la version vN » pour une version installée'); ok(/nouvelle version/i.test(E("nfText({kind: 'app_update', ref: String(APP_BUILD + 1)})")), 'et « nouvelle version » pour une version pas encore installée');
+    ok(/Réciter à voix haute/.test(E("newsSummary(APP_BUILD)")) && E("newsSummary(APP_BUILD + 5)") === '', 'résumé : titres des nouveautés de cette version seulement');
+    E("go('home')"); ok($q('#news-slot .upd') && /Nouveautés de la version/.test($q('#news-slot .upd').textContent) && /Réciter à voix haute/.test($q('#news-slot .upd').textContent) && $q('[data-act="news-open"]'), 'accueil : carte « Nouveautés » avec le résumé et le bouton');
+    clickAct('news-open'); await wait(300); ok(/Nouveautés de la version/.test(appText()) && $$q('[data-act="news-go"]').length === 2, 'écran des nouveautés : un bouton « Essayer » par nouveauté'); eq(E("store.get('tathbit.newsSeen')"), E('APP_BUILD'), 'la version est marquée « vue »');
+    clickAct('news-go', 'contact'); ok($q('a.btnlink'), '« Essayer » mène à la fonction (page de contact)');
+    E("go('home')"); ok(!$q('#news-slot .upd'), 'une fois vue, la carte ne revient pas');
+    E(`store.set('tathbit.newsSeen', 0); nf = {list: ${nfx(1)}, loaded: true}; nf.list[0].ref = String(APP_BUILD); nfOpen(1)`); await wait(400); ok(/Nouveautés de la version/.test(appText()) && $$q('[data-act="news-go"]').length === 2, 'cliquer la notification d’une version installée ouvre ses nouveautés');
+    W.__news = {v: E('APP_BUILD'), items: [item('a', 'recite', 'Réciter à voix haute')]}; E("news = null; newsAt = 0"); await E("loadNews(true)"); E("openNews()"); await wait(300); ok($q('#frfrom'), 'une seule nouveauté : la notification mène directement à la fonction (récitation libre)');
+    E("pendingGo = 'contact'; go('home')"); await wait(100); ok($q('a.btnlink'), 'lien d’un e-mail (#go=contact) : ouvre la fonction');
+    E("store.set('tathbit.newsSeen', null); stats = {}; days = {}; news = null; newsAt = 0"); await E("loadNews(true)"); E("go('home')"); ok(!$q('#news-slot .upd'), 'premier lancement (rien encore révisé) : pas de carte « Nouveautés »');
+    W.fetch = f0;
     // préférence e-mail
     E("tch.upd = undefined"); ok(/id="upd-mail" checked/.test(E("wkCard()")), 'e-mail « nouvelle version » activé par défaut'); E("tch.upd = false"); ok(!/id="upd-mail" checked/.test(E("wkCard()")), 'désactivé : case décochée');
     E("updToggle(true)"); await wait(150); ok(calls.includes('updates_set {"p_on":true}') && E('tch.upd') === true, 'préférence enregistrée');

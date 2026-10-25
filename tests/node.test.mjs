@@ -594,17 +594,31 @@ test('version.json : suit la version affichée par l’application (à mettre à
   const sql = read('supabase/teacher.sql'); for (const f of ['admin_announce_update', 'admin_announcements', 'updates_set']) assert.match(sql, new RegExp('function public\\.' + f), f);
 });
 
-test('e-mail « nouvelle version » : HTML avec logo, couleurs de l’application, bouton, note échappée, trois langues (arabe de droite à gauche)', () => {
+test('e-mail « nouvelle version » : HTML avec logo, couleurs de l’application, résumé des nouveautés avec liens, note échappée, trois langues (arabe de droite à gauche)', () => {
   const ts = read('supabase/functions/send-reminders/index.ts'), code = ts.slice(ts.indexOf('/* UH:begin'), ts.indexOf('/* UH:end */'))
-    .replace('const escH = (x: string)', 'const escH = (x)').replace('function updHtml(langs: string[], label: string, note: string | null): string', 'function updHtml(langs, label, note)')
+    .replace('const escH = (x: string)', 'const escH = (x)').replace(/function updHtml\(langs: string\[\], label: string, note: string \| null, items: [^)]*\): string/s, 'function updHtml(langs, label, note, items)')
     .replace('const part = (k: string, i: number)', 'const part = (k, i)').replace('(UH as Record<string, typeof UH.fr>)[k]', 'UH[k]');
   const { updHtml } = new Function(code + '; return {updHtml};')();
-  const h3 = updHtml(['fr', 'en', 'ar'], '25 oct. 2026 · v92', 'Récitation <libre> & « voyelles »');
+  const items = JSON.parse(read('news.json')).items;
+  const h3 = updHtml(['fr', 'en', 'ar'], '25 oct. 2026 · v92', 'Récitation <libre> & « voyelles »', []);
   assert.match(h3, /icons\/icon-192\.png/, 'logo'); assert.match(h3, /#0f5d46/, 'vert de l’application'); assert.match(h3, /#b58a2c/, 'or de l’application');
   assert.match(h3, /href="https:\/\/msake2026\.github\.io\/tathbit\/"/, 'bouton vers le site'); assert.match(h3, /Ouvrir Tathbīt/); assert.match(h3, /Open Tathbīt/); assert.match(h3, /dir="rtl"/, 'arabe de droite à gauche');
   assert.ok(h3.includes('Récitation &lt;libre&gt; &amp; « voyelles »') && !h3.includes('<libre>'), 'la note est échappée (pas d’HTML injecté)');
-  assert.ok(h3.includes('v92') && h3.indexOf('Chercher les mises à jour') > 0 && h3.includes('Check for updates'), 'version et consigne');
-  const fr = updHtml(['fr'], 'v93', null); assert.ok(!fr.includes('Open Tathbīt') && !fr.includes('dir="rtl"') && !fr.includes('border-left:4px'), 'une seule langue, sans encadré de note quand il n’y en a pas');
-  assert.match(ts, /html: updHtml\(/, 'l’e-mail part avec la version HTML en plus du texte brut');
+  assert.ok(h3.includes('v92') && h3.includes('Chercher les mises à jour') && h3.includes('Check for updates'), 'version et consigne');
+  const fr = updHtml(['fr'], 'v93', null, []); assert.ok(!fr.includes('Open Tathbīt') && !fr.includes('dir="rtl"') && !fr.includes('border-left:4px'), 'une seule langue, sans encadré de note quand il n’y en a pas');
+  const n = updHtml(['fr', 'en', 'ar'], 'v93', null, items);
+  for (const it of items){ assert.ok(n.includes(it.title.fr) && n.includes(it.title.en) && n.includes(it.title.ar), 'titre de la nouveauté « ' + it.id + ' » dans les trois langues'); assert.ok(n.includes('#go=' + it.go), 'lien direct vers la fonction ' + it.go); }
+  assert.ok(n.includes('#go=news') && n.includes('Voir les nouveautés') && n.includes('See what’s new'), 'bouton « nouveautés » quand il y a un résumé');
+  assert.match(ts, /html: updHtml\(/, 'l’e-mail part avec la version HTML en plus du texte brut'); assert.match(ts, /fetchNews\(a\.version\)/, 'le résumé vient de news.json de la version annoncée');
 });
 
+test('news.json : même version que l’application, chaque nouveauté en trois langues et menant à une fonction qui existe', () => {
+  const html = read('index.html'), n = JSON.parse(read('news.json')), build = +/v(\d+)/.exec(/const APP_VERSION = '([^']+)'/.exec(html)[1])[1];
+  assert.equal(n.v, build, 'news.json doit décrire la version publiée (le message d’accueil et l’e-mail se basent dessus)');
+  const targets = [...html.match(/const NEWS_GO = \{([^\n]*)\};/)[1].matchAll(/(\w+): \(\) =>/g)].map(m => m[1]);
+  assert.ok(n.items.length >= 1 && n.items.length <= 8);
+  for (const it of n.items){
+    for (const k of ['title', 'text']) for (const l of ['fr', 'en', 'ar']) assert.ok(it[k] && it[k][l] && it[k][l].length > 3, it.id + ' ' + k + ' ' + l);
+    assert.ok(it.icon && it.go && targets.includes(it.go) && it.go !== 'news', 'cible « ' + it.go + ' » connue de l’application (' + targets.join(', ') + ')');
+  }
+});

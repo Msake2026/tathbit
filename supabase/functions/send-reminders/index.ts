@@ -147,11 +147,11 @@ async function notifyMessages(db: ReturnType<typeof createClient>) {
 const SITE = 'https://msake2026.github.io/tathbit/', LOGO = SITE + 'icons/icon-192.png';
 const escH = (x: string) => x.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 const UH = {
-  fr: { h: 'Une nouvelle version de Tathbīt est disponible', ver: 'Version', tip: "Ouvre l'application : un message « Nouvelle version disponible » apparaît à l'accueil. Touche « Chercher les mises à jour » (aussi dans Réglages) pour la récupérer.", btn: 'Ouvrir Tathbīt', tail: 'Tu peux ne plus recevoir ces e-mails : Tathbīt → Réglages → Compte.' },
-  en: { h: 'A new version of Tathbīt is available', ver: 'Version', tip: 'Open the app: a “New version available” message appears on the home screen. Tap “Check for updates” (also in Settings) to get it.', btn: 'Open Tathbīt', tail: 'You can stop these e-mails: Tathbīt → Settings → Account.' },
-  ar: { h: 'يتوفر إصدار جديد من «تثبيت»', ver: 'الإصدار', tip: 'افتح التطبيق: تظهر في الصفحة الرئيسية رسالة «إصدار جديد متاح». اضغط «البحث عن التحديثات» (وهي أيضاً في الإعدادات) للحصول عليه.', btn: 'افتح تثبيت', tail: 'يمكنك إيقاف هذه الرسائل: تثبيت ← الإعدادات ← الحساب.' },
+  fr: { h: 'Une nouvelle version de Tathbīt est disponible', ver: 'Version', tip: "Ouvre l'application : un message « Nouvelle version disponible » apparaît à l'accueil. Touche « Chercher les mises à jour » (aussi dans Réglages) pour la récupérer.", btn: 'Ouvrir Tathbīt', news: 'Voir les nouveautés', head: 'Au programme', tail: 'Tu peux ne plus recevoir ces e-mails : Tathbīt → Réglages → Compte.' },
+  en: { h: 'A new version of Tathbīt is available', ver: 'Version', tip: 'Open the app: a “New version available” message appears on the home screen. Tap “Check for updates” (also in Settings) to get it.', btn: 'Open Tathbīt', news: 'See what’s new', head: 'What’s new', tail: 'You can stop these e-mails: Tathbīt → Settings → Account.' },
+  ar: { h: 'يتوفر إصدار جديد من «تثبيت»', ver: 'الإصدار', tip: 'افتح التطبيق: تظهر في الصفحة الرئيسية رسالة «إصدار جديد متاح». اضغط «البحث عن التحديثات» (وهي أيضاً في الإعدادات) للحصول عليه.', btn: 'افتح تثبيت', news: 'اطّلع على الجديد', head: 'الجديد', tail: 'يمكنك إيقاف هذه الرسائل: تثبيت ← الإعدادات ← الحساب.' },
 };
-function updHtml(langs: string[], label: string, note: string | null): string {
+function updHtml(langs: string[], label: string, note: string | null, items: { icon?: string; go: string; title: Record<string, string>; text: Record<string, string> }[]): string {
   const part = (k: string, i: number) => {
     const t = (UH as Record<string, typeof UH.fr>)[k], rtl = k === 'ar', side = rtl ? 'right' : 'left';
     return `${i ? '<tr><td style="padding:0 28px"><hr style="border:0;border-top:1px solid #decfa9;margin:6px 0 0"></td></tr>' : ''}
@@ -159,8 +159,10 @@ function updHtml(langs: string[], label: string, note: string | null): string {
 <h2 style="margin:0 0 10px;font:700 21px/1.35 Georgia,'Times New Roman',serif;color:#0f5d46">${t.h}</h2>
 <p style="margin:0 0 12px"><span style="display:inline-block;background:#b58a2c;color:#fffdf6;font:700 13px Arial,sans-serif;padding:4px 12px;border-radius:999px">${t.ver} · <bdi dir="ltr">${escH(label)}</bdi></span></p>
 ${note ? `<div style="margin:0 0 12px;padding:10px 14px;background:#f3ead6;border-${side}:4px solid #b58a2c;border-radius:8px;font:15px/1.6 Arial,sans-serif;color:#2b2218">${escH(note)}</div>` : ''}
+${items.length ? `<p style="margin:14px 0 4px;font:700 14px Arial,sans-serif;color:#b58a2c;text-transform:uppercase;letter-spacing:.5px">${t.head}</p>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 12px">${items.map((it) => `<tr><td valign="top" style="width:34px;padding:8px 0;font-size:22px;line-height:1.3">${it.icon ?? ''}</td><td valign="top" style="padding:8px 0;font:15px/1.55 Arial,sans-serif;color:#2b2218"><a href="${SITE}#go=${escH(it.go)}" style="color:#0f5d46;font-weight:700;text-decoration:none">${escH(it.title[k] ?? it.title.fr)}</a><br>${escH(it.text[k] ?? it.text.fr)}</td></tr>`).join('')}</table>` : ''}
 <p style="margin:0 0 16px;font:15px/1.65 Arial,sans-serif;color:#2b2218">${t.tip}</p>
-<p style="margin:0 0 18px;text-align:center"><a href="${SITE}" style="display:inline-block;background:#0f5d46;color:#fff8e6;text-decoration:none;font:700 16px Arial,sans-serif;padding:13px 28px;border-radius:12px">${t.btn}</a></p>
+<p style="margin:0 0 18px;text-align:center"><a href="${items.length ? SITE + '#go=news' : SITE}" style="display:inline-block;background:#0f5d46;color:#fff8e6;text-decoration:none;font:700 16px Arial,sans-serif;padding:13px 28px;border-radius:12px">${items.length ? t.news : t.btn}</a></p>
 <p style="margin:0 0 6px;font:12px/1.5 Arial,sans-serif;color:#6f6049;text-align:${side}">${t.tail}</p>
 </td></tr>`;
   };
@@ -189,6 +191,13 @@ const UPD = {
         tail: 'يمكنك إيقاف هذه الرسائل: تثبيت ← الإعدادات ← الحساب.' },
 };
 
+// résumé des nouveautés de la version annoncée : fichier news.json du site (mis à jour à chaque publication) ; vide s'il ne correspond pas à la version
+async function fetchNews(version: number) {
+  try {
+    const r = await fetch(SITE + 'news.json?t=' + Date.now()); if (!r.ok) return [];
+    const j = await r.json(); return Number(j.v) === version && Array.isArray(j.items) ? j.items.slice(0, 8) : [];
+  } catch { return []; }
+}
 // nouvelle version annoncée : 1) cloche + notification (une seule fois), 2) e-mails par paquets de 40 jusqu'à ce que tout le monde l'ait reçu
 async function announceUpdates(db: ReturnType<typeof createClient>) {
   const { data: anns, error } = await db.from('app_announcements').select('id, version, label, note, fanout_at').is('mail_done_at', null).order('version', { ascending: true }).limit(2);
@@ -213,6 +222,7 @@ async function announceUpdates(db: ReturnType<typeof createClient>) {
       }
     }
     if (!smtpUser || !smtpPass) continue;                                  // sans SMTP : cloche et notifications seulement
+    const items = await fetchNews(a.version);
     const { data: sent } = await db.from('announce_mail').select('user_id').eq('announcement_id', a.id);
     const done = new Set((sent ?? []).map((r: { user_id: string }) => r.user_id));
     const { data: off } = await db.from('mail_prefs').select('user_id').eq('updates', false);
@@ -230,8 +240,9 @@ async function announceUpdates(db: ReturnType<typeof createClient>) {
     try {
       for (const p of todo) {
         const l = lang.get(p.id) as keyof typeof UPD | undefined, one = l && UPD[l];
-        const content = one ? `${one.body(a.label, a.note)}\n\n${one.tail}` : (['fr', 'en', 'ar'] as const).map((k) => `${UPD[k].body(a.label, a.note)}\n${UPD[k].tail}`).join('\n\n———\n\n');
-        try { await client.send({ from: `Tathbīt <${smtpUser}>`, to: p.email, subject: one ? one.subject : UPD.en.subject, content, html: updHtml(one && l ? [l] : ['fr', 'en', 'ar'], a.label, a.note) }); await db.from('announce_mail').insert({ announcement_id: a.id, user_id: p.id }); mail++; }
+        const txt = (k: 'fr' | 'en' | 'ar') => `${UPD[k].body(a.label, a.note)}${items.length ? '\n\n' + items.map((it: { title: Record<string, string>; text: Record<string, string> }) => `• ${it.title[k] ?? it.title.fr} : ${it.text[k] ?? it.text.fr}`).join('\n') : ''}\n\n${UPD[k].tail}`;
+        const content = one && l ? txt(l) : (['fr', 'en', 'ar'] as const).map(txt).join('\n\n———\n\n');
+        try { await client.send({ from: `Tathbīt <${smtpUser}>`, to: p.email, subject: one ? one.subject : UPD.en.subject, content, html: updHtml(one && l ? [l] : ['fr', 'en', 'ar'], a.label, a.note, items) }); await db.from('announce_mail').insert({ announcement_id: a.id, user_id: p.id }); mail++; }
         catch (e) { console.error('mail maj', (e as Error).message); }
       }
     } finally { await client.close().catch(() => {}); }

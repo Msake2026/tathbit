@@ -1,0 +1,80 @@
+{
+ "v": 93,
+ "items": [
+  {
+   "id": "recitation",
+   "icon": "🎙️",
+   "go": "recite",
+   "title": {
+    "fr": "Réciter à voix haute, sans exercice",
+    "en": "Recite aloud, no exercise",
+    "ar": "التسميع بصوت مسموع بلا تمرين"
+   },
+   "text": {
+    "fr": "Choisis une ou plusieurs sourates et récite-les de mémoire : le texte se dévoile au fur et à mesure. Touche un mot rouge pour voir ce que le téléphone a entendu, et vérifie tes voyelles à la fin.",
+    "en": "Choose one or more surahs and recite them from memory: the text is revealed as you go. Tap a red word to see what the phone heard, and check your vowels at the end.",
+    "ar": "اختر سورة أو أكثر وسمّعها من الحفظ؛ يظهر النص شيئًا فشيئًا. المس كلمة حمراء لترى ما سمعه الهاتف، وتحقق من حركاتك في النهاية."
+   }
+  },
+  {
+   "id": "moutoun",
+   "icon": "📜",
+   "go": "moutoun",
+   "title": {
+    "fr": "Ibn ʿĀshir et moutoun par blocs",
+    "en": "Ibn ʿĀshir and mutun by blocks",
+    "ar": "ابن عاشر والمتون بحسب الأبواب"
+   },
+   "text": {
+    "fr": "Le matn d'Ibn ʿĀshir (al-Murshid al-Muʿīn) est ajouté. Les moutoun sont classés par thème et par chapitre : révise ou lis un seul bloc, ou le matn entier avec des blocs repliables.",
+    "en": "The matn of Ibn ʿĀshir (al-Murshid al-Muʿīn) is added. Mutun are sorted by theme and chapter: revise or read a single block, or the whole matn with collapsible blocks.",
+    "ar": "أُضيف متن ابن عاشر (المرشد المعين). صُنّفت المتون بحسب الموضوع والباب: راجع أو اقرأ بابًا واحدًا، أو المتن كله بأبواب قابلة للطي."
+   }
+  },
+  {
+   "id": "plan",
+   "icon": "📅",
+   "go": "plan",
+   "title": {
+    "fr": "Plan de révision plus souple",
+    "en": "A more flexible revision plan",
+    "ar": "خطة مراجعة أكثر مرونة"
+   },
+   "text": {
+    "fr": "Pour la révision récente et le cycle, choisis « Autre » et écris le nombre de jours que tu veux (jusqu'à 30).",
+    "en": "For recent revision and the cycle, choose “Other” and type the number of days you want (up to 30).",
+    "ar": "للمراجعة القريبة والدورة، اختر «أخرى» واكتب عدد الأيام الذي تريده (حتى ٣٠)."
+   }
+  },
+  {
+   "id": "contact",
+   "icon": "✉️",
+   "go": "contact",
+   "title": {
+    "fr": "Page de contact",
+    "en": "Contact page",
+    "ar": "صفحة التواصل"
+   },
+   "text": {
+    "fr": "Signale une erreur dans un texte, un problème ou une idée par e-mail, avec un modèle déjà rempli.",
+    "en": "Report a mistake in a text, a problem or an idea by e-mail, with a ready-made template.",
+    "ar": "أبلغ عن خطأ في نص أو مشكلة أو فكرة عبر البريد الإلكتروني بنموذج جاهز."
+   }
+  },
+  {
+   "id": "updates",
+   "icon": "🔔",
+   "go": "settings",
+   "title": {
+    "fr": "Prévenu des nouvelles versions",
+    "en": "Notified of new versions",
+    "ar": "تنبيه بالإصدارات الجديدة"
+   },
+   "text": {
+    "fr": "Un message à l'accueil, une notification dans la cloche et un e-mail (désactivable dans Réglages → Compte) t'avertissent quand une version sort, avec le résumé de ses nouveautés.",
+    "en": "A message on the home screen, a bell notification and an e-mail (can be turned off in Settings → Account) tell you when a version comes out, with a summary of what's new.",
+    "ar": "رسالة في الصفحة الرئيسية وإشعار في الجرس ورسالة بريد (يمكن إيقافها من الإعدادات ← الحساب) تنبّهك عند صدور إصدار، مع ملخص الجديد."
+   }
+  }
+ ]
+}

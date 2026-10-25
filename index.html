@@ -743,6 +743,9 @@ const scopeLabel = sc => sc.type === 'matn' ? (sc.id === 'all' ? tr('Tous les mo
 const modeTitle = id => id === 'free' ? tr('Récitation libre') : tr((MODES.find(m => m[0] === id) || [])[1] || id);
 const INPUTS = {recite: 'je récite', type: 'je tape', voice: 'à voix haute'};
 
+let pendingGo = null;   // fonction à ouvrir après la connexion (lien d'un e-mail de nouveautés)
+const GO_HASH = /^#go=([a-z]+)$/.exec(location.hash || '');   // lien d'un e-mail de nouveautés : https://…/tathbit/#go=recite
+if (GO_HASH){ pendingGo = GO_HASH[1]; try { history.replaceState(null, '', location.pathname + location.search); } catch { /* sans effet */ } }
 function home(){ // affiche l'écran du menu courant (accès réservé aux comptes connectés quand les comptes sont activés)
   stopAudio(); ls = null;
   if (cloudOn() && !authReady) return renderLoading();
@@ -750,6 +753,7 @@ function home(){ // affiche l'écran du menu courant (accès réservé aux compt
   if (!tabsNow().some(t => t[0] === cfg.tab)) cfg.tab = 'home';
   $app.innerHTML = ({home: tabHome, plan: tabPlan, train: tabTrain, progress: tabProgress, errors: tabErrors, settings: tabSettings, student: tabStudent, teacher: tabTeacher})[cfg.tab]();
   setNav(true); tchEnter(); chatBottom(); if (cfg.tab === 'settings') setTimeout(audioSpace, 0);
+  if (pendingGo){ const g = pendingGo; pendingGo = null; setTimeout(() => newsGo(g), 0); }
   $app.querySelectorAll('select').forEach(el => { if (el.id.startsWith('cm-')) return;
     el.onchange = () => { syncCfg(); if (['stype', 'smatn', 'ssec', 'sgoal', 'scat', 'srec', 'aud-from', 'aud-to', 'aud-cap', 'aud-q'].includes(el.id) || el.id.startsWith('pf-')) home(); }; });
   ['pf-recent-n', 'pf-cycle-n'].forEach(id => { if ($(id)) $(id).oninput = () => { pdraft = pfRead(); }; });
@@ -815,6 +819,7 @@ function tabHome(){
   const top = aggErrors(errors.filter(e => e.t >= Date.now() - 7 * 864e5)).slice(0, 3);
   return `
   <div id="upd-slot">${updBannerHtml()}</div>
+  <div id="news-slot">${newsCardHtml()}</div>
   ${homeNotice ? `<div class="fb ok" role="status">${esc(homeNotice)}</div>` : ''}
   <div class="hero"><div class="logo"><span class="lg">تثبيت</span></div><div><h1>Tathbīt</h1><p class="tag">${tr('Coran et moutoun')}</p><p>${me ? esc(me.user.email) + ' ' + roleChips() : tr('Que ta mémorisation soit bénie.')}</p></div></div>
   ${cloudOn() && !me ? `<div class="card"><h2>${tr('Sauvegarde ta progression')}</h2><p class="sub" style="margin:0 0 8px">${tr('Crée un compte gratuit pour retrouver tes séries, tes erreurs et ton historique sur tous tes appareils.')}</p>
@@ -1255,7 +1260,7 @@ function tabSettings(){
 
   <div class="card"><h2>${tr('Application')}</h2>
     <p class="ref" style="margin:0 0 8px">${tr("Version {v}. Une fois installée sur le téléphone, l'application se met à jour toute seule à l'ouverture quand tu es en ligne ; si tu ne vois pas les nouveautés, utilise ce bouton (ta progression n'est pas touchée).", {v: APP_VERSION})}</p>
-    <button data-act="upd">🔄 ${tr('Chercher les mises à jour')}</button></div>
+    <button data-act="upd">🔄 ${tr('Chercher les mises à jour')}</button> <button data-act="news-open">✨ ${tr('Voir les nouveautés')}</button></div>
 
   <div class="card"><h2>${tr('Contact')}</h2>
     <p class="ref" style="margin:0 0 8px">${tr('Une question, une erreur dans un texte, un problème, une idée : écris-nous.')}</p>
@@ -2752,6 +2757,10 @@ const onClick = e => {
     case 'acc-delete': doDeleteMe(); break;
     case 'adm-open': openAdmin(); break;
     case 'adm-refresh': adminLoad(); break;
+    case 'news-open': openNews(); break;
+    case 'news-dismiss': if (news) store.set('tathbit.newsSeen', +news.v); newsSlot(); break;
+    case 'news-back': go('home'); break;
+    case 'news-go': newsGo(v); break;
     case 'adm-announce': {
       const ver = Math.round(+$('adm-ver').value), note = ($('adm-note').value || '').trim();
       if (!(ver >= 1)) { adm.msg = tr('Numéro de version invalide.'); renderAdmin(); break; }
@@ -3081,7 +3090,7 @@ function results(){
 }
 
 /* ---------- compte (Supabase) : inscription, connexion, synchronisation, espace admin ---------- */
-const APP_VERSION = '25 oct. 2026 · v92';
+const APP_VERSION = '25 oct. 2026 · v93';
 const APP_BUILD = +((/v(\d+)/.exec(APP_VERSION) || [])[1]) || 0;   // numéro de la version qui tourne ; version.json (à jour à chaque publication) donne le dernier numéro publié
 let newVer = null, verAt = 0;
 function updBannerHtml(){
@@ -3090,6 +3099,39 @@ function updBannerHtml(){
     <p style="margin:0 0 8px">${tr("Une nouvelle version de Tathbīt est disponible ({v}). Pour la récupérer, touche « Chercher les mises à jour ».", {v: esc(newVer.label)})}</p>
     ${newVer.note ? `<p class="ref" style="margin:0 0 8px">${esc(newVer.note)}</p>` : ''}
     <button class="pri big" data-act="upd">🔄 ${tr('Chercher les mises à jour')}</button></div>`;
+}
+/* ---------- nouveautés d'une version (news.json, mis à jour à chaque publication) ---------- */
+let news = null, newsAt = 0;
+const NEWS_GO = {news: () => openNews(), recite: () => frSetup(), moutoun: () => { cfg.scope = {type: 'matn', id: 'ibnachir'}; saveCfg(); go('train'); }, plan: () => go('plan'), contact: () => renderContact(), settings: () => go('settings')};
+async function loadNews(force){
+  if (!force && news && Date.now() - newsAt < 30 * 60e3) return news;
+  try { const r = await fetch('news.json?t=' + Date.now(), {cache: 'no-store'}); if (r.ok){ const j = await r.json(); if (j && Array.isArray(j.items)){ news = j; newsAt = Date.now(); } } } catch { /* hors ligne ou fichier absent */ }
+  return news;
+}
+const newsText = o => (o && (o[LANG] || o.fr)) || '';
+const newsGo = g => { const f = NEWS_GO[g]; if (f) f(); else go('home'); };
+function newsSummary(v){ if (!news || +news.v !== +v) return ''; return news.items.slice(0, 3).map(i => (i.icon || '') + ' ' + esc(newsText(i.title))).join(' · ') + (news.items.length > 3 ? ' …' : ''); }
+function newsCardHtml(){ // carte d'accueil : une fois la version installée, résumé des nouveautés (jusqu'à ce qu'on la ferme)
+  if (!news || +news.v > APP_BUILD || !news.items.length) return '';
+  const seen = store.get('tathbit.newsSeen', null);
+  if (seen === null && !Object.keys(stats).length && !Object.keys(days).length){ store.set('tathbit.newsSeen', +news.v); return ''; }   // premier lancement : rien à « découvrir »
+  if (seen !== null && +seen >= +news.v) return '';
+  return `<div class="card upd" role="status"><h2>✨ ${tr('Nouveautés de la version v{v}', {v: news.v})}</h2><p style="margin:0 0 8px">${newsSummary(news.v)}</p>
+    <div class="grades"><button class="pri" data-act="news-open">${tr('Voir les nouveautés')}</button><button data-act="news-dismiss">${tr('Plus tard')}</button></div></div>`;
+}
+function newsSlot(){ const el = $('news-slot'); if (el) el.innerHTML = newsCardHtml(); }
+async function openNews(v){ // une seule nouveauté : on va directement à la fonction ; sinon, l'écran des nouveautés
+  await loadNews(); if (!news || !news.items.length) return go('home');
+  if (news.items.length === 1) { store.set('tathbit.newsSeen', +news.v); return newsGo(news.items[0].go); }
+  renderNews();
+}
+function renderNews(){
+  setNav(false); screen = 'news'; store.set('tathbit.newsSeen', +news.v);
+  $app.innerHTML = `<div class="top"><button class="link" data-act="news-back">${tr('← Retour')}</button><span>${tr('Nouveautés')}</span></div>
+    <h1 style="margin-top:8px">✨ ${tr('Nouveautés de la version v{v}', {v: news.v})}</h1>
+    <p class="sub">${tr("Touche « Essayer » pour aller directement à la fonction.")} ${AI()}</p>
+    ${news.items.map(i => `<div class="card"><h2>${i.icon || ''} ${esc(newsText(i.title))}</h2><p style="margin:0 0 8px">${esc(newsText(i.text))}</p>${NEWS_GO[i.go] ? `<button class="pri" data-act="news-go" data-v="${esc(i.go)}">${tr('Essayer')}</button>` : ''}</div>`).join('')}`;
+  window.scrollTo(0, 0);
 }
 function updSlot(){ const el = $('upd-slot'); if (el) el.innerHTML = updBannerHtml(); }
 async function checkVersion(force){
@@ -3197,12 +3239,12 @@ async function cloudInit(){
       : tr("Le lien n'a pas pu être validé ({e}). Demande un nouvel e-mail de confirmation.", {e: LINK_NOTICE.detail});
     openAccount('login');
   } else home();
-  setTimeout(checkVersion, 2500); document.addEventListener('visibilitychange', () => { if (!document.hidden) checkVersion(); });
+  setTimeout(() => loadNews().then(newsSlot), 2600); setTimeout(checkVersion, 2500); document.addEventListener('visibilitychange', () => { if (!document.hidden) checkVersion(); });
   setTimeout(maybeAutoAudio, 4000); if (navigator.connection && navigator.connection.addEventListener) navigator.connection.addEventListener('change', () => setTimeout(maybeAutoAudio, 1500));
 }
 function renderLoading(){ setNav(false); $app.innerHTML = `<p class="sub" style="margin-top:40vh;text-align:center">${tr('Chargement…')}</p>`; }
 function refreshAccount(){
-  if (screen === 'legal' || screen === 'contact') return;
+  if (screen === 'legal' || screen === 'contact' || screen === 'news') return;
   if (screen === 'account' && me && acc.fromGate){ acc.fromGate = false; return go('home'); } // connexion réussie depuis l'écran d'accueil protégé
   if (screen === 'account') renderAccount(); else if (screen === 'admin') renderAdmin(); else if (screen === 'tab' || !me) home();
 }
@@ -3769,7 +3811,7 @@ function nfText(x){
     linked: tr('{e} suit maintenant ta progression.', {e}),
     unlinked: tr('{e} a mis fin au suivi.', {e}),
     student_joined: tr('{e} a rejoint ta classe.', {e}),
-    app_update: tr("Nouvelle version de l'application (v{v}) : touche « Chercher les mises à jour ».", {v: esc(x.ref || '')}),
+    app_update: +x.ref > APP_BUILD ? tr("Nouvelle version de l'application (v{v}) : touche « Chercher les mises à jour ».", {v: esc(x.ref || '')}) : tr('Nouveautés de la version v{v}', {v: esc(x.ref || '')}),
     reminder: n > 0 ? trp(n, 'Rappel de révision : {n} verset à revoir aujourd\'hui|Rappel de révision : {n} versets à revoir aujourd\'hui') : tr("Rappel de révision : c'est l'heure de ta révision.")
   })[x.kind] || esc(x.kind);
 }
@@ -3791,7 +3833,7 @@ function nfPaint(){
   bellSync();
   const p = nfPanel(); if (p.hidden) return;
   const U = nfUnread(), R = nf.list.filter(x => x.read_at).slice(0, 8);
-  const item = (x, done) => `<div class="nf${done ? ' done' : ''}"><div>${nfText(x)}<br><span class="ref">${fdate(Date.parse(x.created_at))}</span></div>${done ? '' : `<div class="grades"><button data-act="nf-open" data-v="${x.id}">${tr('Ouvrir')}</button><button class="link" data-act="nf-done" data-v="${x.id}">✓ ${tr('Traité')}</button></div>`}</div>`;
+  const item = (x, done) => `<div class="nf${done ? ' done' : ''}"><div>${nfText(x)}${x.kind === 'app_update' && newsSummary(x.ref) ? `<br><span class="ref">${newsSummary(x.ref)}</span>` : ''}<br><span class="ref">${fdate(Date.parse(x.created_at))}</span></div>${done ? '' : `<div class="grades"><button data-act="nf-open" data-v="${x.id}">${tr('Ouvrir')}</button><button class="link" data-act="nf-done" data-v="${x.id}">✓ ${tr('Traité')}</button></div>`}</div>`;
   p.setAttribute('aria-label', tr('Notifications'));
   p.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center"><h2 style="margin:0">${tr('Notifications')}</h2><button class="link" data-act="nf-close" aria-label="${tr('Fermer')}">✕</button></div>
     ${U.length ? U.map(x => item(x)).join('') + `<button data-act="nf-all" style="margin-top:8px">${tr('Tout marquer comme traité')}</button>` : `<p class="ref" style="margin:8px 0">${tr('Rien à traiter pour le moment.')}</p>`}
@@ -3802,9 +3844,8 @@ async function nfLoad(){
   try { const r = await sb.rpc('notifs_mine'); if (!r.error) nf.list = r.data || []; } catch { /* hors ligne ou base pas à jour : la cloche reste vide */ }
   // un rappel de révision est traité dès qu'on a révisé le jour où il a été envoyé (ou après)
   for (const x of nf.list) if (x.kind === 'reminder' && !x.read_at && (days[x.ref] || 0) > 0) nfRead(x.id);
-  for (const x of nf.list) if (x.kind === 'app_update' && !x.read_at){   // version déjà installée : traitée ; sinon l'accueil affiche le message
-    if (+x.ref <= APP_BUILD) nfRead(x.id); else if (!newVer || +x.ref > newVer.v){ newVer = {v: +x.ref, label: 'v' + x.ref, note: ''}; updSlot(); }
-  }
+  for (const x of nf.list) if (x.kind === 'app_update' && !x.read_at && +x.ref > APP_BUILD && (!newVer || +x.ref > newVer.v)){ newVer = {v: +x.ref, label: 'v' + x.ref, note: ''}; updSlot(); }   // pas encore installée : l'accueil affiche le message
+  if (nf.list.some(x => x.kind === 'app_update')) await loadNews();   // résumé des nouveautés dans la cloche
   nfPaint();
 }
 function nfToggle(){ const p = nfPanel(); if (!p.hidden) return nfClose(); p.hidden = false; const bl = $('bell'); if (bl) bl.setAttribute('aria-expanded', 'true'); nfPaint(); nfLoad(); const f = p.querySelector('button'); if (f) f.focus(); }
@@ -3822,7 +3863,10 @@ async function nfOpen(id){
   else if (x.kind === 'student_joined') go('teacher');
   else if (x.kind === 'reminder'){ if (dueRefs().length) start(shuffle(reviewPick(15))); else go('train'); }
   else if (x.kind === 'unlinked' || x.kind === 'request_declined') openAccount();
-  else if (x.kind === 'app_update'){ if (!newVer || +x.ref > newVer.v) newVer = {v: +x.ref, label: 'v' + x.ref, note: ''}; go('home'); }
+  else if (x.kind === 'app_update'){
+    if (+x.ref > APP_BUILD){ if (!newVer || +x.ref > newVer.v) newVer = {v: +x.ref, label: 'v' + x.ref, note: ''}; go('home'); }   // pas encore installée : « Chercher les mises à jour »
+    else openNews(x.ref);                                                                                                            // installée : les nouveautés, et les boutons pour les essayer
+  }
   else go('student');
 }
 document.addEventListener('click', e => { // clic hors du panneau ou de la cloche : on ferme. composedPath() : la cible a pu être remplacée par le rafraîchissement de la cloche (innerHTML) pendant le clic, closest() la croirait alors « dehors »
