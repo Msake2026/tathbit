@@ -1,79 +1,65 @@
 {
- "v": 96,
+ "v": 97,
+ "date": "2026-10-25",
  "items": [
   {
-   "id": "day",
-   "icon": "▶️",
-   "go": "home",
+   "id": "arsize",
+   "icon": "🔤",
+   "go": "settings",
    "title": {
-    "fr": "Ma séance du jour, en une touche",
-    "en": "My session of the day, in one tap",
-    "ar": "حصّتي اليوم بلمسة واحدة"
+    "fr": "Taille du texte arabe réglable partout",
+    "en": "Arabic text size adjustable everywhere",
+    "ar": "حجم النص العربي قابل للضبط في كل مكان"
    },
    "text": {
-    "fr": "Un seul bouton à l'accueil enchaîne les versets dus, puis la révision récente et la révision ancienne de ton plan. Moins de choix, plus de régularité.",
-    "en": "One button on the home screen chains your due verses, then your plan's recent and old review. Fewer choices, more regularity.",
-    "ar": "زر واحد في الصفحة الرئيسية يجمع الآيات المستحقة ثم المراجعة القريبة والقديمة من خطتك. اختيارات أقل ومواظبة أكثر."
+    "fr": "Réglages → Affichage : agrandis ou réduis le texte arabe, avec un aperçu. Le réglage vaut pour les questions, le lecteur, la récitation, les résultats et les erreurs.",
+    "en": "Settings → Display: enlarge or shrink the Arabic text, with a preview. It applies to questions, the reader, recitation, results and mistakes.",
+    "ar": "الإعدادات ← العرض: كبّر النص العربي أو صغّره مع معاينة. يسري على الأسئلة والقارئ والتسميع والنتائج والأخطاء."
    }
   },
   {
-   "id": "install",
-   "icon": "📲",
-   "go": "install",
+   "id": "resume",
+   "icon": "🎙️",
+   "go": "recite",
    "title": {
-    "fr": "Installer l'application",
-    "en": "Install the app",
-    "ar": "تثبيت التطبيق"
+    "fr": "Récitation libre : reprendre où tu t'es arrêté",
+    "en": "Free recitation: resume where you stopped",
+    "ar": "التسميع الحر: تابع من حيث توقفت"
    },
    "text": {
-    "fr": "Sur Android, un seul toucher sur la tuile lance l'installation. Sur iPhone, un guide en 3 schémas (Partager → Sur l'écran d'accueil). Plein écran, meilleur hors ligne, rappels de révision.",
-    "en": "On Android, one tap on the tile starts the installation. On iPhone, a 3-diagram guide (Share → Add to Home Screen). Full screen, better offline, revision reminders.",
-    "ar": "على أندرويد تكفي لمسة واحدة على البطاقة لبدء التثبيت. وعلى آيفون دليل بثلاثة رسوم (مشاركة ← إضافة إلى الشاشة الرئيسية). بملء الشاشة، وأفضل دون اتصال، مع تذكيرات المراجعة."
+    "fr": "Pour chaque sourate, l'application retient ta dernière récitation : versets récités, sans oubli, à revoir. Un bouton te fait reprendre au verset où tu t'es arrêté.",
+    "en": "For each surah the app remembers your last recitation: verses recited, without a slip, to review. A button resumes at the verse where you stopped.",
+    "ar": "يتذكّر التطبيق آخر تسميع لكل سورة: الآيات المسمَّعة وما كان بلا نسيان وما يحتاج مراجعة. وزرّ يستأنف من الآية التي توقفت عندها."
    }
   },
   {
-   "id": "offline",
-   "icon": "📴",
-   "go": "home",
+   "id": "backup",
+   "icon": "💾",
+   "go": "settings",
    "title": {
-    "fr": "Indicateur hors ligne",
-    "en": "Offline indicator",
-    "ar": "مؤشّر انعدام الاتصال"
+    "fr": "Rappel de sauvegarde sans compte",
+    "en": "Backup reminder without an account",
+    "ar": "تذكير بالنسخ الاحتياطي دون حساب"
    },
    "text": {
-    "fr": "Sans réseau, un bandeau t'indique ce qui reste disponible (texte, exercices, plan, audio téléchargé) et ce qui attend le retour de la connexion.",
-    "en": "Without a network, a banner tells you what is still available (text, exercises, plan, downloaded audio) and what waits for the connection to return.",
-    "ar": "عند انقطاع الشبكة يبيّن لك شريط ما يبقى متاحًا (النص والتمارين والخطة والصوت المنزَّل) وما ينتظر عودة الاتصال."
+    "fr": "Sans compte, ta progression n'est que sur ton appareil : après 30 jours sans sauvegarde, l'accueil te propose de l'exporter.",
+    "en": "Without an account your progress lives only on your device: after 30 days without a backup, the home screen offers to export it.",
+    "ar": "بدون حساب يبقى تقدّمك على جهازك فقط: بعد 30 يومًا دون نسخة احتياطية تقترح الصفحة الرئيسية تصديره."
    }
   },
   {
-   "id": "contact",
-   "icon": "✉️",
-   "go": "contact",
+   "id": "history",
+   "icon": "📜",
+   "go": "settings",
    "title": {
-    "fr": "Contact et diagnostic",
-    "en": "Contact and diagnostic",
-    "ar": "التواصل والتشخيص"
+    "fr": "Historique des nouveautés",
+    "en": "History of new features",
+    "ar": "سجلّ المستجدّات"
    },
    "text": {
-    "fr": "Sur la page de contact, « Copier le diagnostic » joint ta version, ton appareil et ta langue à ton message (sans donnée personnelle).",
-    "en": "On the contact page, “Copy the diagnostic” adds your version, device and language to your message (no personal data).",
-    "ar": "في صفحة التواصل يضيف «نسخ التشخيص» إصدارك وجهازك ولغتك إلى رسالتك (دون بيانات شخصية)."
-   }
-  },
-  {
-   "id": "home",
-   "icon": "🧭",
-   "go": "home",
-   "title": {
-    "fr": "Un accueil qui va à l'essentiel",
-    "en": "A home screen that gets to the point",
-    "ar": "صفحة رئيسية تدخل في صلب الموضوع"
-   },
-   "text": {
-    "fr": "Six tuiles montrent leur état et mènent droit à la fonction : récitation, moutoun, lecture, tajwīd, sauvegarde et installation. Plus d'information en double avec la barre du bas.",
-    "en": "Six tiles show their status and lead straight to the feature: recitation, mutun, reading, tajwīd, backup and installation. No more information repeated from the bottom bar.",
-    "ar": "ست بطاقات تعرض حالتها وتقودك مباشرة إلى الميزة: التسميع والمتون والقراءة والتجويد والنسخ الاحتياطي والتثبيت. لا تكرار للمعلومات الموجودة في الشريط السفلي."
+    "fr": "L'écran « Nouveautés » (Réglages → Aide et infos) garde maintenant les versions précédentes, avec ce qu'elles ont apporté.",
+    "en": "The “What's new” screen (Settings → Help and info) now keeps previous versions, with what each one brought.",
+    "ar": "تحتفظ شاشة «المستجدّات» (الإعدادات ← المساعدة والمعلومات) الآن بالإصدارات السابقة وما أضافته كل منها."
    }
   }
  ]

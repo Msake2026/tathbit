@@ -8,6 +8,10 @@ import { fileURLToPath } from 'node:url';
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const read = f => fs.readFileSync(path.join(root, f), 'utf8');
+// le code de l'application est réparti en js/*.js (ordre = celui des balises <script> de index.html) et app.css ; les tests le lisent d'un bloc
+const APP_FILES = ['core', 'screens', 'session', 'recite', 'clicks', 'reader', 'account', 'extras', 'start'];
+const APP_JS = APP_FILES.map(n => read('js/' + n + '.js')).join('');
+const readApp = () => read('index.html') + '\n' + APP_JS + '\n' + read('app.css');
 const loadGlobal = (file, name) => { const w = {}; new Function('window', read(file))(w); return w[name]; };
 
 test('quran.js : 114 sourates, 6236 versets, empreinte SHA-256 correcte', () => {
@@ -66,7 +70,7 @@ test('noms arabes des sourates : aucun tatwīl parasite, quatre voyelles corrig�
 });
 
 test('traductions : chaque texte tr()/trp() de index.html existe en anglais et en arabe', () => {
-  const src = read('index.html').match(/<script>([\s\S]*)<\/script>/)[1];
+  const src = APP_JS;
   const I = loadGlobal('i18n.js', 'I18N');
   const lit = i => { const q = src[i]; let j = i + 1, out = ''; while (j < src.length) { const c = src[j]; if (c === '\\') { out += src[j] + src[j + 1]; j += 2; continue; } if (c === q) break; out += c; j++; } try { return [eval(q + out + q), j + 1]; } catch { return [null, j + 1]; } };
   const keys = new Set(); const re = /\btrp?\(/g; let m;
@@ -159,7 +163,7 @@ test('modèles d\'e-mail : trois langues, bouton vers {{ .ConfirmationURL }}, au
 });
 
 test('révision espacée : intervalle adaptatif et liste « à renforcer en priorité »', () => {
-  const html = read('index.html'); const code = html.slice(html.indexOf('/* SRS:begin'), html.indexOf('/* SRS:end */'));
+  const html = readApp(); const code = html.slice(html.indexOf('/* SRS:begin'), html.indexOf('/* SRS:end */'));
   assert.ok(code.includes('function srsNext') && code.includes('function weakList'));
   const { srsNext, weakList, SRS } = new Function(code + '; return {srsNext, weakList, SRS};')();
   const DAY = 864e5, T = Date.UTC(2026, 9, 21, 12);
@@ -196,7 +200,7 @@ test('révision espacée : intervalle adaptatif et liste « à renforcer en prio
 });
 
 test('exercice de tajwīd : segments, parties surlignées, parties à trouver, vrai/faux, propositions', () => {
-  const html = read('index.html'); const code = html.slice(html.indexOf('/* TJ:begin'), html.indexOf('/* TJ:end */'));
+  const html = readApp(); const code = html.slice(html.indexOf('/* TJ:begin'), html.indexOf('/* TJ:end */'));
   const esc = t => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const { TJFAM, TJGROUP, tjSegs, tjMulti, tjParts, tjFindPicks, tjFalseFam, tjOptions } = new Function('esc', code + '; return {TJFAM, TJGROUP, tjSegs, tjMulti, tjParts, tjFindPicks, tjFalseFam, tjOptions};')(esc);
   // segments : le texte est conservé, les codes de la source sont regroupés comme dans sa légende
@@ -238,7 +242,7 @@ test('exercice de tajwīd : segments, parties surlignées, parties à trouver, v
 });
 
 test('data/tajweed.js : les 15 familles de règles existent et chaque verset est bien segmenté', () => {
-  const html = read('index.html'); const code = html.slice(html.indexOf('/* TJ:begin'), html.indexOf('/* TJ:end */'));
+  const html = readApp(); const code = html.slice(html.indexOf('/* TJ:begin'), html.indexOf('/* TJ:end */'));
   const { tjSegs } = new Function('esc', code + '; return {tjSegs};')(x => x);
   const w = {}; new Function('window', read('data/tajweed.js'))(w); const all = w.QX.tajweed.s.flat();
   const fam = new Set(); let spans = 0;
@@ -268,7 +272,7 @@ test('huruf.js : 17 points de sortie, 28 lettres, qualités cohérentes, sources
 });
 
 test('exercices makhārij / ṣifāt : questions toujours valides (milliers de tirages)', () => {
-  const html = read('index.html'); const code = html.slice(html.indexOf('/* HF:begin'), html.indexOf('/* HF:end */'));
+  const html = readApp(); const code = html.slice(html.indexOf('/* HF:begin'), html.indexOf('/* HF:end */'));
   const { mkBuild, sfBuild, hfPointOf, HF_AMBIG } = new Function(code + '; return {mkBuild, sfBuild, hfPointOf, HF_AMBIG};')();
   const w = {}; new Function('window', read('huruf.js'))(w); const H = w.HURUF;
   let seed = 11; const rnd = n => (seed = (seed * 16807) % 2147483647) % n, shuf = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = rnd(i + 1); [a[i], a[j]] = [a[j], a[i]]; } return a; };
@@ -289,7 +293,7 @@ test('exercices makhārij / ṣifāt : questions toujours valides (milliers de t
 });
 
 test('qualités conditionnelles : la règle de qalqala coïncide avec l\'annotation du tajwīd sur les 6236 versets', () => {
-  const html = read('index.html'); const code = html.slice(html.indexOf('/* HF:begin'), html.indexOf('/* HF:end */'));
+  const html = readApp(); const code = html.slice(html.indexOf('/* HF:begin'), html.indexOf('/* HF:end */'));
   const { hfClusters, hfCond, condBuild } = new Function(code + '; return {hfClusters, hfCond, condBuild};')();
   const Qd = loadGlobal('quran.js', 'QURAN').surahs; const tj = {}; new Function('window', read('data/tajweed.js'))(tj);
   let diff = [];
@@ -302,7 +306,7 @@ test('qualités conditionnelles : la règle de qalqala coïncide avec l\'annotat
 });
 
 test('qualités conditionnelles : līn et questions posées sur de vrais versets', () => {
-  const html = read('index.html'); const code = html.slice(html.indexOf('/* HF:begin'), html.indexOf('/* HF:end */'));
+  const html = readApp(); const code = html.slice(html.indexOf('/* HF:begin'), html.indexOf('/* HF:end */'));
   const { hfClusters, hfCond, condBuild } = new Function(code + '; return {hfClusters, hfCond, condBuild};')();
   const Qd = loadGlobal('quran.js', 'QURAN').surahs, Q = Qd.map(s => ({ n: s.n, a: s.a.map(v => ({ t: v[0] })) }));
   // cas connus : « خَوۡف » (exemple de l'article) et « ٱلۡبَيۡتِ » (106:3) ont un līn ; « يَقُولُ » : la lettre و est une lettre de madd
@@ -322,7 +326,7 @@ test('qualités conditionnelles : līn et questions posées sur de vrais versets
 });
 
 test('data/ahkam.js : ensembles de lettres cohérents, occurrences conformes à la règle, questions toujours valides', () => {
-  const html = read('index.html'); const hf = html.slice(html.indexOf('/* HF:begin'), html.indexOf('/* HF:end */')), ah = html.slice(html.indexOf('/* AH:begin'), html.indexOf('/* AH:end */'));
+  const html = readApp(); const hf = html.slice(html.indexOf('/* HF:begin'), html.indexOf('/* HF:end */')), ah = html.slice(html.indexOf('/* AH:begin'), html.indexOf('/* AH:end */'));
   const { hfClusters, hfPick, ahIndex, ahBuild, ahLetterRule } = new Function(hf + ah + '; return {hfClusters, hfPick, ahIndex, ahBuild, ahLetterRule};')();
   const w = {}; new Function('window', read('data/ahkam.js'))(w); const A = w.AHKAM;
   const S = A.sets; assert.deepEqual(Object.fromEntries(Object.entries(S).map(([k, v]) => [k, [...v].length])), { H: 6, G: 4, N: 2, Q: 1, K: 15 });
@@ -357,7 +361,7 @@ test('data/ahkam.js : ensembles de lettres cohérents, occurrences conformes à 
 });
 
 test('madd : type déduit du texte coïncide avec la marque de la source (n, p, m, o) et questions valides', () => {
-  const html = read('index.html'); const code = ['/* TJ:begin', '/* HF:begin', '/* MD:begin'].map(m => html.slice(html.indexOf(m), html.indexOf(m.replace(':begin', ':end') + ' */'))).join('\n');
+  const html = readApp(); const code = ['/* TJ:begin', '/* HF:begin', '/* MD:begin'].map(m => html.slice(html.indexOf(m), html.indexOf(m.replace(':begin', ':end') + ' */'))).join('\n');
   const esc = t => String(t);
   const { tjSegs, tjMulti, tjParts, mdKind, mdBuild, MD_CODE } = new Function('esc', code + '; return {tjSegs, tjMulti, tjParts, mdKind, mdBuild, MD_CODE};')(esc);
   const w = {}; new Function('window', read('data/tajweed.js'))(w); const T = w.QX.tajweed.s;
@@ -382,7 +386,7 @@ test('madd : type déduit du texte coïncide avec la marque de la source (n, p, 
 });
 
 test('audio hors ligne : adresses, estimation, plafond et plages d\'octets du service worker', () => {
-  const html = read('index.html'), au = html.slice(html.indexOf('/* AU:begin'), html.indexOf('/* AU:end */'));
+  const html = readApp(), au = html.slice(html.indexOf('/* AU:begin'), html.indexOf('/* AU:end */'));
   const { AU_EA, AU_EA128, auQ, auEntry, auUrl, auPad, auChars, auEstimate, auPlan, auMo } = new Function(au + '; return {AU_EA, AU_EA128, auQ, auEntry, auUrl, auPad, auChars, auEstimate, auPlan, auMo};')();
   const ids = [...html.matchAll(/\['(ar\.[a-z]+)', '[^']+', \d+\]/g)].map(m => m[1]); assert.equal(ids.length, 8);
   for (const id of ids) assert.ok(AU_EA[id] && /_64kbps$/.test(AU_EA[id]), 'dossier everyayah pour ' + id);
@@ -405,7 +409,7 @@ test('audio hors ligne : adresses, estimation, plafond et plages d\'octets du se
 });
 
 test('audio du plan du jour : sourates concernées, déjà téléchargées, détection du Wi-Fi', () => {
-  const html = read('index.html'), au = html.slice(html.indexOf('/* AU:begin'), html.indexOf('/* AU:end */'));
+  const html = readApp(), au = html.slice(html.indexOf('/* AU:begin'), html.indexOf('/* AU:end */'));
   const { auWifi, auPlanSurahs, auMissing } = new Function(au + '; return {auWifi, auPlanSurahs, auMissing};')();
   assert.deepEqual(auPlanSurahs({ next: { s: 114, a: 1, b: 3 }, rec: [{ s: 113, a: 1, b: 3 }, { s: 113, a: 4, b: 5 }], man: [{ s: 112, a: 1, b: 2 }, { s: 114, a: 4, b: 6 }] }), [112, 113, 114]);
   assert.deepEqual(auPlanSurahs({ next: null, rec: [], man: [] }), []); assert.deepEqual(auPlanSurahs({ next: { s: 2, a: 1, b: 5 } }), [2]);
@@ -415,7 +419,7 @@ test('audio du plan du jour : sourates concernées, déjà téléchargées, dét
 });
 
 test('surveillance des e-mails : seuils d\'alerte et passage au nom de domaine', () => {
-  const html = read('index.html'), wa = html.slice(html.indexOf('/* WA:begin'), html.indexOf('/* WA:end */'));
+  const html = readApp(), wa = html.slice(html.indexOf('/* WA:begin'), html.indexOf('/* WA:end */'));
   const { WA, admWatch } = new Function(wa + '; return {WA, admWatch};')(); const now = Date.UTC(2026, 9, 21, 12);
   const mk = (n, agoH) => Array.from({ length: n }, () => ({ created_at: new Date(now - agoH * 36e5).toISOString() }));
   let w = admWatch([], now); assert.deepEqual([w.h1, w.h24, w.total, w.level, w.domain], [0, 0, 0, 0, false]);
@@ -428,7 +432,7 @@ test('surveillance des e-mails : seuils d\'alerte et passage au nom de domaine',
 });
 
 test('confidentialité : chaque service contacté automatiquement est cité dans la page, tout nouveau service fait échouer ce test', () => {
-  const html = read('index.html'), sw = read('sw.js'), cfg = read('config.js');
+  const html = readApp(), sw = read('sw.js'), cfg = read('config.js');
   const legal = html.slice(html.indexOf('function renderLegal'), html.indexOf('function summarize') > 0 ? html.indexOf('function summarize') : undefined);
   // services contactés par l'application sans clic de l'utilisateur -> mot attendu dans la page de confidentialité
   const auto = { 'supabase.co': 'Supabase', 'cdn.jsdelivr.net': 'jsDelivr', 'api.alquran.cloud': 'AlQuran Cloud', 'cdn.islamic.network': 'AlQuran Cloud', 'everyayah.com': 'everyayah.com', 'github.io': 'GitHub' };
@@ -444,7 +448,7 @@ test('confidentialité : chaque service contacté automatiquement est cité dans
 });
 
 test('export CSV : échappement, séparateurs, protection contre les formules, UTF-8 avec BOM', () => {
-  const html = read('index.html'), c = html.slice(html.indexOf('/* CSV:begin'), html.indexOf('/* CSV:end */'));
+  const html = readApp(), c = html.slice(html.indexOf('/* CSV:begin'), html.indexOf('/* CSV:end */'));
   const { csvCell, toCsv } = new Function(c + '; return {csvCell, toCsv};')();
   assert.equal(csvCell('simple', ';'), 'simple'); assert.equal(csvCell('a;b', ';'), '"a;b"'); assert.equal(csvCell('a;b', ','), 'a;b'); assert.equal(csvCell('a,b', ','), '"a,b"');
   assert.equal(csvCell('il a dit "oui"', ';'), '"il a dit ""oui"""'); assert.equal(csvCell('ligne1\nligne2', ';'), '"ligne1\nligne2"');
@@ -454,7 +458,7 @@ test('export CSV : échappement, séparateurs, protection contre les formules, U
 });
 
 test('accessibilité : contrastes WCAG des couleurs du thème et du tajwīd (mode contraste renforcé)', () => {
-  const html = read('index.html'), a = html.slice(html.indexOf('/* A11Y:begin'), html.indexOf('/* A11Y:end */'));
+  const html = readApp(), a = html.slice(html.indexOf('/* A11Y:begin'), html.indexOf('/* A11Y:end */'));
   const { a11yContrast, a11yDarken, a11yLum } = new Function(a + '; return {a11yContrast, a11yDarken, a11yLum};')();
   assert.ok(Math.abs(a11yContrast('#000000', '#ffffff') - 21) < 0.01); assert.ok(Math.abs(a11yContrast('#777777', '#ffffff') - 4.48) < 0.02, 'valeur de référence WCAG');
   // couleurs du thème : texte courant >= 4,5:1 (clair et sombre)
@@ -476,7 +480,7 @@ test('accessibilité : contrastes WCAG des couleurs du thème et du tajwīd (mod
 });
 
 test('suivi par un enseignant : régularité, progression par sourate, erreurs fréquentes (fonctions pures)', () => {
-  const html = read('index.html'), tc = html.slice(html.indexOf('/* TC:begin'), html.indexOf('/* TC:end */'));
+  const html = readApp(), tc = html.slice(html.indexOf('/* TC:begin'), html.indexOf('/* TC:end */'));
   const { tcRegularity, tcPerSurah, tcFrequent, tcGoal, tcRemaining, tcRanges, tcPace, tcGoalR } = new Function(tc + '; return {tcRegularity, tcPerSurah, tcFrequent, tcGoal, tcRemaining, tcRanges, tcPace, tcGoalR};')();
   { const len = n => ({ 1: 7, 2: 286, 3: 200 })[n]; const R = tcGoalR({ '1:1': [1, 0], '1:2': [0, 1], '2:1': [2, 0], '2:2': [1, 0] }, 1, 3, len);
     assert.equal(R.total, 493); assert.equal(R.seen, 3); assert.equal(R.left, 490); assert.deepEqual(R.parts.map(p => [p.s, p.rest.length]), [[1, 6], [2, 284], [3, 200]]); assert.equal(R.pct, 1);
@@ -501,7 +505,7 @@ test('suivi par un enseignant : régularité, progression par sourate, erreurs f
 });
 
 test('rôle enseignant : le code du client n\'appelle que des fonctions SQL existantes dans teacher.sql, avec les bons arguments', () => {
-  const html = read('index.html'), sql = read('supabase/teacher.sql') + read('supabase/schema.sql');
+  const html = readApp(), sql = read('supabase/teacher.sql') + read('supabase/schema.sql');
   const calls = [...html.matchAll(/sb\.rpc\('([a-z_]+)'(?:, \{([^}]*)\})?/g)].map(m => [m[1], (m[2] || '').split(',').map(x => x.split(':')[0].trim()).filter(Boolean)]);
   const mine = ['invite_create', 'invite_cancel', 'invite_accept', 'link_revoke', 'links_mine', 'access_log_mine', 'teacher_students', 'teacher_student_data'];
   for (const [n, args] of calls.filter(([n]) => mine.includes(n))) {
@@ -526,14 +530,14 @@ test('résumé hebdomadaire : total, jours actifs et série sur 7 jours (send-re
 });
 
 test('contenus rédigés par l’IA : la mention « pas une source officielle » accompagne les explications de règles et le détail est dans Réglages', () => {
-  const html = read('index.html');
+  const html = readApp();
   assert.ok((html.match(/\$\{AI\(\)\}/g) || []).length >= 7, 'la mention doit figurer près des textes d’explication (plan, règles de tajwīd, madd, aḥkām, légende)');
   for (const f of ['CONDRULE', 'AHNOTE', 'TJNOTE']) { const i = html.indexOf('const ' + f + ' ='); assert.ok(html.slice(i, i + 1500).includes('${AI()}'), f + ' doit porter la mention'); }
   assert.ok(html.includes("D'où viennent les contenus ?") && html.includes('Rédigé par une IA, pas une source officielle'), 'carte « D’où viennent les contenus ? » dans Réglages');
 });
 
 test('PWA : écrans de lancement iPhone et captures du manifeste existent, avec les bonnes dimensions', () => {
-  const html = read('index.html'), man = JSON.parse(read('manifest.webmanifest'));
+  const html = readApp(), man = JSON.parse(read('manifest.webmanifest'));
   const dims = f => { const b = fs.readFileSync(f); if (b[0] === 0x89) return [b.readUInt32BE(16), b.readUInt32BE(20)]; let i = 2; while (i < b.length) { if (b[i] !== 0xff) { i++; continue; } const m = b[i + 1]; if (m >= 0xc0 && m <= 0xc3) return [b.readUInt16BE(i + 7), b.readUInt16BE(i + 5)]; i += 2 + b.readUInt16BE(i + 2); } return null; };
   const links = [...html.matchAll(/<link rel="apple-touch-startup-image" media="\(device-width: (\d+)px\) and \(device-height: (\d+)px\) and \(-webkit-device-pixel-ratio: (\d)\) and \(orientation: (portrait|landscape)\)" href="([^"]+)">/g)];
   assert.ok(links.length >= 28, 'iPhone (12 tailles) et iPad (9 tailles, portrait et paysage)');
@@ -553,7 +557,7 @@ test('notifications : chaque notification a sa propre étiquette (le 2e rappel n
 });
 
 test('lien de confirmation reçu par e-mail : succès, lien expiré ou refusé sont reconnus (et expliqués à l’utilisateur)', () => {
-  const html = read('index.html'), { authLinkNotice } = new Function(html.slice(html.indexOf('/* AL:begin'), html.indexOf('/* AL:end */')) + '; return {authLinkNotice};')();
+  const html = readApp(), { authLinkNotice } = new Function(html.slice(html.indexOf('/* AL:begin'), html.indexOf('/* AL:end */')) + '; return {authLinkNotice};')();
   assert.deepEqual(authLinkNotice('#access_token=abc&refresh_token=x&type=signup', ''), { ok: 'signup' });
   assert.deepEqual(authLinkNotice('', '?code=123'), { ok: 'link' });
   assert.equal(authLinkNotice('#error=access_denied&error_code=otp_expired&error_description=Email+link+is+invalid+or+has+expired', '').err, 'expired');
@@ -564,7 +568,7 @@ test('lien de confirmation reçu par e-mail : succès, lien expiré ou refusé s
 });
 
 test('micro qui ne s’ouvre pas : chaque cause a un message d’aide précis, traduit, adapté à l’appareil', () => {
-  const html = read('index.html'), { micHelp } = new Function(html.slice(html.indexOf('/* MH:begin'), html.indexOf('/* MH:end */')) + '; return {micHelp};')();
+  const html = readApp(), { micHelp } = new Function(html.slice(html.indexOf('/* MH:begin'), html.indexOf('/* MH:end */')) + '; return {micHelp};')();
   const i18n = read('i18n.js');
   const all = []; for (const code of ['not-allowed', 'service-not-allowed', 'audio-capture', 'network', 'language-not-supported', 'no-speech']) for (const [pf, st] of [['ios', true], ['ios', false], ['android', false], ['desktop', false]]) { const h = micHelp(code, pf, st); assert.ok(h.text, code); all.push(h.text, h.how); }
   assert.match(micHelp('not-allowed', 'ios', false).how, /Réglages > Safari > Microphone.*dictée/); assert.match(micHelp('not-allowed', 'ios', true).how, /ouvre le site dans Safari/);
@@ -574,7 +578,7 @@ test('micro qui ne s’ouvre pas : chaque cause a un message d’aide précis, t
 });
 
 test('récitation libre : l’alignement des mots entendus suit l’ordre, saute les petits mots sans les inventer, ignore le bruit, garde ce qui a été entendu à la place', () => {
-  const html = read('index.html'), { frAlign } = new Function(html.slice(html.indexOf('/* FR:begin'), html.indexOf('/* FR:end */')) + '; return {frAlign};')();
+  const html = readApp(), { frAlign } = new Function(html.slice(html.indexOf('/* FR:begin'), html.indexOf('/* FR:end */')) + '; return {frAlign};')();
   const same = (a, b) => a === b, pm = r => ({p: r.p, miss: r.miss});
   const exp = ['بسم', 'الله', 'الرحمن', 'الرحيم', 'الحمد', 'لله', 'رب', 'العالمين'];
   let r = frAlign(exp, 0, ['بسم', 'الله', 'الرحمن', 'الرحيم'], same); assert.deepEqual(pm(r), {p: 4, miss: []}, 'récitation exacte'); assert.deepEqual(r.said, [], 'rien à signaler');
@@ -588,7 +592,7 @@ test('récitation libre : l’alignement des mots entendus suit l’ordre, saute
 });
 
 test('version.json : suit la version affichée par l’application (à mettre à jour à chaque publication, sinon le message « nouvelle version » se trompe)', () => {
-  const v = /const APP_VERSION = '([^']+)'/.exec(read('index.html'))[1], n = +/v(\d+)/.exec(v)[1], j = JSON.parse(read('version.json'));
+  const v = /const APP_VERSION = '([^']+)'/.exec(readApp())[1], n = +/v(\d+)/.exec(v)[1], j = JSON.parse(read('version.json'));
   assert.equal(j.v, n, 'numéro de version'); assert.equal(j.label, v, 'libellé');
   const ts = read('supabase/functions/send-reminders/index.ts'); assert.match(ts, /announceUpdates/); assert.match(ts, /kind: 'app_update'/);
   const sql = read('supabase/teacher.sql'); for (const f of ['admin_announce_update', 'admin_announcements', 'updates_set']) assert.match(sql, new RegExp('function public\\.' + f), f);
@@ -613,7 +617,7 @@ test('e-mail « nouvelle version » : HTML avec logo, couleurs de l’applicatio
 });
 
 test('news.json : même version que l’application, chaque nouveauté en trois langues et menant à une fonction qui existe', () => {
-  const html = read('index.html'), n = JSON.parse(read('news.json')), build = +/v(\d+)/.exec(/const APP_VERSION = '([^']+)'/.exec(html)[1])[1];
+  const html = readApp(), n = JSON.parse(read('news.json')), build = +/v(\d+)/.exec(/const APP_VERSION = '([^']+)'/.exec(html)[1])[1];
   assert.equal(n.v, build, 'news.json doit décrire la version publiée (le message d’accueil et l’e-mail se basent dessus)');
   const targets = [...html.match(/const NEWS_GO = \{([^\n]*)\};/)[1].matchAll(/(\w+): \(\) =>/g)].map(m => m[1]);
   assert.ok(n.items.length >= 1 && n.items.length <= 8);
@@ -623,11 +627,21 @@ test('news.json : même version que l’application, chaque nouveauté en trois 
   }
 });
 test('news-history.json : versions précédentes (plus récente d’abord), chaque nouveauté en trois langues', () => {
-  const html = read('index.html'), n = JSON.parse(read('news.json')), H = JSON.parse(read('news-history.json')).versions, build = +/v(\d+)/.exec(/const APP_VERSION = '([^']+)'/.exec(html)[1])[1];
+  const html = readApp(), n = JSON.parse(read('news.json')), H = JSON.parse(read('news-history.json')).versions, build = +/v(\d+)/.exec(/const APP_VERSION = '([^']+)'/.exec(html)[1])[1];
   assert.ok(H.length >= 1, 'au moins une version archivée');
   for (let i = 0; i < H.length; i++){
     assert.ok(H[i].v < n.v, 'une version archivée est plus ancienne que la version courante (v' + H[i].v + ' < v' + n.v + ')'); if (i) assert.ok(H[i - 1].v > H[i].v, 'ordre décroissant');
     for (const it of H[i].items) for (const k of ['title', 'text']) for (const l of ['fr', 'en', 'ar']) assert.ok(it[k] && it[k][l] && it[k][l].length > 3, 'v' + H[i].v + ' ' + it.id + ' ' + k + ' ' + l);
   }
   assert.equal(new Set(H.map(x => x.v)).size, H.length, 'pas de doublon'); assert.ok(n.v === build);
+});
+test('découpage : index.html charge js/*.js dans l’ordre, le service worker les met en cache, chaque repère begin/end est complet', () => {
+  const html = read('index.html'), sw = read('sw.js');
+  const tags = [...html.matchAll(/<script src="js\/(\w+)\.js"><\/script>/g)].map(m => m[1]);
+  assert.deepEqual(tags, APP_FILES, 'ordre des scripts dans index.html = ordre attendu (portée globale partagée : ne pas réordonner)');
+  assert.ok(/<link rel="stylesheet" href="app\.css">/.test(html), 'feuille de style app.css');
+  assert.ok(!/<script>/.test(html) && !/<style>/.test(html), 'plus de script ni de style en ligne dans index.html');
+  for (const f of [...APP_FILES.map(n => 'js/' + n + '.js'), 'app.css']) assert.ok(sw.includes("'./" + f + "'"), f + ' dans la liste du service worker (sans cela : pas de hors ligne)');
+  for (const f of APP_FILES) { const s = read('js/' + f + '.js'); for (const m of s.matchAll(/\/\* (\w+):begin/g)) assert.ok(s.includes('/* ' + m[1] + ':end'), f + ' : repère ' + m[1] + ' coupé entre deux fichiers'); }
+  assert.ok(html.split('\n').length < 120, 'index.html reste une coquille courte');
 });

@@ -5,7 +5,9 @@
   if (!local && !/[?&]force\b/.test(location.search)){ document.getElementById('sum').innerHTML = '<b class="ko">Refusé : lance ces tests depuis localhost (ils effacent puis restaurent la progression locale).</b>'; window.__result = {passed: 0, failed: 1, results: []}; return; }
 
   const results = [], tests = [];
-  const test = (name, fn) => tests.push({name, fn});
+  const FAST = /[?&]fast\b/.test(location.search);   // « ?fast » : on saute les tests lents (audit d'accessibilité, audio réel sur le réseau) ; la suite complète reste obligatoire avant d'envoyer
+  const SLOW = /audit axe|\(réseau requis\)/;
+  const test = (name, fn) => tests.push({name, fn, slow: SLOW.test(name)});
   const fail = m => { throw new Error(m); };
   const ok = (c, m) => { if (!c) fail(m || 'condition fausse'); };
   const eq = (a, b, m) => { if (JSON.stringify(a) !== JSON.stringify(b)) fail((m ? m + ' : ' : '') + 'attendu ' + JSON.stringify(b) + ', obtenu ' + JSON.stringify(a)); };
@@ -1153,15 +1155,16 @@
   /* ---- exécution ---- */
   const out = document.getElementById('out');
   for (const t of tests){
-    let r;
-    try { await t.fn(); r = {name: t.name, ok: true}; } catch (e){ r = {name: t.name, ok: false, err: String(e && e.message || e)}; }
+    let r; const t0 = performance.now();
+    if (FAST && t.slow) r = {name: t.name, ok: true, skipped: true, ms: 0};
+    else try { await t.fn(); r = {name: t.name, ok: true, ms: Math.round(performance.now() - t0)}; } catch (e){ r = {name: t.name, ok: false, err: String(e && e.message || e), ms: Math.round(performance.now() - t0)}; }
     results.push(r);
-    const li = document.createElement('li'); li.innerHTML = `<span class="${r.ok ? 'ok' : 'ko'}">${r.ok ? '✓' : '✗'}</span> ${r.name.replace(/</g, '&lt;')}` + (r.ok ? '' : `<pre class="ko"></pre>`);
+    const li = document.createElement('li'); li.innerHTML = `<span class="${r.skipped ? 'mut' : r.ok ? 'ok' : 'ko'}">${r.skipped ? '⏭' : r.ok ? '✓' : '✗'}</span> ${r.name.replace(/</g, '&lt;')}` + (r.ok ? '' : `<pre class="ko"></pre>`);
     if (!r.ok) li.querySelector('pre').textContent = r.err;
     out.appendChild(li);
   }
   restore();
-  const failed = results.filter(r => !r.ok).length;
-  document.getElementById('sum').innerHTML = `<b class="${failed ? 'ko' : 'ok'}">${results.length - failed} réussis, ${failed} en échec</b>`;
-  window.__result = {passed: results.length - failed, failed, results};
+  const failed = results.filter(r => !r.ok).length, skipped = results.filter(r => r.skipped).length;
+  document.getElementById('sum').innerHTML = `<b class="${failed ? 'ko' : 'ok'}">${results.length - failed - skipped} réussis, ${failed} en échec${skipped ? `, ${skipped} ignorés (mode rapide : lance la suite complète avant d’envoyer)` : ''}</b>`;
+  window.__result = {passed: results.length - failed - skipped, failed, skipped, fast: FAST, results};
 })();
