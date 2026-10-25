@@ -5,7 +5,7 @@
   {
    "id": "arsize",
    "icon": "🔤",
-   "go": "settings",
+   "go": "arsize",
    "title": {
     "fr": "Taille du texte arabe réglable partout",
     "en": "Arabic text size adjustable everywhere",
@@ -35,7 +35,7 @@
   {
    "id": "backup",
    "icon": "💾",
-   "go": "settings",
+   "go": "backup",
    "title": {
     "fr": "Rappel de sauvegarde sans compte",
     "en": "Backup reminder without an account",
@@ -50,7 +50,7 @@
   {
    "id": "history",
    "icon": "📜",
-   "go": "settings",
+   "go": "appinfo",
    "title": {
     "fr": "Historique des nouveautés",
     "en": "History of new features",

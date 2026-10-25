@@ -1080,6 +1080,13 @@
     for (const L of ['en', 'ar']){ E(`stats = {'112:1': [3, 1]}; store.set('tathbit.lastExport', Date.now() - 35 * ${DAY}); setLang('${L}'); go('home')`); ok(!!$q('#export-nudge') && !/undefined|NaN/.test(appText()), 'rappel en ' + L); eq(E('[...missingKeys]'), [], 'clés traduites (' + L + ')'); }
     E("setLang('fr'); stats = {}; store.set('tathbit.lastExport', 0); store.set('tathbit.firstUse', Date.now()); store.set('tathbit.exportSnooze', 0)"); noErr('rappel d’export');
   });
+  test('Nouveautés : « Essayer » ouvre le bon réglage, fait défiler jusqu’à la carte et la met en évidence', async () => {
+    reset("cfg.rdSize = 1.9"); E(`news = {v: APP_BUILD, items: [{id: 'a', icon: '🔤', go: 'arsize', title: {fr: 'Taille', en: 'Size', ar: 'حجم'}, text: {fr: 'Texte A', en: 'Text A', ar: 'نص أ'}}, {id: 'b', icon: '💾', go: 'backup', title: {fr: 'Sauvegarde', en: 'Backup', ar: 'نسخ'}, text: {fr: 'Texte B', en: 'Text B', ar: 'نص ب'}}]}; newsHist = []`);
+    E("renderNews()"); clickAct('news-go', 'arsize'); await wait(200); eq(E('cfg.tab + ":" + cfg.setTab'), 'settings:display', 'bloc Affichage ouvert'); ok(!!$q('#card-arsize') && $q('#card-arsize').classList.contains('flash') && /Taille du texte arabe/.test($q('#card-arsize').textContent), 'la carte « Taille du texte arabe » est affichée et mise en évidence');
+    E("renderNews()"); clickAct('news-go', 'backup'); await wait(200); eq(E('cfg.setTab'), 'data', 'bloc Données ouvert'); ok(!!$q('#card-data.flash'), 'carte « Mes données » en évidence');
+    E("newsGo('appinfo')"); await wait(200); eq(E('cfg.setTab'), 'help', 'bloc Aide ouvert'); ok(!!$q('#card-app.flash'), 'carte « Application » en évidence');
+    E("cfg.setTab = 'hub'; newsHist = null; news = null"); noErr('essayer des nouveautés');
+  });
   test('Nouveautés : historique des versions précédentes consultable depuis l’écran des nouveautés', async () => {
     reset(); E(`news = {v: APP_BUILD, items: [{id: 'a', icon: '🎙️', go: 'home', title: {fr: 'Titre A', en: 'Title A', ar: 'عنوان أ'}, text: {fr: 'Texte A', en: 'Text A', ar: 'نص أ'}}, {id: 'b', icon: '📅', go: 'plan', title: {fr: 'Titre B', en: 'Title B', ar: 'عنوان ب'}, text: {fr: 'Texte B', en: 'Text B', ar: 'نص ب'}}]}; newsHist = null`);
     const real = W.fetch; W.fetch = async u => String(u).startsWith('news-history.json') ? ({ok: true, json: async () => ({versions: [{v: 90, date: '2026-10-01', items: [{id: 'o', icon: '📜', go: 'home', title: {fr: 'Ancienne nouveauté', en: 'Old feature', ar: 'ميزة قديمة'}, text: {fr: 'Ancien texte', en: 'Old text', ar: 'نص قديم'}}]}, {v: 80, items: []}]})}) : real(u);

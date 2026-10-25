@@ -13,7 +13,11 @@ function updBannerHtml(){
 }
 /* ---------- nouveautés d'une version (news.json, mis à jour à chaque publication) ---------- */
 let news = null, newsAt = 0;
-const NEWS_GO = {news: () => openNews(), recite: () => frSetup(), moutoun: () => { cfg.scope = {type: 'matn', id: 'ibnachir'}; saveCfg(); go('train'); }, plan: () => go('plan'), contact: () => renderContact(), settings: () => go('settings'), home: () => go('home'), install: () => renderInstall()};
+function settingsGo(tab, id){ // « Essayer » depuis les nouveautés : ouvre le bon bloc des Réglages, fait défiler jusqu'à la carte et la met en évidence un instant
+  cfg.setTab = tab; setQ = ''; saveCfg(); go('settings');
+  setTimeout(() => { const el = document.getElementById(id); if (!el) return; try { el.scrollIntoView({block: 'center'}); } catch { /* ancien navigateur */ } el.classList.add('flash'); setTimeout(() => el.classList.remove('flash'), 2600); }, 50);
+}
+const NEWS_GO = {arsize: () => settingsGo('display', 'card-arsize'), backup: () => settingsGo('data', 'card-data'), appinfo: () => settingsGo('help', 'card-app'), news: () => openNews(), recite: () => frSetup(), moutoun: () => { cfg.scope = {type: 'matn', id: 'ibnachir'}; saveCfg(); go('train'); }, plan: () => go('plan'), contact: () => renderContact(), settings: () => go('settings'), home: () => go('home'), install: () => renderInstall()};
 async function loadNews(force){
   if (!force && news && Date.now() - newsAt < 30 * 60e3) return news;
   try { const r = await fetch('news.json?t=' + Date.now(), {cache: 'no-store'}); if (r.ok){ const j = await r.json(); if (j && Array.isArray(j.items)){ news = j; newsAt = Date.now(); } } } catch { /* hors ligne ou fichier absent */ }

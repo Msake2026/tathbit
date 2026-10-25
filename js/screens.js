@@ -638,7 +638,7 @@ function tabSettings(){
     lang: `<div class="card"><h2>${tr('Langue')}</h2>
     <div class="seg">${Object.entries(LANGS).map(([k, n]) => `<button class="${LANG === k ? 'sel' : ''}" data-act="lang" data-v="${k}" lang="${k}">${n}</button>`).join('')}</div>
   </div>`,
-    arsize: `<div class="card"><h2>${tr('Taille du texte arabe')}</h2>
+    arsize: `<div class="card" id="card-arsize"><h2>${tr('Taille du texte arabe')}</h2>
     <p class="ref" style="margin:0 0 6px">${tr("Valable partout : questions, lecteur, récitation, résultats et erreurs.")}</p>
     <div class="row" style="align-items:center"><button data-act="ar-size" data-v="-1" aria-label="${tr('Réduire le texte arabe')}" ${(cfg.rdSize || AR_DEF) <= 1.1 ? 'disabled' : ''}>A−</button><b id="arsz" style="flex:1;text-align:center" role="status">${Math.round(100 * (cfg.rdSize || AR_DEF) / AR_DEF)} %</b><button data-act="ar-size" data-v="1" aria-label="${tr('Agrandir le texte arabe')}" ${(cfg.rdSize || AR_DEF) >= 3.2 ? 'disabled' : ''}>A+</button><button data-act="ar-size" data-v="reset">${tr('Par défaut')}</button></div>
     <div class="ar" dir="rtl" lang="ar" style="text-align:center">بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ</div></div>`,
@@ -676,7 +676,7 @@ function tabSettings(){
     <p class="ref" style="margin:6px 0 0">${tr("Les couleurs officielles du tajwīd ont un faible contraste sur fond clair (10 règles sur 15 ont une couleur sous la recommandation 4,5:1). Ce réglage les fonce, en gardant la même teinte.")}</p></div>`,
     audioOff: `${audioCard()}`,
     remind: `${remindCard()}`,
-    data: `<div class="card"><h2>${tr('Mes données')}</h2>
+    data: `<div class="card" id="card-data"><h2>${tr('Mes données')}</h2>
     <div class="row"><button data-act="export">⬇ ${tr('Exporter ma progression')}</button><button data-act="import">⬆ ${tr('Importer')}</button></div>
     <input type="file" id="impfile" accept="application/json,.json" hidden>
     <label class="f" for="csv-kind">${tr('Exporter pour un tableur (CSV)')}</label>
@@ -684,7 +684,7 @@ function tabSettings(){
     <p class="ref" style="margin:8px 0 0">${tr('Tout est stocké sur cet appareil. Exporte régulièrement pour ne rien perdre en changeant de téléphone.')}</p>
     <p style="margin:6px 0 0"><button class="link" data-act="reset" style="color:var(--ko)">${tr('Réinitialiser statistiques et historique')}</button></p>
   </div>`,
-    app: `<div class="card"><h2>${tr('Application')}</h2>
+    app: `<div class="card" id="card-app"><h2>${tr('Application')}</h2>
     <p class="ref" style="margin:0 0 8px">${tr("Version {v}. Une fois installée sur le téléphone, l'application se met à jour toute seule à l'ouverture quand tu es en ligne ; si tu ne vois pas les nouveautés, utilise ce bouton (ta progression n'est pas touchée).", {v: APP_VERSION})}</p>
     <button data-act="upd">🔄 ${tr('Chercher les mises à jour')}</button> <button data-act="news-open">✨ ${tr('Voir les nouveautés')}</button></div>`,
     contact: `<div class="card"><h2>${tr('Contact')}</h2>
