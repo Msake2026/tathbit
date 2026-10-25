@@ -43,7 +43,6 @@ const onClick = e => {
     case 'ics': exportIcs(); break;
     case 'export': exportData(); if (cfg.tab === 'home') home(); break;
     case 'export-later': store.set('tathbit.exportSnooze', Date.now() + 7 * 864e5); home(); break;
-    case 'csv': exportCsv($('csv-kind') ? $('csv-kind').value : 'verses'); break;
     case 'import': $('impfile').click(); break;
     case 'addcustom': addCustom(); break;
     case 'delcustom':
@@ -204,7 +203,6 @@ const onClick = e => {
       break;
     case 'hist': go('errors'); break;
     case 'hfilter': hf = v; home(); break;
-    case 'hview': hv = v; home(); break;
     case 'hreview': if (hrefs.length) start(shuffle(hrefs)); break;
     case 'hclear': if (confirm(tr("Effacer tout l'historique des erreurs ?"))){ errors = []; store.set('tathbit.errors', errors); home(); } break;
     case 'nextq': nextQ(); break;

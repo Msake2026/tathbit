@@ -533,21 +533,6 @@
       E("home()"); E("go('progress')"); eq(E('[...missingKeys]'), [], L);
     }
   });
-  test('Export CSV : versets, jours, erreurs, exercices (contenu et téléchargement)', async () => {
-    reset(); const t0 = Date.now(); const got = [];
-    W.download = async (name, text, type) => { got.push({name, text, type}); };
-    E(`stats = {'1:2': [3, 1], '2:255': [0, 2], 'tuhfa:1': [1, 0]}; sched = {'1:2': {iv: 2.5, due: ${t0 + 864e5}}}; days = {'2026-10-20': 12, '2026-10-21': 5};
-      errors = [{t: ${t0}, k: '2:255', m: 'cloze', sc: 0, ans: '=cmd', bad: ['ٱللَّهُ', 'لَا']}]; tjs = {n: [4, 1]}; hfs = {'mk:ظ': [1, 2], 'ah:K': [3, 0], 'md:lazim': [0, 1]}`);
-    E("go('settings')"); const sel = $q('#csv-kind'); ok(sel && $q('[data-act="csv"]'), 'liste et bouton'); eq([...sel.options].map(o => o.value), ['verses', 'days', 'errors', 'drills']);
-    const parse = txt => txt.replace(/^\ufeff/, '').trim().split('\r\n').map(l => l.split(';'));
-    for (const [kind, rows, check] of [['verses', 4, r => ok(r[0][0] === 'Type' && r.some(x => x[2] === 'Al-Faatiha' && x[3] === '2' && x[6] === '3' && x[7] === '1' && x[8] === '75' && x[9] === '2.5'), 'verset 1:2 : 3 réussites, 1 raté, 75 %, intervalle 2,5 j')],
-      ['days', 3, r => ok(r[1][0] === '2026-10-20' && r[1][1] === '12')], ['errors', 2, r => { ok(r[1][5] === 'Mots manquants' || r[1][5].length > 0); ok(r[1][7] === "'=cmd", 'formule neutralisée'); ok(r[1][8].includes('لَا')); }], ['drills', 5, r => ok(r.some(x => x[0] === 'Tajwīd (entraînement)' || x[0] === 'Tajwīd') && r.some(x => /الإخفاء/.test(x[1])), 'exercices')]]){
-      got.length = 0; $q('#csv-kind').value = kind; clickAct('csv'); await wait(100); eq(got.length, 1, kind); ok(got[0].name.startsWith(`tathbit-${kind}-`) && got[0].name.endsWith('.csv')); ok(got[0].text.startsWith('\ufeff') && /csv/.test(got[0].type));
-      const r = parse(got[0].text); eq(r.length, rows, kind + ' : lignes'); eq(new Set(r.map(x => x.length)).size, 1, kind + ' : même nombre de colonnes'); check(r);
-    }
-    E("setLang('en')"); got.length = 0; E("exportCsv('days')"); ok(got[0].text.split('\r\n')[0].includes(',') && got[0].text.includes('Answers'), 'anglais : virgule et en-têtes traduits'); E("setLang('fr')");
-    for (const L of ['en', 'ar']){ E(`setLang('${L}')`); for (const k of ['verses', 'days', 'errors', 'drills']) E(`exportCsv('${k}')`); E("go('settings')"); eq(E('[...missingKeys]'), [], L); } E("setLang('fr')"); delete W.download;
-  });
   test('Rôle enseignant : carte élève (inviter, annuler, retirer, journal), espace enseignant, nomination par l’admin (serveur simulé)', async () => {
     reset(); const calls = []; W.__calls = calls; const now = Date.now(), iso = d => new Date(now + d * 864e5).toISOString();
     W.__state = {links: [{as_role: 'teacher', other_id: 't1', email: 'prof@x.fr', since: iso(-3)}], invites: [{code: 'OLDCODE2', expires_at: iso(3), used_by: null}], log: [{teacher_email: 'prof@x.fr', at: iso(-1)}], fail: null};
@@ -960,8 +945,8 @@
     openG('learn'); ok($q('[data-act="corr"]') && $q('[data-act="show"]') && !$q('#srec'), 'Apprentissage : correction et indices');
     openG('audio'); ok($q('#srec') && $q('#sgoal') && !$q('[data-act="corr"]'), 'Audio et rappels : récitateur, objectif');
     openG('display'); ok($q('#sth') && $q('[data-act="lang"]') && !$q('#srec'), 'Affichage : langue, thème, accessibilité');
-    openG('data'); ok($q('[data-act="export"]') && $q('#csv-kind'), 'Données : export, import, CSV');
-    openG('help'); ok($q('[data-act="contact"]') && $q('[data-act="legal"]') && $q('[data-act="upd"]') && $$q('details.card').length === 3 && !$q('details.card[open]'), 'Aide et infos : application, contact, confidentialité ; sources et contenus repliés');
+    openG('data'); ok($q('[data-act="export"]') && $q('[data-act="import"]') && !$q('#csv-kind'), 'Données : export et import (plus de CSV)');
+    openG('help'); ok($q('[data-act="contact"]') && $q('[data-act="legal"]') && $q('[data-act="upd"]') && $$q('details.card').length === 1 && !$q('details.card[open]') && /But de l'application/.test($q('#card-about').textContent) && /D'où viennent les contenus/.test($q('#card-about').textContent) && /Coran : texte uthmani/.test($q('#card-about').textContent), 'Aide et infos : application, contact, confidentialité ; une seule carte « À propos et sources » repliée (but, origine des contenus, sources)');
     openG('all'); ok($q('#srec') && $q('#sth') && $q('[data-act="export"]') && $q('[data-act="contact"]') && $q('[data-act="corr"]'), '« Tout afficher » : tous les réglages sur une page'); const hAll = D.documentElement.scrollHeight;
     ok(hHub < hAll * 0.5, 'l’écran d’accueil des réglages est bien plus court que toute la page (' + hHub + ' px contre ' + hAll + ' px)');
     // recherche depuis les 6 blocs
@@ -1071,6 +1056,14 @@
     for (const L of ['en', 'ar']){ E(`setLang('${L}'); renderAdmin()`); ok(!/undefined|NaN/.test(appText()), 'admin en ' + L); E("tch.addOpen = true"); E("tabTeacher(); renderAccount()"); ok(!/undefined|NaN/.test(appText()), 'compte en ' + L); E("openReader('q:112')"); await wait(200); ok(!/undefined|NaN/.test(appText()), 'lecteur en ' + L); E("rdStop()"); eq(E('[...missingKeys]'), [], 'clés traduites (' + L + ')'); }
     E("setLang('fr'); rdStop(); CLOUD.url = ''; CLOUD.anonKey = ''; me = null; sb = null; adm = {users: null, q: '', detail: null, msg: '', reqs: []}; tch.uid = null; tch.addOpen = false"); noErr('écrans compte, enseignant, admin, lecteur');
     } finally { cleanup(); }
+  });
+  test('Simplifications : plus de vue « Chronologie » des erreurs, plus d’export CSV, une seule carte « À propos et sources »', async () => {
+    reset("errors = [{t: Date.now(), k: '107:2', m: 'next', sc: 0}, {t: Date.now() - 3600e3, k: '107:2', m: 'cloze', sc: 0.5, bad: ['ٱلْيَتِيمَ']}]; stats = {'107:2': [1, 2]}"); E("go('errors')");
+    ok(!$q('[data-act="hview"]') && !/Chronologie/.test(appText()), 'Erreurs : plus de bascule « Chronologie »'); eq($$q('#app .sib').length, 1, 'un verset, regroupé : raté 2 fois'); ok(/raté 2 fois/.test(appText()) && /Mots souvent faux/.test(appText()), 'le détail par verset reste (nombre de fois, mots faux)');
+    E("cfg.setTab = 'data'; go('settings')"); ok($q('[data-act="export"]') && $q('[data-act="import"]') && !$q('#csv-kind') && !$q('[data-act="csv"]') && !/CSV/.test(appText()), 'Données : export et import JSON seulement');
+    ok(E("typeof exportCsv") === 'undefined' && E("typeof csvRows") === 'undefined', 'le code des exports CSV est retiré');
+    E("cfg.setTab = 'help'; go('settings')"); eq($$q('details.card').length, 1, 'une seule carte repliable'); ok(!!$q('#card-about'), '« À propos et sources »');
+    E("cfg.setTab = 'hub'; errors = []; stats = {}"); noErr('simplifications');
   });
   test('Premier lancement : 3 écrans (le but, choisir ses sourates ou un matn, premier exercice) ; pas pour un utilisateur existant', async () => {
     reset(); E("store.set('tathbit.welcome', 0); go('home')"); ok(/Le but de Tathbīt/.test(appText()) && /1 \/ 3/.test(appText()) && /ḥifẓ/.test(appText()), 'écran 1 : le but (tathbīt, pas ḥifẓ)'); ok(!$q('#nav') || $q('#nav').hidden, 'pas de barre de menu pendant le guide');

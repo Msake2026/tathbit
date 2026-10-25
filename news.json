@@ -1,35 +1,20 @@
 {
- "v": 99,
+ "v": 100,
  "date": "2026-10-25",
  "items": [
   {
-   "id": "reader2",
-   "icon": "📖",
-   "go": "reader",
+   "id": "simplify",
+   "icon": "🧹",
+   "go": "appinfo",
    "title": {
-    "fr": "Lecteur : le texte d'abord",
-    "en": "Reader: the text first",
-    "ar": "القارئ: النص أولًا"
+    "fr": "Une application plus simple",
+    "en": "A simpler app",
+    "ar": "تطبيق أبسط"
    },
    "text": {
-    "fr": "Une barre d'outils compacte (précédent, suivant, taille, masquer, écouter) remplace la pile de boutons : le texte apparaît dès l'ouverture. Tajwīd, traduction et tafsir sont rangés dans « Affichage ».",
-    "en": "A compact toolbar (previous, next, size, hide, listen) replaces the stack of buttons: the text shows as soon as you open it. Tajwīd, translation and tafsir are tucked into “Display”.",
-    "ar": "شريط أدوات مضغوط (السابق، التالي، الحجم، الإخفاء، الاستماع) بدل كومة الأزرار: يظهر النص فور الفتح. والتجويد والترجمة والتفسير في «العرض»."
-   }
-  },
-  {
-   "id": "spaces2",
-   "icon": "👥",
-   "go": "home",
-   "title": {
-    "fr": "Compte, élève, enseignant : plus clairs",
-    "en": "Account, student, teacher: clearer",
-    "ar": "الحساب والطالب والمعلّم: أوضح"
-   },
-   "text": {
-    "fr": "Compte : e-mails et mot de passe avant le reste, suppression en dernier. Élève : objectifs avant les messages. Enseignant : la liste des élèves d'abord, l'ajout derrière un bouton. Les titres ne passent plus sous la cloche.",
-    "en": "Account: e-mails and password first, deletion last. Student: goals before messages. Teacher: the list of students first, adding behind a button. Headers no longer slide under the bell.",
-    "ar": "الحساب: البريد وكلمة المرور أولًا والحذف أخيرًا. الطالب: الأهداف قبل الرسائل. المعلّم: قائمة الطلاب أولًا والإضافة خلف زر. ولا تمرّ العناوين تحت الجرس."
+    "fr": "Les erreurs s'affichent seulement par verset (la vue « Chronologie » double emploi est retirée), les exports CSV disparaissent (la sauvegarde JSON reste) et trois cartes d'infos deviennent une seule : « À propos et sources ».",
+    "en": "Mistakes are now shown per verse only (the duplicate “Timeline” view is gone), CSV exports are removed (the JSON backup stays) and three info cards become one: “About and sources”.",
+    "ar": "تُعرض الأخطاء الآن حسب الآية فقط (أُزيل عرض «التسلسل الزمني» المكرّر)، وأُزيلت صادرات CSV (يبقى النسخ الاحتياطي JSON)، وصارت ثلاث بطاقات معلومات بطاقة واحدة: «حول التطبيق والمصادر»."
    }
   }
  ]

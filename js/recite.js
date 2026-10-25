@@ -282,36 +282,6 @@ function applyA11y(){ // contraste renforcé des couleurs du tajwīd (réglage, 
   const on = cfg.hc !== undefined ? !!cfg.hc : !!(window.matchMedia && matchMedia('(prefers-contrast: more)').matches);
   let st = document.getElementById('tjhc'); if (on){ if (!st){ st = document.createElement('style'); st.id = 'tjhc'; document.head.appendChild(st); } st.textContent = tjHcStyle(); } else if (st) st.remove();
 }
-/* CSV:begin — export des statistiques pour un tableur (fonctions pures, testées en Node) */
-function csvCell(v, sep){ // protège les séparateurs, guillemets et sauts de ligne ; neutralise les cellules qui commenceraient une formule (= + - @)
-  let t = v === null || v === undefined ? '' : String(v);
-  if (/^[=+\-@\t\r]/.test(t) && !/^-?\d+([.,]\d+)?$/.test(t)) t = "'" + t;
-  return t.includes(sep) || /["\n\r]/.test(t) ? '"' + t.replace(/"/g, '""') + '"' : t;
-}
-const toCsv = (rows, sep) => '\ufeff' + rows.map(r => r.map(c => csvCell(c, sep)).join(sep)).join('\r\n') + '\r\n';   // BOM : Excel lit bien l'UTF-8 (arabe compris)
-/* CSV:end */
-const CSVKINDS = [['verses', 'Versets (réussites, ratés, prochaine révision)'], ['days', 'Réponses par jour'], ['errors', "Historique des erreurs"], ['drills', 'Exercices de tajwīd, makhārij, ṣifāt, aḥkām, madd']];
-function csvRows(kind){
-  const pct = (o, k) => o + k ? Math.round(100 * o / (o + k)) : '', dt = t => new Date(t).toISOString().slice(0, 10);
-  if (kind === 'days') return [[tr('Date'), tr('Réponses')], ...Object.entries(days).sort().map(([d, n]) => [d, n])];
-  if (kind === 'errors') return [[tr('Date'), tr('Heure'), tr('Sourate / matn'), tr('Nom'), tr('Verset'), tr('Exercice'), tr('Score'), tr('Réponse donnée'), tr('Mots faux')],
-    ...errors.map(e => { const r = pk(e.k), q = isQ(r.s), tm = new Date(e.t); return [dt(e.t), tm.toTimeString().slice(0, 5), r.s, book(r.s) ? (q ? SN(r.s) : MN(r.s)) : '', r.a, MODE_NAME[e.m] || e.m, e.sc, e.ans || '', (e.bad || []).join(' ')]; })];
-  if (kind === 'drills'){
-    const lab = k => { const [t, v] = k.split(':'); return t === 'mk' ? tr('Makhārij') + ' ' + v : t === 'ah' ? tr('Aḥkām') + ' ' + (AH_NAME[v] || v) : t === 'md' ? tr('Madd') + ' ' + (MD_NAME[v] || v) : tr('Ṣifāt') + ' ' + (hfAttr(v) ? hfAttr(v).ar + ' ' + hfAttr(v).tr : v); };
-    return [[tr('Exercice'), tr('Élément'), tr('Réussites'), tr('Ratés'), tr('Taux (%)')],
-      ...Object.entries(tjs).filter(([c]) => TJNAME[c]).map(([c, [o, k]]) => [tr('Tajwīd'), tr(TJNAME[c]), o, k, pct(o, k)]),
-      ...Object.entries(hfs).map(([key, [o, k]]) => [lab(key).split(' ')[0], lab(key), o, k, pct(o, k)])];
-  }
-  return [[tr('Type'), tr('Sourate / matn'), tr('Nom'), tr('Verset'), tr('Page'), tr('Juz'), tr('Réussites'), tr('Ratés'), tr('Taux (%)'), tr('Intervalle (jours)'), tr('Prochaine révision')],
-    ...Object.entries(stats).filter(([k]) => book(pk(k).s)).map(([k, [o, ko]]) => { const r = pk(k), q = isQ(r.s), v = q ? Q[r.s - 1].a[r.a - 1] : null, sc = sched[k];
-      return [q ? tr('Coran') : tr('Matn'), r.s, q ? SN(r.s) : MN(r.s), r.a, v ? v.p : '', v ? v.j : '', Math.round(o * 100) / 100, Math.round(ko * 100) / 100, pct(o, ko), sc ? Math.round(sc.iv * 10) / 10 : '', sc ? dt(sc.due) : '']; })
-    .sort((a, b) => (typeof a[1] === 'number' ? a[1] : 999) - (typeof b[1] === 'number' ? b[1] : 999) || a[3] - b[3])];
-}
-function exportCsv(kind){
-  const k = CSVKINDS.some(x => x[0] === kind) ? kind : 'verses', sep = LANG === 'fr' ? ';' : ',';
-  download(`tathbit-${k}-${today()}.csv`, toCsv(csvRows(k), sep), 'text/csv;charset=utf-8');
-}
-
 /* ---------- sauvegarde / restauration ---------- */
 function exportData(){
   const compte = me ? {email: me.user.email, role: me.profile && me.profile.role, enseignants: tch.links, invitations: tch.invites, messages: tch.msgs, objectifs: tch.goals, consultations: tch.log, resume_hebdo: tch.wk} : undefined;   // données de compte enregistrées sur le serveur (droit d'accès)

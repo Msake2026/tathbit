@@ -176,7 +176,7 @@ function rdPlay(id, i){
 }
 
 /* ---------- historique des erreurs ---------- */
-let hf = 'all', hv = 'v', hrefs = [];
+let hf = 'all', hrefs = [];
 const MODE_NAME = new Proxy({}, {get: (_o, id) => { if (id === 'free') return tr('Récitation libre'); const m = MODES.find(x => x[0] === id); return m ? tr(m[1]) : undefined; }}); // nom traduit de chaque exercice
 const fdate = t => new Date(t).toLocaleString(LOCALE(), {day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'});
 function aggErrors(list){
@@ -195,22 +195,15 @@ function tabErrors(){
   const L = errors.filter(e => { const r = pk(e.k); return book(r.s) && (hf === 'all' || (hf === 'q' && isQ(r.s)) || (hf === 'm' && !isQ(r.s)) || (hf === '7' && e.t >= lim)); });
   const rows = aggErrors(L); hrefs = rows.slice(0, 15).map(a => a.r);
   const chip = (id, cur_, t, act) => `<button class="${cur_ === id ? 'sel' : ''}" data-act="${act}" data-v="${id}">${t}</button>`;
-  const body = hv === 'v'
-    ? rows.slice(0, 80).map(a => `<div class="sib"><p class="ref" style="margin:0">${rlabel(a.r)}</p>
+  const body = rows.slice(0, 80).map(a => `<div class="sib"><p class="ref" style="margin:0">${rlabel(a.r)}</p>
         <p class="ref" style="margin:0"><b>${tr('raté {n} fois', {n: a.n})}</b> · ${tr('dernière :')} ${fdate(a.last)} · ${esc([...a.modes].join(', '))}</p>
         <div class="ar" style="font-size:calc(1.35rem*var(--arz,1));line-height:2">${esc(verse(a.r))}</div>
         <button class="link" data-act="rdopen" data-v="${a.k}">${ic('book')} ${tr('Lire tout le texte')}</button>
-        ${a.bad.length ? `<p class="ref" style="margin:0">${tr('Mots souvent faux :')} <span class="ar" style="font-size:calc(1.2rem*var(--arz,1));display:inline">${esc(a.bad.slice(0, 12).join(' · '))}</span></p>` : ''}</div>`).join('')
-    : L.slice().reverse().slice(0, 100).map(e => { const r = pk(e.k);
-        return `<div class="sib"><p class="ref" style="margin:0">${fdate(e.t)} · ${esc(MODE_NAME[e.m] || e.m)} · ${e.sc === 0.5 ? tr('hésité') : tr('raté')}</p>
-        <p class="ref" style="margin:0"><b>${rlabel(r)}</b></p>
-        ${e.bad ? `<p class="ref" style="margin:0">${tr('Mots faux ou oubliés :')} <span class="ar" style="font-size:calc(1.2rem*var(--arz,1));display:inline">${esc(e.bad.join(' · '))}</span></p>` : ''}
-        ${e.ans ? `<p class="ref" style="margin:0">${tr('Ta réponse :')} <span class="ar" style="font-size:calc(1.2rem*var(--arz,1));display:inline">${esc(e.ans)}</span></p>` : ''}</div>`; }).join('');
+        ${a.bad.length ? `<p class="ref" style="margin:0">${tr('Mots souvent faux :')} <span class="ar" style="font-size:calc(1.2rem*var(--arz,1));display:inline">${esc(a.bad.slice(0, 12).join(' · '))}</span></p>` : ''}</div>`).join('');
   return `
   <h1>${tr('Erreurs')}</h1>
   <p class="sub">${trp(L.length, '{n} erreur|{n} erreurs')} · ${trp(rows.length, '{n} verset concerné|{n} versets concernés')}</p>
   <div class="chips" style="margin-bottom:8px">${chip('all', hf, tr('Tout'), 'hfilter')}${chip('7', hf, tr('7 derniers jours'), 'hfilter')}${chip('q', hf, tr('Coran'), 'hfilter')}${chip('m', hf, tr('Moutoun'), 'hfilter')}</div>
-  <div class="chips" style="margin-bottom:12px">${chip('v', hv, tr('Par verset'), 'hview')}${chip('t', hv, tr('Chronologie'), 'hview')}</div>
   ${rows.length ? `<button class="pri big" data-act="hreview">${tr('Réviser les {n} versets les plus ratés', {n: hrefs.length})}</button>` : ''}
   <div class="card" style="margin-top:12px">${body || `<p class="sub" style="margin:0">${tr('Aucune erreur enregistrée pour ce filtre. Chaque erreur apparaîtra ici avec les mots faux et ta réponse.')}</p>`}</div>
   ${errors.length ? `<p style="text-align:end"><button class="link" data-act="hclear">${tr("Effacer l'historique")}</button></p>` : ''}`;

@@ -447,16 +447,6 @@ test('confidentialité : chaque service contacté automatiquement est cité dans
   assert.match(cfg, /contact:\s*'[^']+@[^']+'/); assert.doesNotMatch(cfg, /region:\s*''/, 'région Supabase renseignée');
 });
 
-test('export CSV : échappement, séparateurs, protection contre les formules, UTF-8 avec BOM', () => {
-  const html = readApp(), c = html.slice(html.indexOf('/* CSV:begin'), html.indexOf('/* CSV:end */'));
-  const { csvCell, toCsv } = new Function(c + '; return {csvCell, toCsv};')();
-  assert.equal(csvCell('simple', ';'), 'simple'); assert.equal(csvCell('a;b', ';'), '"a;b"'); assert.equal(csvCell('a;b', ','), 'a;b'); assert.equal(csvCell('a,b', ','), '"a,b"');
-  assert.equal(csvCell('il a dit "oui"', ';'), '"il a dit ""oui"""'); assert.equal(csvCell('ligne1\nligne2', ';'), '"ligne1\nligne2"');
-  assert.equal(csvCell(null, ';'), ''); assert.equal(csvCell(undefined, ';'), ''); assert.equal(csvCell(0, ';'), '0'); assert.equal(csvCell(12.5, ';'), '12.5');
-  assert.equal(csvCell('=1+1', ';'), "'=1+1"); assert.equal(csvCell('+cmd|x', ';'), "'+cmd|x"); assert.equal(csvCell('@SUM(A1)', ';'), "'@SUM(A1)"); assert.equal(csvCell('-2+3', ';'), "'-2+3"); assert.equal(csvCell('-3', ';'), '-3'); assert.equal(csvCell('بِسْمِ', ';'), 'بِسْمِ');
-  const out = toCsv([['a', 'b;c'], [1, 'ء']], ';'); assert.ok(out.startsWith('\ufeff')); assert.equal(out.slice(1), 'a;"b;c"\r\n1;ء\r\n');
-});
-
 test('accessibilité : contrastes WCAG des couleurs du thème et du tajwīd (mode contraste renforcé)', () => {
   const html = readApp(), a = html.slice(html.indexOf('/* A11Y:begin'), html.indexOf('/* A11Y:end */'));
   const { a11yContrast, a11yDarken, a11yLum } = new Function(a + '; return {a11yContrast, a11yDarken, a11yLum};')();
@@ -533,7 +523,7 @@ test('contenus rédigés par l’IA : la mention « pas une source officielle »
   const html = readApp();
   assert.ok((html.match(/\$\{AI\(\)\}/g) || []).length >= 7, 'la mention doit figurer près des textes d’explication (plan, règles de tajwīd, madd, aḥkām, légende)');
   for (const f of ['CONDRULE', 'AHNOTE', 'TJNOTE']) { const i = html.indexOf('const ' + f + ' ='); assert.ok(html.slice(i, i + 1500).includes('${AI()}'), f + ' doit porter la mention'); }
-  assert.ok(html.includes("D'où viennent les contenus ?") && html.includes('Rédigé par une IA, pas une source officielle'), 'carte « D’où viennent les contenus ? » dans Réglages');
+  assert.ok(html.includes("D'où viennent les contenus ?") && html.includes('Rédigé par une IA, pas une source officielle') && html.includes('À propos et sources'), 'carte « À propos et sources » (avec « D’où viennent les contenus ? ») dans Réglages');
 });
 
 test('PWA : écrans de lancement iPhone et captures du manifeste existent, avec les bonnes dimensions', () => {

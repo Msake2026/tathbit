@@ -654,12 +654,16 @@ function tabSettings(){
     <div class="row" style="margin-top:12px;align-items:end"><div><label class="f">${tr('Rappel quotidien (calendrier)')}</label><input type="time" id="rtime" value="20:00"></div>
       <button data-act="ics">${ic('calendar')} ${tr('Ajouter au calendrier')}</button></div>
   </div>`,
-    about: `<details class="card"><summary><h2>${tr("But de l'application")}</h2></summary>
-    <p class="ref" style="margin:0">${tr("Tathbīt (تثبيت) sert à consolider ce que tu as déjà mémorisé du Coran et des moutoun : c'est le tathbīt, et non le ḥifẓ (la première mémorisation).")}</p></details>`,
-    contents: `<details class="card"><summary><h2>${tr("D'où viennent les contenus ?")}</h2></summary>
+    about: `<details class="card" id="card-about"><summary><h2>${tr('À propos et sources')}</h2></summary>
+    <h3 style="margin:10px 0 4px;font-size:1rem">${tr("But de l'application")}</h3>
+    <p class="ref" style="margin:0">${tr("Tathbīt (تثبيت) sert à consolider ce que tu as déjà mémorisé du Coran et des moutoun : c'est le tathbīt, et non le ḥifẓ (la première mémorisation).")}</p>
+    <h3 style="margin:14px 0 4px;font-size:1rem">${tr("D'où viennent les contenus ?")}</h3>
     <p class="ref" style="margin:0 0 6px"><b>${tr('Sources citées et vérifiables :')}</b> ${tr('texte du Coran et traductions (Tanzil), tafsīr al-Muyassar, annotation du tajwīd (Islamic Network), moutoun (Wikisource, hadith-api ; Ibn ʿĀshir : deux transcriptions web non officielles), règles des lettres (Wikisource et Wikipédia arabe).')}</p>
     <p class="ref" style="margin:0 0 6px"><b>${tr('Rédigé par une IA, pas une source officielle :')}</b> ${tr("les textes d'explication, les consignes, les noms français des règles, les traductions anglaises et arabes de l'interface et le choix des questions. Ils sont signalés par la mention « 🤖 ». En cas de doute, demande à un enseignant qualifié.")}</p>
-    <p class="ref" style="margin:0"><a href="https://github.com/Msake2026/tathbit/blob/main/AUDIT-CONTENU.md" target="_blank" rel="noopener">${tr('Voir le détail de la vérification des contenus')}</a></p></details>`,
+    <p class="ref" style="margin:0"><a href="https://github.com/Msake2026/tathbit/blob/main/AUDIT-CONTENU.md" target="_blank" rel="noopener">${tr('Voir le détail de la vérification des contenus')}</a></p>
+    <h3 style="margin:14px 0 4px;font-size:1rem">${tr('Sources')}</h3>
+    <p class="ref" style="margin:0">${tr("Coran : texte uthmani du projet Tanzil, embarqué dans le site et vérifié (lecture de Ḥafṣ). Audio : cdn.islamic.network (AlQuran Cloud). Lecteur : tajwīd en couleurs (Islamic Network), traductions (Tanzil : Hamidullah, Saheeh International) et tafsir al-Muyassar (Complexe du Roi Fahd). Moutoun : Wikisource arabe et hadith-api (voir l'écran Réviser pour chaque matn). Versets proches : calculés automatiquement.")}</p>
+  </details>`,
     a11y: `<div class="card"><h2>${tr('Accessibilité')}</h2>
     <label class="f" for="sth">${tr('Thème')}</label>
     <select id="sth"><option value="auto" ${!cfg.theme ? 'selected' : ''}>${tr('Automatique (préférence du système)')}</option><option value="light" ${cfg.theme === 'light' ? 'selected' : ''}>${tr('Clair')}</option><option value="dark" ${cfg.theme === 'dark' ? 'selected' : ''}>${tr('Sombre')}</option></select>
@@ -672,8 +676,6 @@ function tabSettings(){
     data: `<div class="card" id="card-data"><h2>${tr('Mes données')}</h2>
     <div class="row"><button data-act="export">${ic('download')} ${tr('Exporter ma progression')}</button><button data-act="import">${ic('upload')} ${tr('Importer')}</button></div>
     <input type="file" id="impfile" accept="application/json,.json" hidden>
-    <label class="f" for="csv-kind">${tr('Exporter pour un tableur (CSV)')}</label>
-    <div class="row" style="align-items:end"><select id="csv-kind">${CSVKINDS.map(([id, t]) => `<option value="${id}">${tr(t)}</option>`).join('')}</select><button data-act="csv" style="flex:0 0 auto">⬇ CSV</button></div>
     <p class="ref" style="margin:8px 0 0">${tr('Tout est stocké sur cet appareil. Exporte régulièrement pour ne rien perdre en changeant de téléphone.')}</p>
     <p style="margin:6px 0 0"><button class="link" data-act="reset" style="color:var(--ko)">${tr('Réinitialiser statistiques et historique')}</button></p>
   </div>`,
@@ -686,13 +688,10 @@ function tabSettings(){
     privacy: `<div class="card"><h2>${tr('Confidentialité')}</h2>
     <p class="ref" style="margin:0 0 8px">${tr('Quelles données sont enregistrées, qui les voit, comment les supprimer.')}</p>
     <button data-act="legal">${tr('Lire la confidentialité et les conditions')}</button></div>`,
-    sources: `<details class="card"><summary><h2>${tr('Sources')}</h2></summary>
-    <p class="ref" style="margin:0">${tr("Coran : texte uthmani du projet Tanzil, embarqué dans le site et vérifié (lecture de Ḥafṣ). Audio : cdn.islamic.network (AlQuran Cloud). Lecteur : tajwīd en couleurs (Islamic Network), traductions (Tanzil : Hamidullah, Saheeh International) et tafsir al-Muyassar (Complexe du Roi Fahd). Moutoun : Wikisource arabe et hadith-api (voir l'écran Réviser pour chaque matn). Versets proches : calculés automatiquement.")}</p>
-  </details>`,
   };
   const G = [['account', 'user', 'Compte', 'Connexion, rôle, mot de passe', ['account']], ['learn', 'cap', 'Apprentissage', 'Correction de la saisie, indices', ['corr', 'hints']],
     ['audio', 'volume', 'Audio et rappels', 'Récitateur, objectif, audio hors ligne, rappels', ['audio', 'audioOff', 'remind']], ['display', 'palette', 'Affichage', 'Langue, taille du texte arabe, thème, accessibilité', ['lang', 'arsize', 'a11y']],
-    ['data', 'database', 'Données', 'Exporter, importer, effacer', ['data']], ['help', 'info', 'Aide et infos', 'Mises à jour, contact, confidentialité, sources', ['app', 'contact', 'privacy', 'about', 'contents', 'sources']]];
+    ['data', 'database', 'Données', 'Exporter, importer, effacer', ['data']], ['help', 'info', 'Aide et infos', 'Mises à jour, contact, confidentialité, sources', ['app', 'contact', 'privacy', 'about']]];
   const plain = h => h.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').toLowerCase();
   const q = setQ.trim().toLowerCase(), grp = G.some(g => g[0] === cfg.setTab) || cfg.setTab === 'all' ? cfg.setTab : 'hub';   // « hub » : les 6 blocs d'un coup d'œil (par défaut)
   const cards = G.flatMap(([g, , t, , ids]) => ids.map(id => ({g, id, t, html: C[id]})));
