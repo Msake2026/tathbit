@@ -973,6 +973,21 @@
     for (const L of ['en', 'ar']){ E(`setLang('${L}')`); for (const g of ['hub', 'account', 'learn', 'audio', 'display', 'data', 'help', 'all']){ E(`cfg.setTab = '${g}'; go('settings')`); } ok(!/undefined/.test(appText()), 'réglages en ' + L); eq(E('[...missingKeys]'), [], 'clés traduites (' + L + ')'); }
     E("setLang('fr')"); noErr('réglages');
   });
+  test('Accueil : tableau de bord de 6 tuiles avec l’état de chaque fonction et un accès direct', async () => {
+    reset("stats = {'112:1': [3, 1]}; errors = [{t: Date.now(), k: '112:1', m: 'next', sc: 0}]; days = {}; plan = null; store.remove ? 0 : 0;"); E("go('home')");
+    const tiles = () => $$q('.sethub button'), st = i => tiles()[i].querySelector('.sv').textContent;
+    eq(tiles().length, 6, 'six tuiles'); ok(/Mon tableau de bord/.test(appText()), 'titre du tableau de bord');
+    ok(/Pas de plan/.test(st(1)) && /75 % de réussite/.test(st(4)) && /1 erreur cette semaine/.test(st(5)) && /Pas encore essayé|Dernière/.test(st(2)), 'états : plan, réussite, erreurs, récitation : ' + tiles().map(b => b.querySelector('.sv').textContent).join(' | '));
+    ok(/Rien à revoir/.test(st(0)) && tiles()[0].dataset.act === 'tab' && tiles()[0].dataset.v === 'train', 'rien de dû : « Réviser » ouvre l’onglet Réviser');
+    E("sched = {'112:1': {iv: 1, due: Date.now() - 1000}}; go('home')"); ok(/1 verset à revoir/.test(st(0)) && tiles()[0].dataset.act === 'review', 'un verset dû : la tuile lance la révision');
+    clickAct('tab', 'progress'); ok(E('cfg.tab') === 'progress', 'tuile Progrès'); E("go('home')");
+    tiles()[2].click(); await wait(100); ok($q('#frfrom'), 'tuile « Réciter à voix haute » ouvre la récitation libre'); E("go('home')");
+    E("cfg.lastM = 'ibnachir'"); E("go('home')"); ok(/Dernier : Al-Murshid al-Muʿīn/.test(st(3)), 'tuile Moutoun : dernier matn'); tiles()[3].click(); await wait(100); ok(E("cfg.scope.type") === 'matn' && E("cfg.scope.id") === 'ibnachir' && E('cfg.tab') === 'train', 'ouvre Réviser sur ce matn');
+    E("plan = {v: 1, from: 78, to: 114, order: 'desc', amt: 'v5', recent: 7, cycle: 30, log: [], mptr: 0, done: {}}; go('home')"); ok(/étapes terminées aujourd'hui/.test(st(1)), 'tuile Plan avec un plan : étapes du jour');
+    E("store.set('tathbit.frLast', {t: Date.now(), n: 5, c: 4}); go('home')"); ok(/Dernière : .* · 5 versets/.test(st(2)), 'tuile Récitation : date et nombre de versets de la dernière fois');
+    for (const L of ['en', 'ar']){ E(`setLang('${L}'); go('home')`); ok(tiles().length === 6 && !/undefined|NaN/.test(appText()), 'accueil en ' + L); eq(E('[...missingKeys]'), [], 'clés traduites (' + L + ')'); }
+    E("setLang('fr'); plan = null; sched = {}; store.set('tathbit.frLast', null)"); noErr('tableau de bord');
+  });
   test('Contact : page avec adresse, sujets préremplis, copie de l’adresse ; liens depuis les Réglages et l’écran de connexion', async () => {
     reset(); E("window.TATHBIT_LEGAL = {contact: 'tathbit.app.contact@gmail.com', region: ''}; renderContact()");
     ok(appText().includes('tathbit.app.contact@gmail.com'), 'adresse affichée'); const links = $$q('a.btnlink'); eq(links.length, 5, 'cinq sujets, dont « Autre sujet »'); ok(/autre/i.test(links[4].textContent) && /autre/i.test(decodeURIComponent(links[4].getAttribute('href'))), 'le dernier sujet est « Autre sujet »');

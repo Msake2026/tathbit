@@ -820,6 +820,21 @@ function weakCard(full){
     ${full ? `<p class="ref" style="margin:8px 0 0">${tr("Choisis chaque jour parmi tes versets les plus fragiles : erreurs récentes (les plus récentes comptent le plus), retard de révision et taux de réussite. Un verset reste dans la liste jusqu'à ce qu'il tienne plus d'une semaine sans erreur.")}</p>`
       : `<button class="list-btn" data-act="tab" data-v="plan"><span>${tr('Voir la liste')}</span><span>›</span></button>`}</div>`;
 }
+function homeTiles(due){ // tableau de bord : une tuile par grande fonction, avec son état en cours et un accès direct
+  const wk = errors.filter(e => e.t >= Date.now() - 7 * 864e5).length, tot = Object.values(stats).reduce((a, v) => [a[0] + (v[0] || 0), a[1] + (v[1] || 0)], [0, 0]);
+  const act7 = [0, 1, 2, 3, 4, 5, 6].filter(i => days[today(new Date(Date.now() - i * 864e5))]).length, last = store.get('tathbit.frLast', null);
+  let planSt = tr('Pas de plan : crée-en un');
+  if (plan){ const T = planToday(), n = (T.next ? 1 : 0) + (T.rec.length ? 1 : 0) + (T.man.length ? 1 : 0), d = (T.next && T.d.sabaq ? 1 : 0) + (T.rec.length && T.d.sabqi ? 1 : 0) + (T.man.length && T.d.manzil ? 1 : 0); planSt = T.next || n ? tr("{a} / {b} étapes terminées aujourd'hui", {a: d, b: n}) : tr('Plan terminé 🎉'); }
+  const mt = cfg.lastM && MT[cfg.lastM] ? MN(cfg.lastM) : null;
+  const T = [
+    [due.length ? 'review' : 'tab', due.length ? '' : 'train', '🔁', 'Réviser', 'Versets dus et séries', due.length ? trp(due.length, '{n} verset à revoir|{n} versets à revoir') : tr('Rien à revoir pour le moment')],
+    ['tab', 'plan', '📅', 'Plan', 'Ta routine de révision', planSt],
+    ['fr-setup', '', '🎙️', 'Réciter à voix haute', 'Sourates de mémoire, au micro', last ? tr('Dernière : {d} · {n}', {d: new Date(last.t).toLocaleDateString(LOCALE(), {day: 'numeric', month: 'short'}), n: trp(last.n, '{n} verset|{n} versets')}) : tr("Pas encore essayé")],
+    ['tile-matn', '', '📜', 'Moutoun', "Ibn ʿĀshir, Tuḥfa, Bayqūniyya…", mt ? tr('Dernier : {m}', {m: esc(mt)}) : trp(Object.keys(MT).length, '{n} matn|{n} moutoun')],
+    ['tab', 'progress', '📊', 'Progrès', 'Statistiques et jours actifs', tot[0] + tot[1] ? tr('{r} % de réussite · {n} jours actifs sur 7', {r: Math.round(100 * tot[0] / (tot[0] + tot[1])), n: act7}) : tr('Pas encore de réponses')],
+    ['tab', 'errors', '⚠️', 'Erreurs', 'Ce qu\'il faut renforcer', wk ? trp(wk, '{n} erreur cette semaine|{n} erreurs cette semaine') : tr('Aucune erreur cette semaine 👍')]];
+  return `<h2 style="margin:16px 0 0">${tr('Mon tableau de bord')}</h2><div class="sethub">${T.map(([a, v, ic, t, d, st]) => `<button data-act="${a}"${v ? ` data-v="${v}"` : ''}><span class="si" aria-hidden="true">${ic}</span><b>${tr(t)}</b><small>${tr(d)}</small><span class="sv">${st}</span></button>`).join('')}</div>`;
+}
 function tabHome(){
   const due = dueRefs(), td = days[today()] || 0, st = streak();
   const top = aggErrors(errors.filter(e => e.t >= Date.now() - 7 * 864e5)).slice(0, 3);
@@ -838,6 +853,8 @@ function tabHome(){
     ${due.length ? `<button class="pri big" style="margin-top:8px" data-act="review">${tr('Réviser mes versets dus ({n})', {n: due.length})}</button>`
       : `<p class="sub" style="margin:8px 0 0">${tr("Rien à revoir pour l'instant. Lance une série : les versets à retravailler reviendront ici au bon moment.")}</p>`}
   </div>
+
+  ${homeTiles(due)}
 
   ${weakCard(false)}
   ${goalHomeCard()}
@@ -2309,6 +2326,7 @@ function frSummary(){
   const done = fr.verses.filter(v => v.to <= fr.p), clean = [], flagged = [];
   for (const v of done){ const bad = []; for (let w = v.from; w < v.to; w++) if (fr.miss.has(w) || fr.hint.has(w)) bad.push(w); (bad.length ? flagged.push({v, bad}) : clean.push(v)); }
   fr.clean = clean; fr.flagged = flagged;
+  if (done.length) store.set('tathbit.frLast', {t: Date.now(), n: done.length, c: clean.length});   // pour la tuile de l'accueil
   if (fr.hide && clean.length && !fr.recorded){ // récités de mémoire, sans oubli : comptent dans la révision (une seule écriture pour tout)
     fr.recorded = true; const now = Date.now();
     for (const v of clean){ const k = v.s + ':' + v.a, [ok, ko] = stats[k] || [0, 0]; fr.undo[k] = {st: [ok, ko], sc: sched[k]}; stats[k] = [ok + 1, ko]; sched[k] = srsNext(sched[k], 1, now); }
@@ -2691,6 +2709,7 @@ const onClick = e => {
       start(); break;
     }
     case 'review': start(shuffle(reviewPick(15))); break;
+    case 'tile-matn': cfg.scope = {type: 'matn', id: cfg.lastM && MT[cfg.lastM] ? cfg.lastM : 'all'}; saveCfg(); go('train'); break;
     case 'strengthen': { const W = weakNow().slice(0, 10); if (W.length) start(shuffle(W.map(w => pk(w.k)))); } break;
     case 'ics': exportIcs(); break;
     case 'export': exportData(); break;
