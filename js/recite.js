@@ -13,6 +13,12 @@ function frRemember(done, clean, flagged, open){
   for (const [k, e] of Object.entries(by)) H[k] = {t: now, a0: e.a0, a1: e.a1, c: e.c, flag: e.flag.sort((x, y) => x - y), tot: slen(+k), stop: open && open.s === +k ? open.a : 0, rt: fr.to};
   store.set('tathbit.frSurah', H);
 }
+function frResumeHtml(){ // accueil : la dernière récitation interrompue, à reprendre d'un toucher
+  const E_ = Object.entries(frHist()).filter(([k, e]) => Q[k - 1] && e.stop > 0).sort((a, b) => b[1].t - a[1].t)[0];
+  if (!E_) return '';
+  const [k, e] = E_;
+  return `<button class="big" style="margin-top:8px" data-act="fr-resume" data-v="${k}:${e.stop}">🎙️ ${tr('Reprendre ma récitation : {s}, verset {a}', {s: esc(SN(+k)), a: e.stop})}</button>`;
+}
 function frHistHtml(){ // « Mes récitations » : dernière récitation de chaque sourate, ce qui est à revoir, et le bouton pour reprendre
   const E_ = Object.entries(frHist()).filter(([k]) => Q[k - 1]).sort((a, b) => b[1].t - a[1].t).slice(0, 8);
   if (!E_.length) return '';

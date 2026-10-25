@@ -250,6 +250,7 @@ function tabHome(){
     ${td >= cfg.goal ? `<p class="ref" style="margin:0 0 8px">${tr('Objectif atteint, machaa Allah 🎉')}</p>` : ''}
     ${DS.length ? `<button class="pri big" style="margin-top:8px" data-act="day-go">▶ ${tr('Ma séance du jour')}</button><p class="ref" style="margin:6px 0 0">${daySummary(DS)}</p>`
       : `<p class="sub" style="margin:8px 0 0">${tr("Rien à revoir pour l'instant. Lance une série : les versets à retravailler reviendront ici au bon moment.")}</p>`}
+    ${frResumeHtml()}
   </div>
 
   ${homeTiles()}
