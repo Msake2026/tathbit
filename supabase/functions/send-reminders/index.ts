@@ -4,6 +4,7 @@
 // Déployer avec « Verify JWT » désactivé : l'accès est protégé par CRON_SECRET.
 // Même passage toutes les 5 minutes : prévient les administrateurs (notification + e-mail) d'une nouvelle demande pour devenir enseignant.
 // Le dimanche en fin d'après-midi (UTC) : résumé de la semaine par e-mail aux personnes qui l'ont activé (Réglages → Compte).
+// Nouvelle version annoncée par l'administrateur (Réglages → Compte → Espace admin) : cloche + notification sur les appareils + e-mail (40 par passage ; sauf pour qui l'a désactivé).
 // L'e-mail est facultatif : il demande les secrets SMTP_USER (adresse Gmail d'envoi) et SMTP_PASS (mot de passe d'application Google) ; sans eux, seule la notification part.
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import webpush from 'npm:web-push@3.6.7';
@@ -142,6 +143,68 @@ async function notifyMessages(db: ReturnType<typeof createClient>) {
   return n;
 }
 
+const UPD = {
+  fr: { title: 'Tathbīt · nouvelle version', subject: 'Tathbīt : nouvelle version disponible',
+        body: (l: string, n: string | null) => `Une nouvelle version de Tathbīt est disponible (${l}).${n ? '\n' + n : ''}\n\nOuvre l'application, puis touche « Chercher les mises à jour » (Réglages) pour la récupérer.`,
+        tail: "Tu peux ne plus recevoir ces e-mails : Tathbīt → Réglages → Compte." },
+  en: { title: 'Tathbīt · new version', subject: 'Tathbīt: a new version is available',
+        body: (l: string, n: string | null) => `A new version of Tathbīt is available (${l}).${n ? '\n' + n : ''}\n\nOpen the app, then tap “Check for updates” (Settings) to get it.`,
+        tail: 'You can stop these e-mails: Tathbīt → Settings → Account.' },
+  ar: { title: 'تثبيت · إصدار جديد', subject: 'تثبيت: إصدار جديد متاح',
+        body: (l: string, n: string | null) => `يتوفر إصدار جديد من تثبيت (${l}).${n ? '\n' + n : ''}\n\nافتح التطبيق ثم اضغط «البحث عن التحديثات» (الإعدادات) للحصول عليه.`,
+        tail: 'يمكنك إيقاف هذه الرسائل: تثبيت ← الإعدادات ← الحساب.' },
+};
+
+// nouvelle version annoncée : 1) cloche + notification (une seule fois), 2) e-mails par paquets de 40 jusqu'à ce que tout le monde l'ait reçu
+async function announceUpdates(db: ReturnType<typeof createClient>) {
+  const { data: anns, error } = await db.from('app_announcements').select('id, version, label, note, fanout_at').is('mail_done_at', null).order('version', { ascending: true }).limit(2);
+  if (error || !anns?.length) return { bell: 0, push: 0, mail: 0 };       // table absente (teacher.sql pas relancé) ou rien à annoncer
+  let bell = 0, push = 0, mail = 0;
+  const smtpUser = Deno.env.get('SMTP_USER'), smtpPass = Deno.env.get('SMTP_PASS');
+  for (const a of anns as { id: number; version: number; label: string; note: string | null; fanout_at: string | null }[]) {
+    if (!a.fanout_at) {
+      const claim = await db.from('app_announcements').update({ fanout_at: new Date().toISOString() }).eq('id', a.id).is('fanout_at', null).select('id');
+      if (!claim.data?.length) continue;                                  // un autre passage s'en occupe
+      for (let from = 0; ; from += 1000) {                                 // cloche : une notification par compte actif
+        const { data: ps } = await db.from('profiles').select('id').eq('blocked', false).order('id').range(from, from + 999);
+        if (!ps?.length) break;
+        await db.from('notifications').insert(ps.map((p: { id: string }) => ({ user_id: p.id, kind: 'app_update', ref: String(a.version) }))); bell += ps.length;
+        if (ps.length < 1000) break;
+      }
+      const { data: subs } = await db.from('push_subs').select('id, endpoint, p256dh, auth, lang').limit(2000);
+      for (const sub of subs ?? []) {                                      // notification sur les appareils qui ont activé les rappels
+        const m = UPD[sub.lang as keyof typeof UPD] ?? UPD.fr;
+        try { await webpush.sendNotification({ endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } }, JSON.stringify({ title: m.title, body: m.body(a.label, a.note).split('\n\n')[0], url: './', tag: 'maj-' + a.version }), { TTL: 3 * 24 * 3600, urgency: 'normal' }); push++; }
+        catch (e) { const c = (e as { statusCode?: number }).statusCode; if (c === 404 || c === 410) await db.from('push_subs').delete().eq('id', sub.id); else console.error('push maj', c, (e as Error).message); }
+      }
+    }
+    if (!smtpUser || !smtpPass) continue;                                  // sans SMTP : cloche et notifications seulement
+    const { data: sent } = await db.from('announce_mail').select('user_id').eq('announcement_id', a.id);
+    const done = new Set((sent ?? []).map((r: { user_id: string }) => r.user_id));
+    const { data: off } = await db.from('mail_prefs').select('user_id').eq('updates', false);
+    const { data: langs } = await db.from('mail_prefs').select('user_id, lang');
+    const skip = new Set((off ?? []).map((r: { user_id: string }) => r.user_id)), lang = new Map<string, string>((langs ?? []).map((r: { user_id: string; lang: string }): [string, string] => [r.user_id, r.lang]));
+    const todo: { id: string; email: string }[] = [];
+    for (let from = 0; todo.length < 40; from += 1000) {
+      const { data: ps } = await db.from('profiles').select('id, email').eq('blocked', false).order('id').range(from, from + 999);
+      if (!ps?.length) break;
+      for (const p of ps as { id: string; email: string }[]) if (!done.has(p.id) && !skip.has(p.id) && p.email && todo.length < 40) todo.push(p);
+      if (ps.length < 1000) break;
+    }
+    if (!todo.length) { await db.from('app_announcements').update({ mail_done_at: new Date().toISOString() }).eq('id', a.id); continue; }
+    const client = new SMTPClient({ connection: { hostname: 'smtp.gmail.com', port: 465, tls: true, auth: { username: smtpUser, password: smtpPass } } });
+    try {
+      for (const p of todo) {
+        const l = lang.get(p.id) as keyof typeof UPD | undefined, one = l && UPD[l];
+        const content = one ? `${one.body(a.label, a.note)}\n\n${one.tail}` : (['fr', 'en', 'ar'] as const).map((k) => `${UPD[k].body(a.label, a.note)}\n${UPD[k].tail}`).join('\n\n———\n\n');
+        try { await client.send({ from: smtpUser, to: p.email, subject: one ? one.subject : UPD.en.subject, content }); await db.from('announce_mail').insert({ announcement_id: a.id, user_id: p.id }); mail++; }
+        catch (e) { console.error('mail maj', (e as Error).message); }
+      }
+    } finally { await client.close().catch(() => {}); }
+  }
+  return { bell, push, mail };
+}
+
 Deno.serve(async (req) => {
   if (req.headers.get('Authorization') !== `Bearer ${Deno.env.get('CRON_SECRET')}`) return new Response('forbidden', { status: 403 });
   const db = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!, { auth: { persistSession: false } });
@@ -152,6 +215,7 @@ Deno.serve(async (req) => {
   let messages = 0; try { messages = await notifyMessages(db); } catch (e) { console.error('messages', (e as Error).message); }
   let weekly = 0; try { weekly = await sendWeekly(db, new Date()); } catch (e) { console.error('hebdo', (e as Error).message); }
   let notified = 0; try { notified = await notifyRequests(db); } catch (e) { console.error('demandes', (e as Error).message); }
+  let update = { bell: 0, push: 0, mail: 0 }; try { update = await announceUpdates(db); } catch (e) { console.error('maj', (e as Error).message); }
   let sent = 0, skipped = 0, removed = 0;
   for (const s of (subs ?? []) as Sub[]) {
     const d = decide(s, now);
@@ -177,5 +241,5 @@ Deno.serve(async (req) => {
       else console.error('push', s.id, code, (e as Error).message);
     }
   }
-  return new Response(JSON.stringify({ sent, skipped, removed, notified, weekly, messages }), { headers: { 'Content-Type': 'application/json' } });
+  return new Response(JSON.stringify({ sent, skipped, removed, notified, weekly, messages, update }), { headers: { 'Content-Type': 'application/json' } });
 });

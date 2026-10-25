@@ -525,3 +525,53 @@ begin
 end $$;
 revoke all on function public.teacher_message_all(text) from public, anon;
 grant execute on function public.teacher_message_all(text) to authenticated;
+
+-- 13. Nouvelle version de l'application : l'administrateur l'annonce, la fonction send-reminders prévient alors tout le monde
+--     (cloche, notification sur les appareils qui ont activé les rappels, e-mail sauf pour qui l'a désactivé dans Réglages)
+alter table public.mail_prefs add column if not exists updates boolean not null default true;
+create table if not exists public.app_announcements (
+  id           bigint generated always as identity primary key,
+  version      int  not null unique check (version > 0),
+  label        text not null check (char_length(label) <= 60),     -- ex. « 25 oct. 2026 · v88 »
+  note         text check (char_length(note) <= 200),              -- ce qui change, en une phrase
+  created_at   timestamptz not null default now(),
+  fanout_at    timestamptz,                                         -- cloche et notifications créées
+  mail_done_at timestamptz                                          -- tous les e-mails sont partis
+);
+alter table public.app_announcements enable row level security;
+revoke all on public.app_announcements from anon, authenticated;     -- aucune politique : seules les fonctions ci-dessous et send-reminders (clé de service) y touchent
+create table if not exists public.announce_mail (
+  announcement_id bigint not null references public.app_announcements(id) on delete cascade,
+  user_id         uuid   not null references auth.users(id) on delete cascade,
+  sent_at         timestamptz not null default now(),
+  primary key (announcement_id, user_id)
+);
+alter table public.announce_mail enable row level security;
+revoke all on public.announce_mail from anon, authenticated;
+
+create or replace function public.admin_announce_update(p_version int, p_label text, p_note text default null) returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  if not public.is_admin() then raise exception 'accès refusé' using errcode = '42501'; end if;
+  if p_version is null or p_version < 1 then raise exception 'Numéro de version invalide.' using errcode = 'P0001'; end if;
+  insert into public.app_announcements (version, label, note)
+  values (p_version, left(coalesce(nullif(trim(p_label), ''), 'v' || p_version), 60), left(nullif(trim(p_note), ''), 200))
+  on conflict (version) do nothing;
+  if not found then raise exception 'Cette version a déjà été annoncée.' using errcode = 'P0001'; end if;
+end $$;
+create or replace function public.admin_announcements() returns table (version int, label text, note text, created_at timestamptz, fanout_at timestamptz, mail_done_at timestamptz, mails bigint)
+language plpgsql security definer set search_path = public as $$
+begin
+  if not public.is_admin() then raise exception 'accès refusé' using errcode = '42501'; end if;
+  return query select a.version, a.label, a.note, a.created_at, a.fanout_at, a.mail_done_at,
+    (select count(*) from public.announce_mail m where m.announcement_id = a.id) from public.app_announcements a order by a.version desc limit 10;
+end $$;
+create or replace function public.updates_set(p_on boolean) returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  if auth.uid() is null or not public.is_active() then raise exception 'accès refusé' using errcode = '42501'; end if;
+  insert into public.mail_prefs (user_id, updates) values (auth.uid(), coalesce(p_on, true))
+  on conflict (user_id) do update set updates = excluded.updates;
+end $$;
+revoke all on function public.admin_announce_update(int, text, text), public.admin_announcements(), public.updates_set(boolean) from public, anon;
+grant execute on function public.admin_announce_update(int, text, text), public.admin_announcements(), public.updates_set(boolean) to authenticated;

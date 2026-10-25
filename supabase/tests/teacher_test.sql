@@ -234,6 +234,18 @@ begin
   -- 8. suppression d'un compte élève : le lien et le journal partent avec lui
   perform t.as_super(); update public.profiles set blocked = false where id = f1; delete from auth.users where id = a;
   assert (select count(*) from public.teacher_access_log where student_id = a) = 0 and (select count(*) from public.teacher_links where student_id = a) = 0, 'cascade à la suppression';
+  -- 9. annonce d'une nouvelle version : réservée à l'administrateur, une seule fois par version ; préférence d'e-mail « nouvelle version »
+  perform t.as_user(c1); perform t.fails('select public.admin_announce_update(88, ''v88'', ''x'')', '42501'); perform t.fails('select * from public.admin_announcements()', '42501');
+  perform t.fails('select * from public.app_announcements', '42501');                      -- aucune lecture directe de la table
+  perform t.as_user(ad); perform public.admin_announce_update(88, '  25 oct. 2026 · v88  ', '  Récitation libre  ');
+  assert (select label from public.admin_announcements() where version = 88) = '25 oct. 2026 · v88', 'libellé nettoyé';
+  assert (select note from public.admin_announcements() where version = 88) = 'Récitation libre' and (select fanout_at from public.admin_announcements() where version = 88) is null, 'note nettoyée, pas encore diffusée';
+  perform t.fails('select public.admin_announce_update(88, ''v88'', null)', 'P0001');       -- déjà annoncée
+  perform t.fails('select public.admin_announce_update(0, ''v0'', null)', 'P0001');
+  perform t.as_user(b); assert coalesce((select updates from public.mail_prefs where user_id = b), true) = true, 'e-mail « nouvelle version » activé par défaut';
+  perform public.updates_set(false); assert (select updates from public.mail_prefs where user_id = b) = false, 'désactivé';
+  perform public.updates_set(true); assert (select updates from public.mail_prefs where user_id = b) = true, 'réactivé';
+  perform t.as_super(); delete from public.app_announcements;
   raise notice 'tous les tests du rôle enseignant sont passés';
 end $$;
 rollback;

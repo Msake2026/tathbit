@@ -575,3 +575,10 @@ test('récitation libre : l’alignement des mots entendus suit l’ordre, saute
   r = frAlign(exp, 0, ['العالمين'], same); assert.equal(r.p, 0, 'un saut de plus de 4 mots est refusé');
   r = frAlign(exp, 0, [], same); assert.deepEqual(r, {p: 0, miss: []}, 'rien entendu');
 });
+
+test('version.json : suit la version affichée par l’application (à mettre à jour à chaque publication, sinon le message « nouvelle version » se trompe)', () => {
+  const v = /const APP_VERSION = '([^']+)'/.exec(read('index.html'))[1], n = +/v(\d+)/.exec(v)[1], j = JSON.parse(read('version.json'));
+  assert.equal(j.v, n, 'numéro de version'); assert.equal(j.label, v, 'libellé');
+  const ts = read('supabase/functions/send-reminders/index.ts'); assert.match(ts, /announceUpdates/); assert.match(ts, /kind: 'app_update'/);
+  const sql = read('supabase/teacher.sql'); for (const f of ['admin_announce_update', 'admin_announcements', 'updates_set']) assert.match(sql, new RegExp('function public\\.' + f), f);
+});

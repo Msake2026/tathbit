@@ -892,6 +892,32 @@
     for (const L of ['en', 'ar']){ E(`setLang('${L}'); frSetup()`); clickAct('fr-start'); say(heard(0)); clickAct('fr-stop'); await wait(100); ok(!/undefined/.test(appText()), 'récitation libre en ' + L); eq(E('[...missingKeys]'), [], 'clés traduites (' + L + ')'); }
     E("setLang('fr'); frQuit()");
   });
+  test('Nouvelle version : message à l’accueil, entrée dans la cloche, e-mail désactivable, annonce par l’administrateur', async () => {
+    reset(); const f0 = W.fetch, calls = []; W.__u = calls;
+    E("newVer = null; verAt = 0; window.fetch = async u => ({ok: true, json: async () => ({v: APP_BUILD + 1, label: '9 nov. 2026 · v' + (APP_BUILD + 1)})})");
+    E("go('home')"); ok(!$q('.upd'), 'pas de message quand rien de nouveau n’est connu'); E("checkVersion(true)"); await wait(200);
+    ok($q('#upd-slot .upd') && /nouvelle version/i.test($q('#upd-slot .upd').textContent) && /Chercher les mises à jour/.test($q('#upd-slot .upd').textContent) && $q('#upd-slot [data-act="upd"]'), 'accueil : message explicite et bouton « Chercher les mises à jour »');
+    E("newVer = null; verAt = 0; window.fetch = async u => ({ok: true, json: async () => ({v: APP_BUILD, label: 'x'})})"); E("go('home')"); E("checkVersion(true)"); await wait(100); ok(!$q('.upd'), 'même version : pas de message');
+    E("window.fetch = async u => ({ok: false})"); E("newVer = null; checkVersion(true)"); await wait(50); ok(E('newVer') === null, 'fichier absent : rien');
+    W.fetch = f0;
+    // cloche
+    const nfx = ref => `[{id: 1, kind: 'app_update', ref: '${ref}', actor: null, n: 1, created_at: new Date().toISOString(), read_at: null}]`;
+    ok(/Nouvelle version de l'application \(v99\)/.test(E("nfText({kind: 'app_update', ref: '99'})")), 'texte de la cloche');
+    E(`newVer = null; nf = {list: ${nfx('999')}, loaded: true}; nfOpen(1)`); await wait(200); ok(E('newVer && newVer.v') === 999 && $q('.upd'), 'ouvrir la notification mène à l’accueil, avec le message');
+    E("newVer = null; sb = {rpc: async (n, a) => { window.__u.push(n + ' ' + JSON.stringify(a || {})); return {data: null, error: null}; }}; me = {user: {id: 'u1', email: 'a@b.fr'}, profile: {role: 'user'}}");
+    E(`nf = {list: ${nfx(1)}, loaded: true}; nfRead(1)`); E("sb.rpc = async (n, a) => { window.__u.push(n + ' ' + JSON.stringify(a || {})); return n === 'notifs_mine' ? {data: [{id: 7, kind: 'app_update', ref: '1', actor: null, n: 1, created_at: new Date().toISOString(), read_at: null}], error: null} : {data: null, error: null}; }");
+    E("nfLoad()"); await wait(300); ok(calls.includes('notif_read {"p_id":7}'), 'une annonce de version déjà installée est traitée toute seule'); ok(E('newVer') === null, 'et ne déclenche pas de message');
+    // préférence e-mail
+    E("tch.upd = undefined"); ok(/id="upd-mail" checked/.test(E("wkCard()")), 'e-mail « nouvelle version » activé par défaut'); E("tch.upd = false"); ok(!/id="upd-mail" checked/.test(E("wkCard()")), 'désactivé : case décochée');
+    E("updToggle(true)"); await wait(150); ok(calls.includes('updates_set {"p_on":true}') && E('tch.upd') === true, 'préférence enregistrée');
+    // annonce par l'administrateur
+    E("me = {user: {id: 'ad', email: 'adm@x.fr'}, profile: {role: 'admin'}}; adm = {users: [], q: '', detail: null, msg: '', reqs: [], anns: [{version: 87, label: 'v87', note: null, created_at: '', fanout_at: '2026-10-24', mail_done_at: null, mails: 12}]}; confirm = () => true; sb.rpc = async (n, a) => { window.__u.push(n + ' ' + JSON.stringify(a || {})); return {data: n === 'admin_announcements' ? [] : [], error: null}; }; renderAdmin()");
+    ok(/Annoncer une nouvelle version/.test(appText()) && /12 e-mails envoyés/.test(appText()), 'carte d’annonce et état des annonces précédentes');
+    $q('#adm-ver').value = '89'; $q('#adm-note').value = 'Récitation libre'; clickAct('adm-announce'); await wait(200); ok(calls.includes('admin_announce_update {"p_version":89,"p_label":"v89","p_note":"Récitation libre"}'), 'annonce envoyée avec le libellé de la version');
+    E("renderAdmin()"); $q('#adm-ver').value = String(E('APP_BUILD')); clickAct('adm-announce'); await wait(200); ok(calls.some(c => c.startsWith('admin_announce_update {"p_version":' + E('APP_BUILD') + ',"p_label":"' + E('APP_VERSION'))), 'pour la version courante : libellé complet avec la date');
+    $q('#adm-ver').value = '0'; clickAct('adm-announce'); await wait(100); ok(/invalide/.test(appText()), 'numéro invalide refusé sans appel');
+    E("me = null; sb = null; adm = {users: null, q: '', detail: null, msg: '', reqs: []}; nf = {list: [], loaded: false}"); noErr('nouvelle version');
+  });
   test('Contact : page avec adresse, sujets préremplis, copie de l’adresse ; liens depuis les Réglages et l’écran de connexion', async () => {
     reset(); E("window.TATHBIT_LEGAL = {contact: 'tathbit.app.contact@gmail.com', region: ''}; renderContact()");
     ok(appText().includes('tathbit.app.contact@gmail.com'), 'adresse affichée'); const links = $$q('a.btnlink'); eq(links.length, 5, 'cinq sujets, dont « Autre sujet »'); ok(/autre/i.test(links[4].textContent) && /autre/i.test(decodeURIComponent(links[4].getAttribute('href'))), 'le dernier sujet est « Autre sujet »');

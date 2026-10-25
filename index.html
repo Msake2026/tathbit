@@ -813,6 +813,7 @@ function tabHome(){
   const due = dueRefs(), td = days[today()] || 0, st = streak();
   const top = aggErrors(errors.filter(e => e.t >= Date.now() - 7 * 864e5)).slice(0, 3);
   return `
+  <div id="upd-slot">${updBannerHtml()}</div>
   ${homeNotice ? `<div class="fb ok" role="status">${esc(homeNotice)}</div>` : ''}
   <div class="hero"><div class="logo"><span class="lg">تثبيت</span></div><div><h1>Tathbīt</h1><p class="tag">${tr('Coran et moutoun')}</p><p>${me ? esc(me.user.email) + ' ' + roleChips() : tr('Que ta mémorisation soit bénie.')}</p></div></div>
   ${cloudOn() && !me ? `<div class="card"><h2>${tr('Sauvegarde ta progression')}</h2><p class="sub" style="margin:0 0 8px">${tr('Crée un compte gratuit pour retrouver tes séries, tes erreurs et ton historique sur tous tes appareils.')}</p>
@@ -2736,6 +2737,11 @@ const onClick = e => {
     case 'acc-delete': doDeleteMe(); break;
     case 'adm-open': openAdmin(); break;
     case 'adm-refresh': adminLoad(); break;
+    case 'adm-announce': {
+      const ver = Math.round(+$('adm-ver').value), note = ($('adm-note').value || '').trim();
+      if (!(ver >= 1)) { adm.msg = tr('Numéro de version invalide.'); renderAdmin(); break; }
+      if (confirm(tr('Prévenir tous les utilisateurs de la version {v} (cloche, notification, e-mail) ?', {v: ver}))) adminAct(() => sb.rpc('admin_announce_update', {p_version: ver, p_label: ver === APP_BUILD ? APP_VERSION : 'v' + ver, p_note: note || null}));
+      break; }
     case 'adm-detail': adminDetail(v); break;
     case 'adm-role': adminRole(v); break;
     case 'adm-teacher': adminTeacher(v); break;
@@ -3060,7 +3066,25 @@ function results(){
 }
 
 /* ---------- compte (Supabase) : inscription, connexion, synchronisation, espace admin ---------- */
-const APP_VERSION = '24 oct. 2026 · v87';
+const APP_VERSION = '25 oct. 2026 · v88';
+const APP_BUILD = +((/v(\d+)/.exec(APP_VERSION) || [])[1]) || 0;   // numéro de la version qui tourne ; version.json (à jour à chaque publication) donne le dernier numéro publié
+let newVer = null, verAt = 0;
+function updBannerHtml(){
+  if (!newVer || newVer.v <= APP_BUILD) return '';
+  return `<div class="card upd" role="status"><h2>🆕 ${tr('Nouvelle version disponible')}</h2>
+    <p style="margin:0 0 8px">${tr("Une nouvelle version de Tathbīt est disponible ({v}). Pour la récupérer, touche « Chercher les mises à jour ».", {v: esc(newVer.label)})}</p>
+    ${newVer.note ? `<p class="ref" style="margin:0 0 8px">${esc(newVer.note)}</p>` : ''}
+    <button class="pri big" data-act="upd">🔄 ${tr('Chercher les mises à jour')}</button></div>`;
+}
+function updSlot(){ const el = $('upd-slot'); if (el) el.innerHTML = updBannerHtml(); }
+async function checkVersion(force){
+  if (!navigator.onLine || (!force && Date.now() - verAt < 30 * 60e3)) return; verAt = Date.now();
+  try {
+    const r = await fetch('version.json?t=' + Date.now(), {cache: 'no-store'}); if (!r.ok) return;
+    const j = await r.json();
+    if (j && +j.v > APP_BUILD && (!newVer || +j.v > newVer.v)){ newVer = {v: +j.v, label: String(j.label || 'v' + j.v).slice(0, 60), note: ''}; updSlot(); }
+  } catch { /* hors ligne ou fichier absent : on réessaiera */ }
+}
 async function forceUpdate(el){
   if (!navigator.onLine) return alert(tr('Pas de connexion : connecte-toi à internet pour mettre à jour.'));
   el.disabled = true; el.textContent = tr('Mise à jour…');
@@ -3158,6 +3182,7 @@ async function cloudInit(){
       : tr("Le lien n'a pas pu être validé ({e}). Demande un nouvel e-mail de confirmation.", {e: LINK_NOTICE.detail});
     openAccount('login');
   } else home();
+  setTimeout(checkVersion, 2500); document.addEventListener('visibilitychange', () => { if (!document.hidden) checkVersion(); });
   setTimeout(maybeAutoAudio, 4000); if (navigator.connection && navigator.connection.addEventListener) navigator.connection.addEventListener('change', () => setTimeout(maybeAutoAudio, 1500));
 }
 function renderLoading(){ setNav(false); $app.innerHTML = `<p class="sub" style="margin-top:40vh;text-align:center">${tr('Chargement…')}</p>`; }
@@ -3308,7 +3333,7 @@ function renderAccount(){
 let msgTimer = null;
 function clearMsg(){ acc.msg = ''; acc.auto = false; const m = $('acc-msg'); if (m) m.remove(); }
 $app.addEventListener('change', e => { if (e.target.id === 'tch-reply-to'){ tch.chatWith = e.target.value; chatPaint(chatHtml(chThread(), m => m.from_student, true)); chatBottom(); } if (e.target.id === 'tch-gs' && $('tch-ge') && +$('tch-ge').value < +e.target.value) $('tch-ge').value = e.target.value;
-  if (e.target.id === 'tch-sort'){ tch.sort = e.target.value; tchRefresh(); } if (e.target.id === 'wk-on') wkToggle(e.target.checked); if (e.target.id === 'rem-two') $('rem-time2').disabled = !e.target.checked; if (e.target.id === 'tjp'){ cfg.tjp = e.target.checked; saveCfg(); applyA11y(); }
+  if (e.target.id === 'tch-sort'){ tch.sort = e.target.value; tchRefresh(); } if (e.target.id === 'wk-on') wkToggle(e.target.checked); if (e.target.id === 'upd-mail') updToggle(e.target.checked); if (e.target.id === 'rem-two') $('rem-time2').disabled = !e.target.checked; if (e.target.id === 'tjp'){ cfg.tjp = e.target.checked; saveCfg(); applyA11y(); }
   if (e.target.id === 'aud-auto'){ cfg.audAuto = e.target.checked; saveCfg(); if (cfg.audAuto) maybeAutoAudio(); } });
 $app.addEventListener('input', () => { if (screen === 'account' && acc.msg && acc.ok) clearMsg(); }); // un message de confirmation s'efface dès qu'on tape
 const EYE = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
@@ -3547,7 +3572,7 @@ async function remAction(act){
 }
 
 /* confidentialité et conditions : décrit le fonctionnement réel du site (voir supabase/schema.sql, config.js) */
-const LEGAL_DATE = '2026-10-21';
+const LEGAL_DATE = '2026-10-25';
 function contactAddr(){ return (Object.assign({contact: ''}, window.TATHBIT_LEGAL || {})).contact; }
 async function copyContact(){ const a = contactAddr(), m = $('contact-msg'); let ok = false; try { await navigator.clipboard.writeText(a); ok = true; } catch { /* presse-papiers refusé */ } if (m) m.textContent = ok ? tr('Adresse copiée.') : tr('Copie impossible : recopie l\'adresse à la main.'); }
 function renderContact(){
@@ -3594,6 +3619,7 @@ function renderLegal(){
       tr("Rappels (facultatif) : si tu actives les notifications, l'adresse technique de ton appareil pour les notifications (fournie par Apple, Google ou Mozilla), l'heure choisie, ton fuseau horaire et ta langue sont enregistrés pour t'envoyer le rappel, qui transite par le service de notifications de ton système. Tu peux les désactiver à tout moment dans Réglages."),
       tr("Enseignant (facultatif) : si tu invites un enseignant, il voit ton e-mail, ton total de réponses, ta progression par sourate, tes jours d'activité et tes erreurs (sans les réponses que tu as tapées, sans tes réglages ni les textes que tu ajoutes). Tu génères un code d'invitation valable 7 jours et à usage unique ; seul ton enseignant peut mettre fin au suivi (tu peux aussi supprimer ton compte à tout moment) ; chaque consultation d'un détail est enregistrée et visible dans ton compte. Seul un compte auquel l'administrateur a donné le rôle enseignant peut utiliser un code."),
       tr("Messages, objectifs et classe (facultatif) : un enseignant que tu as invité (ou dont tu as saisi le code de classe) peut t'envoyer des messages de 280 caractères au plus et te fixer des objectifs (sourate, date limite) ; tu peux supprimer les messages. Si ton enseignant met fin au suivi, tu ne les vois plus."),
+      tr("Nouvelles versions : ton e-mail sert aussi à t'avertir quand une nouvelle version de l'application est disponible (par défaut ; tu peux le désactiver dans Réglages, Compte). Une notification s'affiche aussi dans la cloche, et sur tes appareils si tu as activé les rappels."),
       tr("Résumé hebdomadaire (facultatif) : si tu l'actives, ton e-mail, ta langue et le jour du dernier envoi sont utilisés pour t'envoyer chaque dimanche, via Gmail (Google), le nombre de tes réponses et de tes jours actifs de la semaine."),
       tr("Données techniques : comme sur tout site, les hébergeurs et services utilisés peuvent enregistrer des informations de connexion, par exemple l'adresse IP.")])}
     ${sec('Pourquoi ?', [tr("Pour créer ton compte, te connecter et synchroniser ta progression entre tes appareils. L'administrateur peut consulter la liste des comptes et la progression pour gérer le service. Les données ne sont ni vendues ni utilisées pour de la publicité.")])}
@@ -3623,6 +3649,7 @@ async function adminLoad(){
   adm.msg = '';
   try { const {data, error} = await sb.rpc('admin_users'); if (error) throw error; adm.users = data; } catch (e){ adm.msg = friendly(e); }
   try { const r = await sb.rpc('admin_teacher_requests'); adm.reqs = r.error ? [] : (r.data || []); } catch { adm.reqs = []; }
+  try { const r = await sb.rpc('admin_announcements'); adm.anns = r.error ? null : (r.data || []); } catch { adm.anns = null; }
   renderAdmin();
 }
 /* WA:begin — surveillance des e-mails d'inscription (fonction pure, testée en Node). Seuils indicatifs : limite d'envoi de Supabase 30 e-mails/heure (valeur par défaut),
@@ -3694,7 +3721,7 @@ async function tchLoadStudent(){ // ce que l'élève voit : ses invitations, ses
     for (const r of [a, b, c]) if (r.error) throw r.error;
     const q = await sb.from('teacher_requests').select('created_at'); tch.req = !q.error && !!(q.data && q.data.length);
     const safe = async f => { try { const r = await f(); return r.error ? [] : (r.data || []); } catch { return []; } };   // messages et objectifs : absents tant que teacher.sql n'est pas relancé
-    try { const w = await sb.from('mail_prefs').select('weekly'); tch.wk = !w.error && !!(w.data && w.data[0] && w.data[0].weekly); } catch { tch.wk = false; }
+    try { const w = await sb.from('mail_prefs').select('weekly, updates'); tch.wk = !w.error && !!(w.data && w.data[0] && w.data[0].weekly); tch.upd = w.error || !w.data || !w.data[0] ? true : w.data[0].updates !== false; } catch { tch.wk = false; tch.upd = true; }
     [tch.msgs, tch.goals] = await Promise.all([safe(() => sb.rpc('messages_mine')), safe(() => sb.rpc('goals_for'))]);
     tch.links = (a.data || []).filter(x => x.as_role === 'teacher'); tch.invites = b.data || []; tch.log = c.data || [];
     if (isTeacher()){ const u = await safe(() => sb.rpc('teacher_unread')); tch.unread = Object.fromEntries(u.map(x => [x.student_id, Number(x.n)])); }
@@ -3727,6 +3754,7 @@ function nfText(x){
     linked: tr('{e} suit maintenant ta progression.', {e}),
     unlinked: tr('{e} a mis fin au suivi.', {e}),
     student_joined: tr('{e} a rejoint ta classe.', {e}),
+    app_update: tr("Nouvelle version de l'application (v{v}) : touche « Chercher les mises à jour ».", {v: esc(x.ref || '')}),
     reminder: n > 0 ? trp(n, 'Rappel de révision : {n} verset à revoir aujourd\'hui|Rappel de révision : {n} versets à revoir aujourd\'hui') : tr("Rappel de révision : c'est l'heure de ta révision.")
   })[x.kind] || esc(x.kind);
 }
@@ -3759,6 +3787,9 @@ async function nfLoad(){
   try { const r = await sb.rpc('notifs_mine'); if (!r.error) nf.list = r.data || []; } catch { /* hors ligne ou base pas à jour : la cloche reste vide */ }
   // un rappel de révision est traité dès qu'on a révisé le jour où il a été envoyé (ou après)
   for (const x of nf.list) if (x.kind === 'reminder' && !x.read_at && (days[x.ref] || 0) > 0) nfRead(x.id);
+  for (const x of nf.list) if (x.kind === 'app_update' && !x.read_at){   // version déjà installée : traitée ; sinon l'accueil affiche le message
+    if (+x.ref <= APP_BUILD) nfRead(x.id); else if (!newVer || +x.ref > newVer.v){ newVer = {v: +x.ref, label: 'v' + x.ref, note: ''}; updSlot(); }
+  }
   nfPaint();
 }
 function nfToggle(){ const p = nfPanel(); if (!p.hidden) return nfClose(); p.hidden = false; const bl = $('bell'); if (bl) bl.setAttribute('aria-expanded', 'true'); nfPaint(); nfLoad(); const f = p.querySelector('button'); if (f) f.focus(); }
@@ -3776,6 +3807,7 @@ async function nfOpen(id){
   else if (x.kind === 'student_joined') go('teacher');
   else if (x.kind === 'reminder'){ if (dueRefs().length) start(shuffle(reviewPick(15))); else go('train'); }
   else if (x.kind === 'unlinked' || x.kind === 'request_declined') openAccount();
+  else if (x.kind === 'app_update'){ if (!newVer || +x.ref > newVer.v) newVer = {v: +x.ref, label: 'v' + x.ref, note: ''}; go('home'); }
   else go('student');
 }
 document.addEventListener('click', e => { // clic hors du panneau ou de la cloche : on ferme. composedPath() : la cible a pu être remplacée par le rafraîchissement de la cloche (innerHTML) pendant le clic, closest() la croirait alors « dehors »
@@ -3909,8 +3941,10 @@ function roleCard(){   // demande du rôle enseignant : une affaire de compte (p
 function wkCard(){
   if (!me) return '';
   return `<div class="card"><h2>${tr('Résumé de la semaine')}</h2>
-    <label class="consent"><input type="checkbox" id="wk-on" ${tch.wk ? 'checked' : ''}><span>${tr("Recevoir chaque dimanche, par e-mail, un résumé de ma semaine (réponses, jours actifs). Je peux le désactiver à tout moment.")}</span></label></div>`;
+    <label class="consent"><input type="checkbox" id="wk-on" ${tch.wk ? 'checked' : ''}><span>${tr("Recevoir chaque dimanche, par e-mail, un résumé de ma semaine (réponses, jours actifs). Je peux le désactiver à tout moment.")}</span></label>
+    <label class="consent" style="margin-top:8px"><input type="checkbox" id="upd-mail" ${tch.upd !== false ? 'checked' : ''}><span>${tr("Être prévenu par e-mail quand une nouvelle version de l'application est disponible. Je peux le désactiver à tout moment.")}</span></label></div>`;
 }
+async function updToggle(on){ try { const {error} = await sb.rpc('updates_set', {p_on: on}); if (error) throw error; tch.upd = on; tch.ok = true; tch.msg = on ? tr('E-mails de nouvelle version activés.') : tr('E-mails de nouvelle version désactivés.'); } catch (e){ tchErr(e); const c = $('upd-mail'); if (c) c.checked = tch.upd !== false; } if (screen === 'account') renderAccount(); tchFlash(); }
 async function wkToggle(on){ try { const {error} = await sb.rpc('weekly_set', {p_on: on, p_lang: LANG}); if (error) throw error; tch.wk = on; tch.ok = true; tch.msg = on ? tr('Résumé hebdomadaire activé.') : tr('Résumé hebdomadaire désactivé.'); } catch (e){ tchErr(e); const c = $('wk-on'); if (c) c.checked = tch.wk; } if (screen === 'account') renderAccount(); tchFlash(); }
 function tchStudentCard(){
   if (!me) return '';
@@ -4066,6 +4100,12 @@ function renderAdmin(){
     <p class="sub">${adm.users ? `${trp(adm.users.length, '{n} compte|{n} comptes')} · ${trp(active, '{n} actif sur 7 jours|{n} actifs sur 7 jours')}` : tr('Chargement…')}</p>
     ${adm.msg ? `<div class="fb ko">${esc(adm.msg)}</div>` : ''}
     ${watchHtml()}
+    ${adm.anns ? `<div class="card"><h2>🆕 ${tr('Annoncer une nouvelle version')}</h2>
+      <p class="ref" style="margin:0 0 8px">${tr("Après avoir publié une version : tous les comptes reçoivent une notification dans la cloche, une notification sur les appareils qui ont activé les rappels, et un e-mail (sauf s'ils l'ont désactivé). Une seule annonce par numéro de version.")}</p>
+      <div class="row"><div><label class="f" for="adm-ver">${tr('Numéro de version')}</label><input type="number" id="adm-ver" min="1" step="1" value="${APP_BUILD}" inputmode="numeric"></div></div>
+      <label class="f" for="adm-note">${tr('Ce qui change (facultatif, 200 caractères)')}</label><input type="text" id="adm-note" maxlength="200" autocomplete="off">
+      <button class="pri" style="margin-top:8px" data-act="adm-announce">${tr('Annoncer')}</button>
+      ${adm.anns.length ? `<p class="ref" style="margin:10px 0 2px"><b>${tr('Annonces déjà faites :')}</b></p>${adm.anns.map(a => `<p class="ref" style="margin:0">${esc(a.label)} · ${a.fanout_at ? tr('cloche et notifications envoyées') : tr('en attente du prochain passage (5 min)')} · ${a.mail_done_at ? tr('e-mails terminés') : trp(Number(a.mails), '{n} e-mail envoyé|{n} e-mails envoyés')}</p>`).join('')}` : ''}</div>` : ''}
     ${(adm.reqs || []).length ? `<div class="card"><h2>🎓 ${tr("Demandes d'enseignant")}</h2>${adm.reqs.map(r => `<div class="weak"><span>${esc(r.email)} · ${when(r.created_at)}</span><span><button class="link" data-act="adm-req-ok" data-v="${r.user_id}">${tr('Accepter')}</button> <button class="link" style="color:var(--ko)" data-act="adm-req-no" data-v="${r.user_id}">${tr('Refuser')}</button></span></div>`).join('')}</div>` : ''}
     <div class="row" style="margin-bottom:10px"><input type="text" id="adm-q" placeholder="${tr('Rechercher un e-mail')}" value="${esc(adm.q)}" autocomplete="off"><button data-act="adm-refresh" style="flex:0 0 auto">🔄 ${tr('Actualiser')}</button></div>
     <div class="card">${adm.users ? (list.map(row).join('') || `<p class="sub" style="margin:0">${tr('Aucun compte.')}</p>`) : ''}</div>`;
