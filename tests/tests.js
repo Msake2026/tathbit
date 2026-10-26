@@ -434,7 +434,7 @@
       for (let n = 0; n < 8; n++){
         ok($q('.opt'), `${kind} question ${n}`); const btns = $$q('.opt'), hasMark = !!$q('mark.tjq');
         if (kind === 'type'){ eq(btns.length, 5); ok(hasMark, 'partie surlignée'); ok(!$q('#tjv [class^="tj-"]'), 'verset non coloré avant la réponse'); }
-        if (kind === 'count'){ eq(btns.length, 4); ok(hasMark); } if (kind === 'cause'){ eq(btns.length, 4); ok(!hasMark, 'règle du matn : pas de verset'); } if (kind === 'tf'){ eq(btns.length, 2); ok(hasMark); }
+        if (kind === 'count'){ eq(btns.length, 4); ok(hasMark, 'count : partie surlignée (question ' + n + ')'); } if (kind === 'cause'){ eq(btns.length, 4); ok(!hasMark, 'règle du matn : pas de verset'); } if (kind === 'tf'){ eq(btns.length, 2); ok(hasMark, 'tf : partie surlignée (question ' + n + ')'); }
         const good = btns.filter(b => b.dataset.v === E('cur.correct')); eq(good.length, 1, 'une seule bonne réponse'); const wantOk = n % 2 === 0;
         click(wantOk ? good[0] : btns.find(b => b !== good[0])); noErr('réponse madd'); ok(fb().classList.contains(wantOk ? 'ok' : 'ko'), `${kind} ${n}`); ok($q('#fb a[href*="wiki"]'), 'sources');
         ok(/temps/.test(fb().textContent), 'durée dans la correction'); if (hasMark) ok($q('#tjv [class^="tj-"]'), 'verset coloré après la réponse');
