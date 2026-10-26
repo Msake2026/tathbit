@@ -202,6 +202,7 @@ function tabErrors(){
         ${a.bad.length ? `<p class="ref" style="margin:0">${tr('Mots souvent faux :')} <span class="ar" style="font-size:calc(1.2rem*var(--arz,1));display:inline">${esc(a.bad.slice(0, 12).join(' · '))}</span></p>` : ''}</div>`).join('');
   return `
   <h1>${tr('Erreurs')}</h1>
+  ${progressSeg('errors')}
   <p class="sub">${trp(L.length, '{n} erreur|{n} erreurs')} · ${trp(rows.length, '{n} verset concerné|{n} versets concernés')}</p>
   <div class="chips" style="margin-bottom:8px">${chip('all', hf, tr('Tout'), 'hfilter')}${chip('7', hf, tr('7 derniers jours'), 'hfilter')}${chip('q', hf, tr('Coran'), 'hfilter')}${chip('m', hf, tr('Moutoun'), 'hfilter')}</div>
   ${rows.length ? `<button class="pri big" data-act="hreview">${tr('Réviser les {n} versets les plus ratés', {n: hrefs.length})}</button>` : ''}

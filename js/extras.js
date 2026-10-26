@@ -119,12 +119,12 @@ async function remOfferAct(on){
   if (on){ const r = remState(); try { await pushEnable(r.time, r.two, r.time2); homeNotice = remOnMsg(remState()); } catch (e){ homeNotice = friendly(e); } }
   home();
 }
-function remindCard(){
-  if (!cloudOn() || !me || !CLOUD.vapidPublicKey) return '';
+function remindInner(){ // rappels de révision (notifications de l'appareil)
   const r = remState(), ok = PUSH_OK(), needInstall = IOS && !IOS_APP;
-  return `<div class="card"><h2>${tr('Rappels')}</h2>
+  return `<h3 class="nh">${ic('bell')} ${tr('Rappels de révision')}</h3>
     <p class="ref" style="margin:0 0 8px">${tr("Reçois une notification chaque jour à l'heure choisie, seulement si tu n'as pas encore révisé ce jour-là.")}</p>
-    ${needInstall ? `<p class="ref" style="margin:0 0 8px">${tr("Sur iPhone, les rappels ne marchent que si l'application est installée sur l'écran d'accueil.")}</p><button class="pri" data-act="tile-install">${ic('phone')} ${tr("Voir comment installer l'application")}</button>`   // avant « !ok » : Safari (hors application installée) n'expose pas les notifications
+    ${!CLOUD.vapidPublicKey ? `<p class="ref" style="margin:0">${tr('Les rappels ne sont pas encore activés sur ce site.')}</p>`
+    : needInstall ? `<p class="ref" style="margin:0 0 8px">${tr("Sur iPhone, les rappels ne marchent que si l'application est installée sur l'écran d'accueil.")}</p><button class="pri" data-act="tile-install">${ic('phone')} ${tr("Voir comment installer l'application")}</button>`   // avant « !ok » : Safari (hors application installée) n'expose pas les notifications
     : !ok ? `<p class="ref" style="margin:0">${tr('Ton navigateur ne gère pas les notifications.')}</p>`
     : `<label class="f" for="rem-time">${tr('Heure du rappel')}</label><input type="time" id="rem-time" value="${esc(r.time)}">
        <label class="f" style="display:flex;gap:8px;align-items:center;margin-top:12px"><input type="checkbox" id="rem-two"${r.two ? ' checked' : ''}>${tr("Un 2e rappel plus tard, si je n'ai toujours pas révisé")}</label>
@@ -132,8 +132,19 @@ function remindCard(){
        <div class="row" style="margin-top:10px">${r.on
         ? `<button data-act="rem-save">${tr("Enregistrer l'heure")}</button><button data-act="rem-test">${tr('Tester une notification')}</button><button data-act="rem-off">${tr('Désactiver les rappels')}</button>`
         : `<button class="pri" data-act="rem-on">${tr('Activer les rappels sur cet appareil')}</button>`}</div>
-       <p id="rem-msg" class="ref" style="margin:8px 0 0">${r.on ? remOnMsg(r) : ''}</p>`}
-  </div>`;
+       <p id="rem-msg" class="ref" style="margin:8px 0 0">${r.on ? remOnMsg(r) : ''}</p>`}`;
+}
+function emailsInner(){ // e-mails : résumé du dimanche et nouvelle version
+  return `<h3 class="nh">${ic('mail')} ${tr('E-mails')}</h3>
+    ${tch.msg && cfg.tab === 'settings' ? `<p class="fb tch-flash ${tch.ok ? 'ok' : 'ko'}" role="status">${esc(tch.msg)}</p>` : ''}
+    <label class="consent"><input type="checkbox" id="wk-on" ${tch.wk ? 'checked' : ''}><span>${tr("Recevoir chaque dimanche, par e-mail, un résumé de ma semaine (réponses, jours actifs). Je peux le désactiver à tout moment.")}</span></label>
+    <label class="consent" style="margin-top:8px"><input type="checkbox" id="upd-mail" ${tch.upd !== false ? 'checked' : ''}><span>${tr("Être prévenu par e-mail quand une nouvelle version de l'application est disponible. Je peux le désactiver à tout moment.")}</span></label>`;
+}
+function remindCard(){ // « Notifications » : tout ce qui t'écrit ou te rappelle, réglé au même endroit
+  if (!cloudOn() || !me) return '';
+  return `<div class="card" id="card-notif"><h2>${tr('Notifications')}</h2>
+    ${remindInner()}${emailsInner()}
+    <p class="ref" style="margin:12px 0 0">${ic('bell')} ${tr("La cloche en haut de l'écran regroupe aussi les nouveautés, les messages et les objectifs de ton enseignant.")}</p></div>`;
 }
 async function pushSubscribeServer(sub, time, time2){
   const j = sub.toJSON(), {error} = await sb.rpc('push_subscribe', {p_endpoint: j.endpoint, p_p256dh: j.keys.p256dh, p_auth: j.keys.auth, p_time: time,
@@ -366,7 +377,7 @@ async function tchLoadStudent(){ // ce que l'élève voit : ses invitations, ses
 // refait l'écran courant après une action (onglets Élève et Enseignant, ou Compte)
 // un message de réussite disparaît seul au bout de 3 s (les erreurs restent affichées)
 const tchFlash = () => { clearTimeout(tch.t); if (tch.msg && tch.ok) tch.t = setTimeout(() => { if (tch.ok){ tch.msg = ''; document.querySelectorAll('.tch-flash').forEach(e => e.remove()); } }, 3000); };
-const tchRefresh = () => { if (screen === 'tab' && (cfg.tab === 'student' || cfg.tab === 'teacher')) home(); else if (screen === 'account') renderAccount(); tchFlash(); };
+const tchRefresh = () => { if (screen === 'tab' && (cfg.tab === 'student' || cfg.tab === 'teacher' || cfg.tab === 'settings')) home(); else if (screen === 'account') renderAccount(); tchFlash(); };
 /* ---------- cloche : notifications reçues et pas encore traitées ---------- */
 let nf = {list: [], loaded: false};
 const nfUnread = () => nf.list.filter(x => !x.read_at);
@@ -569,14 +580,13 @@ function roleCard(){   // demande du rôle enseignant : une affaire de compte (p
     ? `<p class="ref" style="margin:0 0 6px">${tr("Demande envoyée : l'administrateur doit la valider.")}</p><button class="link" data-act="tch-req-cancel">${tr('Annuler ma demande')}</button>`
     : `<p class="ref" style="margin:0 0 6px">${tr("Tu veux suivre des élèves ? Envoie une demande : l'administrateur la valide ou la refuse.")}</p><button data-act="tch-req" ${tch.busy ? 'disabled' : ''}>🎓 ${tr('Demander à devenir enseignant')}</button>`}</div>`;
 }
-function wkCard(){
+function wkCard(){ // dans Mon compte : les choix de notifications et d'e-mails sont dans Réglages
   if (!me) return '';
-  return `<div class="card"><h2>${tr('Mes e-mails')}</h2>
-    <label class="consent"><input type="checkbox" id="wk-on" ${tch.wk ? 'checked' : ''}><span>${tr("Recevoir chaque dimanche, par e-mail, un résumé de ma semaine (réponses, jours actifs). Je peux le désactiver à tout moment.")}</span></label>
-    <label class="consent" style="margin-top:8px"><input type="checkbox" id="upd-mail" ${tch.upd !== false ? 'checked' : ''}><span>${tr("Être prévenu par e-mail quand une nouvelle version de l'application est disponible. Je peux le désactiver à tout moment.")}</span></label></div>`;
+  return `<div class="card"><h2>${tr('Notifications')}</h2><p class="ref" style="margin:0 0 8px">${tr("Rappels de révision, e-mail du dimanche, e-mail de nouvelle version : tout se règle au même endroit, dans Réglages.")}</p>
+    <button data-act="notif-go">${ic('bell')} ${tr('Régler mes notifications')}</button></div>`;
 }
-async function updToggle(on){ try { const {error} = await sb.rpc('updates_set', {p_on: on}); if (error) throw error; tch.upd = on; tch.ok = true; tch.msg = on ? tr('E-mails de nouvelle version activés.') : tr('E-mails de nouvelle version désactivés.'); } catch (e){ tchErr(e); const c = $('upd-mail'); if (c) c.checked = tch.upd !== false; } if (screen === 'account') renderAccount(); tchFlash(); }
-async function wkToggle(on){ try { const {error} = await sb.rpc('weekly_set', {p_on: on, p_lang: LANG}); if (error) throw error; tch.wk = on; tch.ok = true; tch.msg = on ? tr('Résumé hebdomadaire activé.') : tr('Résumé hebdomadaire désactivé.'); } catch (e){ tchErr(e); const c = $('wk-on'); if (c) c.checked = tch.wk; } if (screen === 'account') renderAccount(); tchFlash(); }
+async function updToggle(on){ try { const {error} = await sb.rpc('updates_set', {p_on: on}); if (error) throw error; tch.upd = on; tch.ok = true; tch.msg = on ? tr('E-mails de nouvelle version activés.') : tr('E-mails de nouvelle version désactivés.'); } catch (e){ tchErr(e); const c = $('upd-mail'); if (c) c.checked = tch.upd !== false; } if (screen === 'account') renderAccount(); else if (screen === 'tab' && cfg.tab === 'settings') home(); tchFlash(); }
+async function wkToggle(on){ try { const {error} = await sb.rpc('weekly_set', {p_on: on, p_lang: LANG}); if (error) throw error; tch.wk = on; tch.ok = true; tch.msg = on ? tr('Résumé hebdomadaire activé.') : tr('Résumé hebdomadaire désactivé.'); } catch (e){ tchErr(e); const c = $('wk-on'); if (c) c.checked = tch.wk; } if (screen === 'account') renderAccount(); else if (screen === 'tab' && cfg.tab === 'settings') home(); tchFlash(); }
 function tchStudentCard(){
   if (!me) return '';
   const I = tch.invites, G = tch.log, fd = t => new Date(t).toLocaleDateString(LOCALE(), {day: 'numeric', month: 'short', year: 'numeric'});

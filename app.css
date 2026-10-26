@@ -189,6 +189,7 @@ body.has-nav main{padding-bottom:96px}
 .rdbar .prev .ic{transform:rotate(180deg)}[dir=rtl] .rdbar .prev .ic{transform:none}[dir=rtl] .rdbar .next .ic{transform:rotate(180deg)}
 .rdopt{margin-top:10px}.rdopt>summary{padding:6px 0}
 body:has(#bell:not([hidden])) .rdtool{margin-top:8px}
+.nh{display:flex;align-items:center;gap:8px;margin:16px 0 8px;font-size:1.05rem}#card-notif .nh:first-of-type{margin-top:4px}
 .uact{margin-top:6px}.uact summary{margin:2px 0 4px}
 .stepper{display:flex;gap:10px;align-items:center}.stepper button{flex:1;min-width:0;min-height:48px;font-size:1.1rem;font-weight:700}.stepper b{flex:1;text-align:center;font-size:1.2rem}
 .srow{padding:14px 0}.srow .shead{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;margin:0 0 2px}.srow .shead b{overflow-wrap:anywhere}.srow .smeta{margin:0 0 6px}.srow>button.big{margin-top:8px}

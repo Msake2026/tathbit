@@ -87,18 +87,20 @@ const TAB_TEACHER = ['teacher', 'Enseignant', '<circle cx="9" cy="8" r="3"/><pat
 const AI = () => `<span class="ai" role="note">🤖 ${tr('Texte rédigé par une IA, pas une source officielle')}</span>`;
 const stuKey = () => 'tathbit.stu.' + (me ? me.user.id : '');
 const isStudent = () => !!me && !isAdmin() && (tch.loaded ? !!((tch.links || []).length || (tch.msgs || []).length || (tch.goals || []).length) : !!store.get(stuKey(), false));
-const hasStudentTab = () => cloudOn() && !!me && !isAdmin() && (isStudent() || (cfg.tab === 'student' && !tch.loaded));
+// un enseignant n'a que l'onglet Enseignant, un élève que l'onglet Élève ; un enseignant qui est aussi élève d'un autre (message, objectif) ne voit l'onglet Élève que le temps d'y aller depuis une notification
+const hasStudentTab = () => cloudOn() && !!me && !isAdmin() && ((isStudent() && !isTeacher()) || (cfg.tab === 'student' && (isStudent() || !tch.loaded)));
 const hasTeacherTab = () => cloudOn() && !!me && isTeacher();
 const profileRoles = () => !me ? [] : isAdmin() ? [['admin', 'Administrateur']] : [...(isTeacher() ? [['teacher', 'Enseignant']] : []), ...(isStudent() ? [['student', 'Élève']] : []), ...(!isTeacher() && !isStudent() ? [['user', 'Utilisateur']] : [])];
 const roleChips = () => profileRoles().map(([k, t]) => `<span class="chip role-${k}">${tr(t)}</span>`).join(' ');
 const unreadStudent = () => (tch.msgs || []).filter(m => !m.from_student && !m.read_at).length;
 const unreadTeacher = () => Object.values(tch.unread || {}).reduce((a, b) => a + b, 0);
-const tabsNow = () => [...BASE_TABS.slice(0, 5), ...(hasStudentTab() ? [TAB_STUDENT] : []), ...(hasTeacherTab() ? [TAB_TEACHER] : []), BASE_TABS[5]];
+const tabsNow = () => [...BASE_TABS.slice(0, 4), ...(hasTeacherTab() ? [TAB_TEACHER] : []), ...(hasStudentTab() ? [TAB_STUDENT] : []), BASE_TABS[5]];   // 5 onglets (6 avec la classe) : « Erreurs » est dans Progrès
+const navOf = t => t === 'errors' ? 'progress' : t;   // l'écran Erreurs allume l'onglet Progrès
 function setNav(on){
   const n = $('nav'); n.hidden = !on; document.body.classList.toggle('has-nav', on); screen = on ? 'tab' : 'full'; queueMicrotask(bellSync);
   if (!on) return;
   const due = dueRefs().length;
-  n.innerHTML = `<div class="in">${tabsNow().map(([id, t, ico]) => `<button class="${cfg.tab === id ? 'sel' : ''}" ${cfg.tab === id ? 'aria-current="page"' : ''} data-act="tab" data-v="${id}" aria-label="${tr(t)}"${cfg.tab === id ? ' aria-current="page"' : ''}>
+  n.innerHTML = `<div class="in">${tabsNow().map(([id, t, ico]) => `<button class="${navOf(cfg.tab) === id ? 'sel' : ''}" data-act="tab" data-v="${id}" aria-label="${tr(t)}"${navOf(cfg.tab) === id ? ' aria-current="page"' : ''}>
     <svg viewBox="0 0 24 24" aria-hidden="true">${ico}</svg>${tr(t)}${id === 'home' && due ? `<span class="badge">${due > 99 ? '99+' : due}</span>` : ''}${id === 'student' && unreadStudent() ? `<span class="badge">${unreadStudent()}</span>` : ''}${id === 'teacher' && unreadTeacher() ? `<span class="badge">${unreadTeacher()}</span>` : ''}</button>`).join('')}</div>`;
 }
 const scopeLabel = sc => sc.type === 'matn' ? (sc.id === 'all' ? tr('Tous les moutoun') : (MT[sc.id] ? MN(sc.id) + (sc.sec != null && MT[sc.id].sec && MT[sc.id].sec[sc.sec] ? ' · ' + secName(MT[sc.id].sec[sc.sec]) : '') : tr('Matn')))
@@ -117,7 +119,7 @@ function home(){ // affiche l'écran du menu courant (accès réservé aux compt
   if (cloudOn() && !authReady) return renderLoading();
   if (cloudOn() && !me) return renderAccount();
   if (cfg.tab === 'home' && welcomeNeeded()) return renderWelcome();
-  if (!tabsNow().some(t => t[0] === cfg.tab)) cfg.tab = 'home';
+  if (!tabsNow().some(t => t[0] === navOf(cfg.tab))) cfg.tab = 'home';
   $app.innerHTML = ({home: tabHome, plan: tabPlan, train: tabTrain, progress: tabProgress, errors: tabErrors, settings: tabSettings, student: tabStudent, teacher: tabTeacher})[cfg.tab]();
   setNav(true); tchEnter(); chatBottom(); if (cfg.tab === 'settings') setTimeout(audioSpace, 0);
   if (pendingGo){ const g = pendingGo; pendingGo = null; setTimeout(() => newsGo(g), 0); }
@@ -228,7 +230,15 @@ function exportNudgeDays(){
   const d = Math.floor((Date.now() - Math.max(first, store.get('tathbit.lastExport', 0))) / 864e5);
   return d >= EXPORT_DAYS ? d : 0;
 }
+/* iPhone sans installation ni compte : Safari peut effacer les données d'un site qu'on n'ouvre pas pendant une semaine (règle WebKit de plafond à 7 jours) ; installée sur l'écran d'accueil, l'application y échappe */
+function iosNudgeOn(){ return IOS && !IS_STANDALONE() && !me && Object.keys(stats).length > 0 && Date.now() >= store.get('tathbit.iosSnooze', 0); }
+function iosNudgeHtml(){
+  if (!iosNudgeOn()) return '';
+  return `<div class="card note" id="ios-nudge"><h2>${ic('phone')} ${tr('Garde ta progression sur iPhone')}</h2><p class="sub" style="margin:0 0 8px">${tr("Sur iPhone, Safari peut effacer les données d'un site que tu n'ouvres pas pendant une semaine. Installée sur l'écran d'accueil, l'application garde ta progression ; un compte ou un export la protège aussi.")}</p>
+    <div class="row"><button class="pri" data-act="tile-install">${tr("Voir comment installer l'application")}</button><button data-act="export">${tr('Exporter maintenant')}</button><button data-act="ios-later">${tr('Plus tard')}</button></div></div>`;
+}
 function exportNudgeHtml(){
+  if (iosNudgeOn()) return '';   // même sujet : on n'affiche qu'une carte
   const d = exportNudgeDays(); if (!d) return '';
   return `<div class="card" id="export-nudge"><h2>${ic('save')} ${tr('Pense à sauvegarder ta progression')}</h2><p class="sub" style="margin:0 0 8px">${tr("Sans compte, ta progression n'est que sur cet appareil. Elle est perdue si tu effaces les données du navigateur ou si tu changes de téléphone. Dernière sauvegarde : il y a {n} jours.", {n: d})}</p>
     <div class="row"><button class="pri" data-act="export">${tr('Exporter maintenant')}</button><button data-act="export-later">${tr('Plus tard')}</button></div></div>`;
@@ -240,7 +250,7 @@ function tabHome(){
   <div class="hero"><div class="logo"><span class="lg">تثبيت</span></div><div><h1>Tathbīt</h1><p class="tag">${me ? esc(me.user.email) + ' ' + roleChips() : tr('Que ta mémorisation soit bénie.')}</p></div></div>
   ${homeNotice ? `<div class="fb ok" role="status">${esc(homeNotice)}</div>` : ''}
   ${remOfferHtml()}
-  ${exportNudgeHtml()}
+  ${iosNudgeHtml()}${exportNudgeHtml()}
   ${cloudOn() && !me ? `<div class="card note"><h2>${tr('Sauvegarde ta progression')}</h2><p class="sub" style="margin:0 0 8px">${tr('Crée un compte gratuit pour retrouver tes séries, tes erreurs et ton historique sur tous tes appareils.')}</p>
     <div class="row"><button class="pri" data-act="acc-open" data-v="signup">${tr('Créer un compte')}</button><button data-act="acc-open" data-v="login">${tr('Se connecter')}</button></div></div>` : ''}
 
@@ -597,6 +607,7 @@ function tabTrain(){
 }
 
 /* -- Progrès : statistiques et carte -- */
+const progressSeg = cur => `<div class="seg tabs" style="margin:0 0 10px"><button class="${cur === 'progress' ? 'sel' : ''}" data-act="tab" data-v="progress" aria-pressed="${cur === 'progress'}">${tr('Statistiques')}</button><button class="${cur === 'errors' ? 'sel' : ''}" data-act="tab" data-v="errors" aria-pressed="${cur === 'errors'}">${tr('Erreurs')}${errors.length ? ' (' + errors.length + ')' : ''}</button></div>`;
 function tabProgress(){
   const tot = Object.values(stats).reduce((a, [o, k]) => [a[0] + o, a[1] + k], [0, 0]), answered = tot[0] + tot[1];
   const per = {};
@@ -605,6 +616,7 @@ function tabProgress(){
     .map(([s, [o, k]]) => [s, o / (o + k), o + k]).sort((a, b) => a[1] - b[1]).slice(0, 5);
   return `
   <h1>${tr('Progrès')}</h1>
+  ${progressSeg('progress')}
   <p class="sub">${tr('Où tu en es, sourate par sourate.')}</p>
   <div class="card">${answered ? `<div class="stat"><div><b>${Math.round(answered)}</b>${tr('réponses')}</div>
     <div><b>${Math.round(100 * tot[0] / answered)} %</b>${tr('réussite')}</div>
@@ -690,7 +702,7 @@ function tabSettings(){
     <button data-act="legal">${tr('Lire la confidentialité et les conditions')}</button></div>`,
   };
   const G = [['account', 'user', 'Compte', 'Connexion, rôle, mot de passe', ['account']], ['learn', 'cap', 'Apprentissage', 'Correction de la saisie, indices', ['corr', 'hints']],
-    ['audio', 'volume', 'Audio et rappels', 'Récitateur, objectif, audio hors ligne, rappels', ['audio', 'audioOff', 'remind']], ['display', 'palette', 'Affichage', 'Langue, taille du texte arabe, thème, accessibilité', ['lang', 'arsize', 'a11y']],
+    ['audio', 'volume', 'Audio et notifications', 'Récitateur, objectif, audio hors ligne, notifications et e-mails', ['audio', 'audioOff', 'remind']], ['display', 'palette', 'Affichage', 'Langue, taille du texte arabe, thème, accessibilité', ['lang', 'arsize', 'a11y']],
     ['data', 'database', 'Données', 'Exporter, importer, effacer', ['data']], ['help', 'info', 'Aide et infos', 'Mises à jour, contact, confidentialité, sources', ['app', 'contact', 'privacy', 'about']]];
   const plain = h => h.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').toLowerCase();
   const q = setQ.trim().toLowerCase(), grp = G.some(g => g[0] === cfg.setTab) || cfg.setTab === 'all' ? cfg.setTab : 'hub';   // « hub » : les 6 blocs d'un coup d'œil (par défaut)

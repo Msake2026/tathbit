@@ -1,6 +1,27 @@
 {
  "versions": [
   {
+   "v": 100,
+   "date": "2026-10-25",
+   "items": [
+    {
+     "id": "simplify",
+     "icon": "🧹",
+     "go": "appinfo",
+     "title": {
+      "fr": "Une application plus simple",
+      "en": "A simpler app",
+      "ar": "تطبيق أبسط"
+     },
+     "text": {
+      "fr": "Les erreurs s'affichent seulement par verset (la vue « Chronologie » double emploi est retirée), les exports CSV disparaissent (la sauvegarde JSON reste) et trois cartes d'infos deviennent une seule : « À propos et sources ».",
+      "en": "Mistakes are now shown per verse only (the duplicate “Timeline” view is gone), CSV exports are removed (the JSON backup stays) and three info cards become one: “About and sources”.",
+      "ar": "تُعرض الأخطاء الآن حسب الآية فقط (أُزيل عرض «التسلسل الزمني» المكرّر)، وأُزيلت صادرات CSV (يبقى النسخ الاحتياطي JSON)، وصارت ثلاث بطاقات معلومات بطاقة واحدة: «حول التطبيق والمصادر»."
+     }
+    }
+   ]
+  },
+  {
    "v": 99,
    "date": "2026-10-25",
    "items": [

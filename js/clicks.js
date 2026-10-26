@@ -42,6 +42,8 @@ const onClick = e => {
     case 'strengthen': { const W = weakNow().slice(0, 10); if (W.length) start(shuffle(W.map(w => pk(w.k)))); } break;
     case 'ics': exportIcs(); break;
     case 'export': exportData(); if (cfg.tab === 'home') home(); break;
+    case 'notif-go': settingsGo('audio', 'card-notif'); break;
+    case 'ios-later': store.set('tathbit.iosSnooze', Date.now() + 7 * 864e5); home(); break;
     case 'export-later': store.set('tathbit.exportSnooze', Date.now() + 7 * 864e5); home(); break;
     case 'import': $('impfile').click(); break;
     case 'addcustom': addCustom(); break;

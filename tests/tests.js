@@ -618,6 +618,7 @@
     E("openAccount()"); await wait(500); ok($q('#tch-join') && !$q('#chat-thread'), 'rejoindre une classe : dans Mon compte');
     $q('#tch-join').value = 'badcode1'; clickAct('tch-join-go'); await wait(300); ok(appText().includes('Code invalide ou expiré.'), 'code de classe refusé');
     $q('#tch-join').value = 'classe22'; clickAct('tch-join-go'); await wait(300); ok(calls.includes('class_join {"p_code":"classe22"}') && appText().includes('Classe rejointe : prof@x.fr'), 'classe rejointe');
+    E("cfg.setTab = 'audio'; go('settings')"); await wait(200); ok(!!$q('#card-notif') && /Notifications/.test($q('#card-notif h2').textContent) && !!$q('#rem-time, [data-act="tile-install"], .ref'), 'Réglages › Audio et notifications : rappels et e-mails au même endroit');
     ok($q('#wk-on') && !$q('#wk-on').checked, 'résumé hebdomadaire : case décochée par défaut'); $q('#wk-on').checked = true; $q('#wk-on').dispatchEvent(new W.Event('change', {bubbles: true})); await wait(300);
     ok(calls.some(c => c === 'weekly_set {"p_on":true,"p_lang":"fr"}') && appText().includes('Résumé hebdomadaire activé.'), 'résumé hebdomadaire activé');
     E("cfg.theme = 'dark'; applyTheme()"); eq(D.documentElement.dataset.theme, 'dark', 'thème sombre forcé'); E("cfg.theme = 'light'; applyTheme()"); eq(D.documentElement.dataset.theme, 'light'); E("delete cfg.theme; applyTheme()"); ok(!D.documentElement.dataset.theme, 'thème automatique');
@@ -918,7 +919,7 @@
     E("store.set('tathbit.newsSeen', null); stats = {}; days = {}; news = null; newsAt = 0"); await E("loadNews(true)"); E("go('home')"); ok(!$q('#news-slot .upd'), 'premier lancement (rien encore révisé) : pas de carte « Nouveautés »');
     W.fetch = f0;
     // préférence e-mail
-    E("tch.upd = undefined"); ok(/id="upd-mail" checked/.test(E("wkCard()")), 'e-mail « nouvelle version » activé par défaut'); E("tch.upd = false"); ok(!/id="upd-mail" checked/.test(E("wkCard()")), 'désactivé : case décochée');
+    E("tch.upd = undefined"); ok(/id="upd-mail" checked/.test(E("emailsInner()")), 'e-mail « nouvelle version » activé par défaut'); E("tch.upd = false"); ok(!/id="upd-mail" checked/.test(E("emailsInner()")), 'désactivé : case décochée');
     E("updToggle(true)"); await wait(150); ok(calls.includes('updates_set {"p_on":true}') && E('tch.upd') === true, 'préférence enregistrée');
     // annonce par l'administrateur
     E("me = {user: {id: 'ad', email: 'adm@x.fr'}, profile: {role: 'admin'}}; adm = {users: [], q: '', detail: null, msg: '', reqs: [], anns: [{version: 87, label: 'v87', note: null, created_at: '', fanout_at: '2026-10-24', mail_done_at: null, mails: 12}]}; confirm = () => true; sb.rpc = async (n, a) => { window.__u.push(n + ' ' + JSON.stringify(a || {})); return {data: n === 'admin_announcements' ? [] : [], error: null}; }; renderAdmin()");
@@ -943,7 +944,7 @@
     clickAct('set-grp', 'account'); ok($q('.setnav') && $q('.setnav [data-v="hub"]') && !$q('.sethub') && !$q('#srec') && !$q('#sth'), 'Compte : bouton « Les 6 blocs » en haut, rien des autres blocs');
     clickAct('set-grp', 'hub'); eq(tiles().length, 6, 'retour aux 6 blocs');
     openG('learn'); ok($q('[data-act="corr"]') && $q('[data-act="show"]') && !$q('#srec'), 'Apprentissage : correction et indices');
-    openG('audio'); ok($q('#srec') && $q('#sgoal') && !$q('[data-act="corr"]'), 'Audio et rappels : récitateur, objectif');
+    openG('audio'); ok($q('#srec') && $q('#sgoal') && !$q('[data-act="corr"]'), 'Audio et notifications : récitateur, objectif');
     openG('display'); ok($q('#sth') && $q('[data-act="lang"]') && !$q('#srec'), 'Affichage : langue, thème, accessibilité');
     openG('data'); ok($q('[data-act="export"]') && $q('[data-act="import"]') && !$q('#csv-kind'), 'Données : export et import (plus de CSV)');
     openG('help'); ok($q('[data-act="contact"]') && $q('[data-act="legal"]') && $q('[data-act="upd"]') && $$q('details.card').length === 1 && !$q('details.card[open]') && /But de l'application/.test($q('#card-about').textContent) && /D'où viennent les contenus/.test($q('#card-about').textContent) && /Coran : texte uthmani/.test($q('#card-about').textContent), 'Aide et infos : application, contact, confidentialité ; une seule carte « À propos et sources » repliée (but, origine des contenus, sources)');
@@ -1047,7 +1048,7 @@
     E("tch.addOpen = true"); ok(/id="tch-code"/.test(E("tabTeacher()")), 'le bouton ouvre le formulaire');
     // compte : e-mails et mot de passe avant tout ce qui concerne les enseignants ; confidentialité et suppression en dernier
     E(`me = {user: {id: 's1', email: 's@x.fr'}, profile: {role: 'user', created_at: '${iso(10)}'}}; sb = {auth: {}, from(){ return {select(){ return Promise.resolve({data: [], error: null}); }}; }, async rpc(){ return {data: [], error: null}; }}; renderAccount()`);
-    const hs = $$q('#app h2').map(x => x.textContent.trim()); ok(hs.indexOf('Mes e-mails') > 0 && hs.indexOf('Mes e-mails') < hs.indexOf('Mot de passe') && hs.indexOf('Mot de passe') < hs.indexOf('Mon enseignant') && hs.indexOf('Mon enseignant') < hs.indexOf('Confidentialité'), 'compte : ' + hs.join(' › '));
+    const hs = $$q('#app h2').map(x => x.textContent.trim()); ok(hs.indexOf('Notifications') > 0 && hs.indexOf('Notifications') < hs.indexOf('Mot de passe') && hs.indexOf('Mot de passe') < hs.indexOf('Mon enseignant') && hs.indexOf('Mon enseignant') < hs.indexOf('Confidentialité'), 'compte : ' + hs.join(' › '));
     // admin : demandes en premier, annonce repliable (ouverte si la version n'est pas annoncée), actions sur un compte rangées
     E(`me = {user: {id: 'a1', email: 'a@x.fr'}, profile: {role: 'admin', created_at: '${iso(50)}'}}; adm.users = [{id: 'a1', email: 'a@x.fr', role: 'admin', blocked: false, created_at: '${iso(50)}', last_seen: '${iso(0)}', answers: 5, ok: 4, errors: 1}, {id: 'u2', email: 'u@x.fr', role: 'user', blocked: false, created_at: '${iso(9)}', last_seen: '${iso(3)}', answers: 50, ok: 30, errors: 7}]; adm.reqs = [{user_id: 'u9', email: 'c@x.fr', created_at: '${iso(1)}'}]; adm.anns = [{label: 'v1', fanout_at: '${iso(1)}', mail_done_at: '${iso(1)}', mails: 2}]; adm.detail = null; adm.q = ''; renderAdmin()`);
     const ah = $$q('#app h2').map(x => x.textContent.trim()); ok(ah[0] === "Demandes d'enseignant" && /^Annoncer une nouvelle version/.test(ah[1]) && ah.indexOf('Surveillance des e-mails') > 1, 'admin : ' + ah.join(' › '));
@@ -1064,6 +1065,39 @@
     ok(E("typeof exportCsv") === 'undefined' && E("typeof csvRows") === 'undefined', 'le code des exports CSV est retiré');
     E("cfg.setTab = 'help'; go('settings')"); eq($$q('details.card').length, 1, 'une seule carte repliable'); ok(!!$q('#card-about'), '« À propos et sources »');
     E("cfg.setTab = 'hub'; errors = []; stats = {}"); noErr('simplifications');
+  });
+  test('Barre du bas : 5 onglets, Erreurs dans Progrès, enseignant = onglet Enseignant seul, élève = onglet Élève seul', async () => {
+    reset("stats = {'112:1': [3, 1]}; errors = [{t: Date.now(), k: '112:1', m: 'next', sc: 0}]"); const tabs = () => $$q('#nav [data-act="tab"]').map(b => b.dataset.v).join(','), sel = () => $$q('#nav button.sel').map(b => b.dataset.v).join(',');
+    E("go('home')"); eq(tabs(), 'home,plan,train,progress,settings', 'simple utilisateur : 5 onglets, plus d’onglet Erreurs');
+    clickAct('tab', 'progress'); ok($$q('.seg.tabs [data-act="tab"]').map(b => b.dataset.v).join() === 'progress,errors' && /Erreurs \(1\)/.test($q('.seg.tabs').textContent), 'Progrès : bascule Statistiques / Erreurs (1)');
+    clickAct('tab', 'errors'); eq(E('cfg.tab'), 'errors', 'la bascule ouvre les erreurs'); eq(sel(), 'progress', 'l’onglet Progrès reste allumé'); ok(/Réviser les 1 versets les plus ratés|Réviser les/.test(appText()) || /1 erreur/.test(appText()), 'liste des erreurs');
+    E("go('home'); cfg.tab = 'errors'; go('errors')"); eq(E('cfg.tab'), 'errors', 'accès direct à Erreurs conservé (liens, tests, ancienne configuration)');
+    const iso = n => new Date(Date.now() - n * 864e5).toISOString();
+    E(`CLOUD.url = 'https://x.supabase.co'; CLOUD.anonKey = 'k'; authReady = true; sb = {auth: {}, from(){ return {select(){ const p = Promise.resolve({data: [], error: null}); p.is = () => ({gt: () => p}); return p; }}; }, async rpc(){ return {data: [], error: null}; }};`);
+    // élève (pas enseignant) : onglet Élève seul
+    E(`me = {user: {id: 's1', email: 's@x.fr'}, profile: {role: 'user', created_at: '${iso(9)}'}}; Object.assign(tch, {uid: 's1', loaded: true, links: [{other_id: 't1', email: 'p@x.fr', since: '${iso(5)}', as_role: 'teacher'}], goals: [], msgs: [], students: null}); cfg.tab = 'home'; go('home')`); eq(tabs(), 'home,plan,train,progress,student,settings', 'élève : onglet Élève, pas d’onglet Enseignant');
+    // enseignant qui est aussi élève d'un autre : seulement Enseignant
+    E(`me = {user: {id: 't9', email: 't@x.fr'}, profile: {role: 'teacher', created_at: '${iso(9)}'}}; Object.assign(tch, {uid: 't9', loaded: true, links: [{other_id: 't1', email: 'p@x.fr', since: '${iso(5)}', as_role: 'teacher'}], goals: [], msgs: [], students: [], classes: []}); cfg.tab = 'home'; go('home')`); eq(tabs(), 'home,plan,train,progress,teacher,settings', 'enseignant : onglet Enseignant seul (même s’il est aussi élève)');
+    E("cfg.tab = 'student'; tch.loaded = true; home()"); eq(tabs(), 'home,plan,train,progress,teacher,student,settings', 'arrivée depuis une notification d’élève : l’onglet Élève apparaît le temps de la visite'); E("go('home')"); eq(tabs(), 'home,plan,train,progress,teacher,settings', 'puis il disparaît');
+    // administrateur : ni l'un ni l'autre
+    E(`me = {user: {id: 'a1', email: 'a@x.fr'}, profile: {role: 'admin', created_at: '${iso(9)}'}}; cfg.tab = 'home'; go('home')`); eq(tabs(), 'home,plan,train,progress,settings', 'administrateur : ni Élève ni Enseignant');
+    for (const L of ['en', 'ar']){ E(`setLang('${L}'); go('progress')`); ok(!/undefined|NaN/.test(appText()) && $$q('.seg.tabs [data-act="tab"]').length === 2, 'Progrès en ' + L); E("go('errors')"); ok(!/undefined|NaN/.test(appText()), 'Erreurs en ' + L); eq(E('[...missingKeys]'), [], 'clés traduites (' + L + ')'); }
+    E("setLang('fr'); CLOUD.url = ''; CLOUD.anonKey = ''; me = null; sb = null; tch.uid = null; cfg.tab = 'home'; errors = []; stats = {}"); noErr('barre du bas');
+  });
+  test('iPhone sans installation ni compte : rappel renforcé (Safari efface les données d’un site délaissé) ; notifications réglées au même endroit', async () => {
+    reset("stats = {'112:1': [3, 1]}; store.set('tathbit.iosSnooze', 0); store.set('tathbit.exportSnooze', 0); store.set('tathbit.lastExport', 0); store.set('tathbit.firstUse', Date.now() - 60 * 864e5)");
+    E("IOS = false; go('home')"); ok(!$q('#ios-nudge'), 'pas d’iPhone : pas de carte iPhone'); ok(!!$q('#export-nudge'), '(hors iPhone, 60 jours sans export : rappel d’export classique)');
+    E("IOS = true; IS_STANDALONE = () => false; go('home')"); ok(!!$q('#ios-nudge') && /Garde ta progression sur iPhone/.test($q('#ios-nudge').textContent) && /Safari peut effacer/.test($q('#ios-nudge').textContent), 'iPhone dans Safari avec des données : carte « Garde ta progression »'); ok(!$q('#export-nudge'), 'une seule carte (le rappel d’export est inclus)');
+    ok(!!$q('#ios-nudge [data-act="tile-install"]') && !!$q('#ios-nudge [data-act="export"]'), 'boutons : installer, exporter'); clickAct('tile-install'); ok(/Installation/.test(appText()) && $$q('.inststeps svg').length === 3, 'le bouton ouvre le guide d’installation'); E("go('home')");
+    $q('#ios-nudge [data-act="ios-later"]').click(); ok(!$q('#ios-nudge') && E("store.get('tathbit.iosSnooze', 0)") > Date.now() + 6 * 864e5, '« Plus tard » : reporté de 7 jours');
+    E("store.set('tathbit.iosSnooze', 0); IS_STANDALONE = () => true; go('home')"); ok(!$q('#ios-nudge'), 'application installée : pas de carte');
+    E("IS_STANDALONE = () => false; stats = {}; go('home')"); ok(!$q('#ios-nudge'), 'aucune donnée : pas de carte'); E("stats = {'112:1': [3, 1]}; me = {user: {id: 'u', email: 'u@x.fr'}, profile: {role: 'user'}}; CLOUD.url = 'https://x.supabase.co'; authReady = true; go('home')"); ok(!$q('#ios-nudge'), 'avec un compte (données synchronisées) : pas de carte');
+    for (const L of ['en', 'ar']){ E(`me = null; CLOUD.url = ''; setLang('${L}'); go('home')`); ok(!!$q('#ios-nudge') && !/undefined|NaN/.test(appText()), 'carte iPhone en ' + L); eq(E('[...missingKeys]'), [], 'clés traduites (' + L + ')'); }
+    // notifications : tout dans Réglages › Audio et notifications ; Mon compte y renvoie
+    E(`IOS = false; setLang('fr'); me = {user: {id: 'u', email: 'u@x.fr'}, profile: {role: 'user', created_at: new Date().toISOString()}}; CLOUD.url = 'https://x.supabase.co'; CLOUD.anonKey = 'k'; authReady = true; sb = {auth: {}, from(){ return {select(){ return Promise.resolve({data: [], error: null}); }}; }, async rpc(){ return {data: [], error: null}; }}; renderAccount()`);
+    ok(/Régler mes notifications/.test(appText()) && !$q('#wk-on') && !$q('#upd-mail'), 'Mon compte : un renvoi, plus de cases à cocher dispersées'); clickAct('notif-go'); await wait(300);
+    eq(E('cfg.tab + ":" + cfg.setTab'), 'settings:audio', 'ouvre Réglages › Audio et notifications'); ok(!!$q('#card-notif.flash') && !!$q('#wk-on') && !!$q('#upd-mail') && /Rappels de révision/.test($q('#card-notif').textContent) && /E-mails/.test($q('#card-notif').textContent) && /cloche/.test($q('#card-notif').textContent), 'une carte : rappels, e-mails, et la cloche expliquée');
+    E("IOS = false; IS_STANDALONE = () => navigator.standalone === true || !!(window.matchMedia && matchMedia('(display-mode: standalone)').matches); CLOUD.url = ''; CLOUD.anonKey = ''; me = null; sb = null; tch.uid = null; cfg.setTab = 'hub'; stats = {}; store.set('tathbit.iosSnooze', 0); store.set('tathbit.firstUse', Date.now())"); noErr('iPhone et notifications');
   });
   test('Premier lancement : 3 écrans (le but, choisir ses sourates ou un matn, premier exercice) ; pas pour un utilisateur existant', async () => {
     reset(); E("store.set('tathbit.welcome', 0); go('home')"); ok(/Le but de Tathbīt/.test(appText()) && /1 \/ 3/.test(appText()) && /ḥifẓ/.test(appText()), 'écran 1 : le but (tathbīt, pas ḥifẓ)'); ok(!$q('#nav') || $q('#nav').hidden, 'pas de barre de menu pendant le guide');
