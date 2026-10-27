@@ -1,6 +1,27 @@
 {
  "versions": [
   {
+   "v": 102,
+   "date": "2026-10-27",
+   "items": [
+    {
+     "id": "class2",
+     "icon": "👥",
+     "go": "home",
+     "title": {
+      "fr": "Enseignant et élève : deux gros boutons clairs",
+      "en": "Teacher and student: two clear buttons",
+      "ar": "معلّم وطالب: زرّان واضحان"
+     },
+     "text": {
+      "fr": "Si tu es à la fois enseignant et élève, un seul onglet « Classe » s'ouvre sur deux grands boutons explicites : « Enseignant · mes élèves » et « Élève · mon enseignant, mes objectifs », avec les messages non lus.",
+      "en": "If you are both a teacher and a student, a single “Class” tab opens on two large explicit buttons: “Teacher · my students” and “Student · my teacher, my goals”, with unread messages.",
+      "ar": "إن كنت معلّمًا وطالبًا في آن واحد يفتح تبويب «الصف» الواحد على زرّين كبيرين واضحين: «معلّم · طلابي» و«طالب · معلّمي وأهدافي» مع الرسائل غير المقروءة."
+     }
+    }
+   ]
+  },
+  {
    "v": 101,
    "date": "2026-10-26",
    "items": [

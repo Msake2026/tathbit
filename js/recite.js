@@ -300,6 +300,57 @@ async function importFile(f){
   } catch { alert(tr('Fichier non reconnu : choisis une sauvegarde exportée depuis Tathbīt.')); }
 }
 
+/* OCRF:begin — lecture d'une page : ne garder que les vers (fonctions pures, testées en Node) */
+const OCR_AR = /[\u0621-\u064A\u066E-\u06D3\u06FA-\u06FF]/g, OCR_DIG = /^[\s\d\u0660-\u0669\u06F0-\u06F9()\[\]{}.\-–—:،,؛;|*]+$/;
+const ocrAr = s => (String(s).match(OCR_AR) || []).length;
+const ocrMedian = a => { const b = a.slice().sort((x, y) => x - y), n = b.length; return n ? (n % 2 ? b[(n - 1) / 2] : (b[n / 2 - 1] + b[n / 2]) / 2) : 0; };
+/* Ordonnée (en pixels) du filet qui sépare le texte des notes de bas de page : une rangée de pixels foncés sur au moins 22 % de la largeur, fine, dans la moitié basse. g = niveaux de gris, w × h. null s'il n'y en a pas. */
+function ocrRuleY(g, w, h){
+  const rows = [];
+  for (let y = Math.floor(h * 0.35); y < h * 0.97; y++){
+    let run = 0, best = 0; const o = y * w;
+    for (let x = 0; x < w; x++){ if (g[o + x] < 130){ run++; if (run > best) best = run; } else run = 0; }
+    if (best >= w * 0.22) rows.push(y);
+  }
+  if (!rows.length) return null;
+  const groups = []; let s = rows[0], p = rows[0];
+  for (let i = 1; i < rows.length; i++){ if (rows[i] - p > 2){ groups.push([s, p]); s = rows[i]; } p = rows[i]; }
+  groups.push([s, p]);
+  const f = groups.find(([a, b]) => b - a + 1 <= Math.max(10, h * 0.012));   // un filet est fin ; un bloc épais est du texte ou une image
+  return f ? Math.round((f[0] + f[1]) / 2) : null;
+}
+/* lines : [{text, x0, y0, x1, y1, words?: [{text, x0, x1}]}] ; o : {notes: false pour tout garder, ruleY, titles: false}.
+   Écarte : les lignes sans texte arabe (numéros de page, mots latins), les notes (caractères nettement plus petits que ceux des vers, numéro d'appel « (1) », sous le filet) et les titres de chapitres.
+   Les deux hémistiches d'un vers (grand blanc au milieu de la ligne ; o.sep: false pour de la prose) sont séparés par « * ». Renvoie {text, kept, dropped: [{text, why}]}. */
+function ocrFilter(lines, o = {}){
+  const L = (lines || []).filter(l => l && typeof l.text === 'string'), kept = [], dropped = [], strict = o.notes !== false;
+  const AR = L.filter(l => ocrAr(l.text) >= 2);
+  L.forEach(l => { if (ocrAr(l.text) < 2 && l.text.trim()) dropped.push({text: l.text.trim(), why: 'num'}); });
+  const hs = AR.map(l => l.y1 - l.y0).filter(h => h > 0).sort((a, b) => b - a), H = hs.length ? ocrMedian(hs.slice(0, Math.max(1, Math.ceil(hs.length * 0.6)))) : 0;   // hauteur « normale » d'un vers : médiane des 60 % de lignes les plus hautes
+  let below = new Set();
+  if (strict && o.ruleY != null){ const b = AR.filter(l => l.y0 > o.ruleY), a = AR.length - b.length; if (b.length && a >= 2 && b.length <= 0.6 * a) below = new Set(b); }   // filet décoratif au milieu des vers : on ne coupe pas
+  for (const l of AR){
+    const h = l.y1 - l.y0, t = l.text.replace(/\s+/g, ' ').trim(), nw = t.split(' ').length;
+    if (strict){
+      const small = H > 0 && h > 0 && h < 0.72 * H, marker = /^[\(\[{]?\s*[\d\u0660-\u0669\u06F0-\u06F9]{1,3}\s*[\)\]}]/.test(t);
+      if (small || below.has(l) || (marker && (H > 0 && h < 0.9 * H))){ dropped.push({text: t, why: 'note'}); continue; }
+      if (o.titles !== false && nw <= 5 && /^(باب|فصل|كتاب|مقدمة|خاتمة|تنبيه|فائدة|تتمة)(\s|$)/.test(t.replace(/[\u064B-\u065F\u0670]/g, ''))){ dropped.push({text: t, why: 'titre'}); continue; }
+    }
+    let words = null;
+    if (l.words && l.words.length >= 2) words = l.words.filter(w => w && String(w.text).trim()).sort((a, b) => (b.x0 + b.x1) - (a.x0 + a.x1));   // arabe : on lit de droite à gauche
+    let out = t;
+    if (words && words.length >= 4 && o.sep !== false){
+      const gaps = []; for (let i = 0; i + 1 < words.length; i++) gaps.push(words[i].x0 - words[i + 1].x1);
+      const med = ocrMedian(gaps.filter(g => g > 0)), big = Math.max(...gaps), thr = Math.max(0.4 * (h > 0 ? h : 20), 2.2 * med);   // le blanc entre hémistiches : au moins 2,2 fois l'espace entre deux mots, et 0,4 fois la hauteur de ligne
+      if (big > thr && big > 0){ const k = gaps.indexOf(big); out = words.map((w, i) => String(w.text).trim() + (i === k ? ' *' : '')).join(' '); }
+      else out = words.map(w => String(w.text).trim()).join(' ');
+    }
+    out = out.split(' ').filter(w => !OCR_DIG.test(w) || w === '*').join(' ').replace(/\s+/g, ' ').trim();   // numéros de vers en tête ou en fin, signes isolés
+    if (ocrAr(out) >= 2) kept.push(out);
+  }
+  return {text: kept.join('\n'), kept, dropped};
+}
+/* OCRF:end */
 /* ---------- import d'un matn depuis une photo, un PDF ou un fichier Word : tout est lu DANS le navigateur ---------- */
 const loadScript = src => new Promise((res, rej) => {
   if (document.querySelector(`script[data-src="${src}"]`)) return res();
@@ -331,9 +382,39 @@ async function newOcr(){ // moteur de lecture de texte arabe (Tesseract), héber
     logger: m => { if (m.status === 'recognizing text') cmStatus(tr('Lecture du texte… {p} %', {p: Math.round(m.progress * 100)})); else cmStatus(tr('Préparation…')); }
   });
 }
-async function ocrImage(file){
-  const canvas = await imgToCanvas(file, 2400), w = await newOcr();
-  try { return (await w.recognize(canvas)).data.text; } finally { await w.terminate(); }
+function prepCanvas(c){ // photo : on efface les ombres et le fond inégal (division par le fond estimé sur une image réduite), le texte ressort plus nettement pour le moteur de lecture
+  try {
+    const w = c.width, h = c.height, k = Math.max(2, Math.round(Math.max(w, h) / 90)), sm = document.createElement('canvas');
+    sm.width = Math.max(1, Math.round(w / k)); sm.height = Math.max(1, Math.round(h / k)); sm.getContext('2d').drawImage(c, 0, 0, sm.width, sm.height);
+    const bg = document.createElement('canvas'); bg.width = w; bg.height = h; const bx = bg.getContext('2d'); bx.imageSmoothingEnabled = true; bx.imageSmoothingQuality = 'high'; bx.drawImage(sm, 0, 0, w, h);
+    const a = c.getContext('2d').getImageData(0, 0, w, h), b = bx.getImageData(0, 0, w, h), A = a.data, B = b.data;
+    for (let i = 0; i < A.length; i += 4){
+      const g = 0.299 * A[i] + 0.587 * A[i + 1] + 0.114 * A[i + 2], f = 0.299 * B[i] + 0.587 * B[i + 1] + 0.114 * B[i + 2] + 8, v = Math.max(0, Math.min(255, 255 * g / (f * 1.05)));
+      A[i] = A[i + 1] = A[i + 2] = v < 90 ? v * 0.7 : v;   // le texte s'assombrit un peu, le papier reste blanc
+    }
+    const o = document.createElement('canvas'); o.width = w; o.height = h; o.getContext('2d').putImageData(a, 0, 0); return o;
+  } catch { return c; }   // mémoire insuffisante : on lit l'image telle quelle
+}
+function ocrGray(c){ // image réduite en niveaux de gris, pour repérer le filet des notes
+  const k = Math.min(1, 1100 / c.width), w = Math.max(1, Math.round(c.width * k)), h = Math.max(1, Math.round(c.height * k)), s = document.createElement('canvas'); s.width = w; s.height = h;
+  const x = s.getContext('2d'); x.drawImage(c, 0, 0, w, h); const d = x.getImageData(0, 0, w, h).data, g = new Uint8Array(w * h);
+  for (let i = 0; i < g.length; i++) g[i] = d[i * 4];
+  return {g, w, h, k};
+}
+const cmOpt = () => ({notes: !$('cm-notes') || $('cm-notes').checked, sep: !$('cm-kind') || $('cm-kind').value !== 'prose'});   // « * » entre les hémistiches seulement pour un poème
+let cmIgnored = [];   // lignes écartées pendant la lecture (affichées pour vérification)
+async function ocrCanvas(w, canvas, label){ // lit une page et ne garde que les vers
+  const data = (await w.recognize(canvas)).data, o = cmOpt();
+  const lines = (data.lines || []).map(l => ({text: l.text || '', x0: l.bbox.x0, y0: l.bbox.y0, x1: l.bbox.x1, y1: l.bbox.y1, words: (l.words || []).map(x => ({text: x.text, x0: x.bbox.x0, x1: x.bbox.x1}))}));
+  if (!lines.length) return data.text || '';
+  let ruleY = null; if (o.notes){ const r = ocrGray(canvas), y = ocrRuleY(r.g, r.w, r.h); if (y != null) ruleY = y / r.k; }
+  const f = ocrFilter(lines, {notes: o.notes, ruleY, sep: o.sep});
+  f.dropped.forEach(d => cmIgnored.push({...d, from: label || ''}));
+  return f.text;
+}
+async function ocrImage(file, label){
+  const canvas = prepCanvas(await imgToCanvas(file, 2400)), w = await newOcr();
+  try { return await ocrCanvas(w, canvas, label); } finally { await w.terminate(); }
 }
 async function readPdf(file){
   if (!window.pdfjsLib){ cmStatus(tr('Chargement du lecteur PDF…')); await loadScript('vendor/pdfjs/pdf.min.js'); pdfjsLib.GlobalWorkerOptions.workerSrc = absUrl('vendor/pdfjs/pdf.worker.min.js'); }
@@ -361,7 +442,7 @@ async function readPdf(file){
       for (let i = a; i <= b; i++){
         cmStatus(tr('Lecture de la page {a} / {b} (image)…', {a: i, b}));
         const page = await pdf.getPage(i), vp = page.getViewport({scale: 2.2}), c = document.createElement('canvas'); c.width = vp.width; c.height = vp.height;
-        await page.render({canvasContext: c.getContext('2d'), viewport: vp}).promise; all.push((await w.recognize(c)).data.text);
+        await page.render({canvasContext: c.getContext('2d'), viewport: vp}).promise; all.push(await ocrCanvas(w, prepCanvas(c), tr('Page {n}', {n: i})));
       }
     } finally { await w.terminate(); }
     text = all.join('\n');
@@ -404,6 +485,7 @@ const fileKind = f => { const n = f.name || '', t = f.type || '';
   return t.startsWith('image/') || /\.(jpe?g|png|webp|heic|heif|bmp|gif)$/i.test(n) ? 'img' : t === 'application/pdf' || /\.pdf$/i.test(n) ? 'pdf'
     : /\.docx$/i.test(n) || t.includes('wordprocessingml') ? 'docx' : /\.doc$/i.test(n) ? 'doc' : t.startsWith('text/') || /\.txt$/i.test(n) ? 'txt' : null; };
 const cmName = f => f.name || tr('photo');
+const cmLabels = () => { let n = 0; return new Map(cmQueue.map(f => [f, fileKind(f) === 'img' ? tr('Image {n}', {n: ++n}) : cmName(f)])); };   // les photos s'appellent « Image 1, Image 2… » dans l'ordre de la liste (l'appareil photo donne le même nom à chacune)
 function queueAdd(files){ // on ajoute les parties à une liste ordonnée : elles seront lues l'une après l'autre
   const msgs = [];
   for (const f of files){
@@ -419,20 +501,21 @@ function queueAdd(files){ // on ajoute les parties à une liste ordonnée : elle
 }
 function queueHtml(){
   if (!cmQueue.length) return '';
+  const lab = cmLabels();
   const b = (act, i, label, txt) => `<button type="button" class="link" data-act="${act}" data-v="${i}" aria-label="${label}">${txt}</button>`;
   return `<p class="ref" style="margin:8px 0 4px"><b>${tr("Parties à lire, dans l'ordre")}</b></p>` + cmQueue.map((f, i) =>
-    `<div class="weak" style="align-items:center"><span>${i + 1}. ${esc(cmName(f))} <span class="ref">(${mb(f.size)} ${tr('Mo')})</span></span><span>${b('cm-up', i, tr('Monter'), '↑')}${b('cm-down', i, tr('Descendre'), '↓')}${b('cm-rm', i, tr('Retirer'), '✕')}</span></div>`).join('')
+    `<div class="weak" style="align-items:center"><span>${i + 1}. ${esc(lab.get(f))} <span class="ref">(${mb(f.size)} ${tr('Mo')})</span></span><span>${b('cm-up', i, tr('Monter'), '↑')}${b('cm-down', i, tr('Descendre'), '↓')}${b('cm-rm', i, tr('Retirer'), '✕')}</span></div>`).join('')
     + `<div class="row" style="margin-top:8px"><button type="button" class="pri" data-act="cm-run">${tr("Lire ces parties dans l'ordre")}</button><button type="button" data-act="cm-qclear">${tr('Vider la liste')}</button></div>`;
 }
 function renderQueue(){ const el = $('cm-queue'); if (el) el.innerHTML = queueHtml(); }
-async function extractText(f){
+async function extractText(f, label){
   const k = fileKind(f);
-  const text = k === 'img' ? await ocrImage(f) : k === 'pdf' ? await readPdf(f) : k === 'docx' ? await readDocx(f) : await f.text();
+  const text = k === 'img' ? await ocrImage(f, label) : k === 'pdf' ? await readPdf(f) : k === 'docx' ? await readDocx(f) : await f.text();
   const t = cleanText(text);
   if (!t) throw new Error(tr('Aucun texte trouvé dans ce fichier.'));
   return t;
 }
-function appendMatnText(text, name){ // ajoute la partie à la suite du texte, dans l'ordre
+function appendMatnText(text, name){   // name : nom du fichier pour proposer un titre (jamais pour une photo : l'appareil les nomme toutes « image ») // ajoute la partie à la suite du texte, dans l'ordre
   const ta = $('cm-text'), old = ta.value.trim(), have = old ? old.split('\n').length : 0, add = text.split('\n').length;
   if (have + add > CM.lines) throw new Error(tr('Ce matn devient trop long ({n} lignes, maximum {m}). Enregistre-le, puis crée un second matn pour la suite.', {n: have + add, m: CM.lines}));
   cmHist.push(ta.value); if (cmHist.length > 30) cmHist.shift();
@@ -443,19 +526,27 @@ function appendMatnText(text, name){ // ajoute la partie à la suite du texte, d
 }
 async function runQueue(){
   if (!cmQueue.length) return;
-  const n0 = cmQueue.length; let done = 0, last = null;
+  const n0 = cmQueue.length; let done = 0, last = null; const lab = cmLabels(); cmIgnored = [];
   cmBusy(true);
   try {
     while (cmQueue.length){
-      const f = cmQueue[0];
-      cmStatus(tr('Partie {i} / {n} : {name}…', {i: done + 1, n: n0, name: cmName(f)}));
-      try { last = appendMatnText(await extractText(f), f.name); }
-      catch (e){ cmStatus(tr("Import arrêté à « {name} » : {msg}", {name: cmName(f), msg: e && e.message ? e.message : tr('Lecture impossible.')}) + (done ? ' ' + tr('Les parties précédentes ont été ajoutées.') : '')); return; }
+      const f = cmQueue[0], nm = lab.get(f);
+      cmStatus(tr('Partie {i} / {n} : {name}…', {i: done + 1, n: n0, name: nm}));
+      try { last = appendMatnText(await extractText(f, nm), fileKind(f) === 'img' ? '' : f.name); }
+      catch (e){ cmStatus(tr("Import arrêté à « {name} » : {msg}", {name: nm, msg: e && e.message ? e.message : tr('Lecture impossible.')}) + (done ? ' ' + tr('Les parties précédentes ont été ajoutées.') : '')); return; }
       cmQueue.shift(); done++; renderQueue();
     }
     cmStatus(tr("Texte lu : vérifie-le et corrige-le avant d'enregistrer.") + (last ? ' ' + trp(last.total, '{n} ligne au total.|{n} lignes au total.') : '')
       + '\n⚠️ ' + tr("Vérifie que le texte est bien dans l'ordre du matn, de la première à la dernière ligne, surtout entre les parties importées : rien ne doit manquer ni se répéter."), true);
-  } finally { cmBusy(false); renderQueue(); }
+  } finally { cmBusy(false); renderQueue(); renderIgnored(); }
+}
+function renderIgnored(){ // ce que la lecture a écarté, pour que la personne puisse vérifier (et recopier une ligne écartée à tort)
+  const el = $('cm-ignored'); if (!el) return;
+  if (!cmIgnored.length){ el.innerHTML = ''; return; }
+  const why = {note: tr('note de bas de page'), titre: tr('titre de chapitre'), num: tr('numéro ou texte non arabe')};
+  el.innerHTML = `<details class="card" style="margin:8px 0 0"><summary>${trp(cmIgnored.length, '{n} ligne ignorée (notes, titres, numéros)|{n} lignes ignorées (notes, titres, numéros)')}</summary>
+    ${cmIgnored.slice(0, 80).map(d => `<p class="ref" style="margin:6px 0 0"><b>${esc(d.from)}</b> · ${why[d.why] || ''}<br><span class="ar" dir="rtl" lang="ar" style="font-size:1.05rem;display:block;line-height:1.7;padding:0">${esc(d.text)}</span></p>`).join('')}
+    <p class="ref" style="margin:8px 0 0">${tr("Si une ligne de vers a été écartée à tort, décoche « Ignorer les notes… » et relis la photo, ou recopie-la dans le texte.")}</p></details>`;
 }
 
 /* ---------- mes moutoun ---------- */

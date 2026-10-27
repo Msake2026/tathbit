@@ -1,4 +1,5 @@
 // Lance la suite de tests de l'application dans ton Chrome, sans rien installer : node tests/run-local.mjs [--fast]
+//   --only "texte" : lance seulement le test dont le titre contient ce texte.
 //   --fast : saute les tests lents (audit d'accessibilité, audio réel sur le réseau) ; pour les essais en cours de route.
 //   (sans option) : suite complète, à lancer avant chaque envoi (tools/release.py le fait).
 // Chrome : variable CHROME si besoin (par défaut celui de macOS). Un petit serveur local est démarré tout seul. Node 22 ou plus.
@@ -9,7 +10,7 @@ import { tmpdir } from 'node:os';
 import { join, extname, normalize, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const root = resolve(fileURLToPath(new URL('..', import.meta.url))), fast = process.argv.includes('--fast');
+const root = resolve(fileURLToPath(new URL('..', import.meta.url))), fast = process.argv.includes('--fast'), onlyI = process.argv.indexOf('--only'), only = onlyI > 0 ? process.argv[onlyI + 1] : '';   // --only « texte » : un seul test (mise au point)
 const CHROME = process.env.CHROME || '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
 const MIME = {'.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.json': 'application/json', '.css': 'text/css', '.svg': 'image/svg+xml', '.png': 'image/png', '.woff2': 'font/woff2', '.webmanifest': 'application/manifest+json'};
 const server = createServer(async (req, res) => {
@@ -30,11 +31,12 @@ const page = list.find(t => t.type === 'page'); if (!page){ console.error('Chrom
 const ws = new WebSocket(page.webSocketDebuggerUrl); await new Promise(r => { ws.onopen = r; });
 let id = 0; const pend = {}; ws.onmessage = m => { const d = JSON.parse(m.data); if (d.id && pend[d.id]) pend[d.id](d); };
 const send = (method, params = {}) => new Promise(r => { const i = ++id; pend[i] = r; ws.send(JSON.stringify({id: i, method, params})); });
-await send('Page.navigate', {url: `http://127.0.0.1:${port}/tests/${fast ? '?fast' : ''}`});
+await send('Page.navigate', {url: `http://127.0.0.1:${port}/tests/?${fast ? 'fast&' : ''}${only ? 'only=' + encodeURIComponent(only) : ''}`});
 const t0 = Date.now(), LIMIT = (+process.env.TEST_TIMEOUT || 900) * 1000; let R = null;
-while (Date.now() - t0 < LIMIT){ await sleep(1500); const r = await send('Runtime.evaluate', {expression: 'JSON.stringify(window.__result || null)', returnByValue: true}); const v = r.result && r.result.result && r.result.result.value; if (v && v !== 'null'){ R = JSON.parse(v); break; } }
+const sendT = (m, p, ms = 6000) => Promise.race([send(m, p), sleep(ms).then(() => null)]);   // une réponse perdue ne doit pas bloquer l'attente (arrivé une fois : tests terminés mais lanceur figé)
+while (Date.now() - t0 < LIMIT){ await sleep(1500); const r = await sendT('Runtime.evaluate', {expression: 'JSON.stringify(window.__result || null)', returnByValue: true}); const v = r && r.result && r.result.result && r.result.result.value; if (v && v !== 'null'){ R = JSON.parse(v); break; } }
 if (!R){   // bloqué : on dit où (dernier test terminé), ce qui désigne le test qui tourne ou qui boucle
-  const r = await send('Runtime.evaluate', {expression: "JSON.stringify([...document.querySelectorAll('#out li')].map(l => l.textContent.trim().slice(0, 110)))", returnByValue: true}).catch(() => null);
+  const r = await sendT('Runtime.evaluate', {expression: "JSON.stringify([...document.querySelectorAll('#out li')].map(l => l.textContent.trim().slice(0, 110)))", returnByValue: true}).catch(() => null);
   let L = []; try { L = JSON.parse(r.result.result.value); } catch { /* page figée */ }
   console.error(`Les tests n'ont pas fini en ${LIMIT / 1000} s. Terminés : ${L.length}. Dernier terminé : ${L[L.length - 1] || '(aucun)'}`);
   await done(2);

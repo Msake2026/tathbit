@@ -635,3 +635,52 @@ test('découpage : index.html charge js/*.js dans l’ordre, le service worker l
   for (const f of APP_FILES) { const s = read('js/' + f + '.js'); for (const m of s.matchAll(/\/\* (\w+):begin/g)) assert.ok(s.includes('/* ' + m[1] + ':end'), f + ' : repère ' + m[1] + ' coupé entre deux fichiers'); }
   assert.ok(html.split('\n').length < 120, 'index.html reste une coquille courte');
 });
+test('lecture de photos : seuls les vers sont gardés (notes, titres, numéros écartés), deux hémistiches séparés par « * », filet des notes repéré', () => {
+  const html = readApp(), c = html.slice(html.indexOf('/* OCRF:begin'), html.indexOf('/* OCRF:end */'));
+  const { ocrFilter, ocrRuleY, ocrAr } = new Function(c + '; return {ocrFilter, ocrRuleY, ocrAr};')();
+  const W = (t, x0, x1) => ({ text: t, x0, x1 });
+  // un vers : 2 hémistiches de 3 mots, grand blanc au milieu (arabe : de droite à gauche, donc x décroissant)
+  const vers = (y, a, b, big = 60) => ({ text: [...a, ...b].join(' '), x0: 100, x1: 900, y0: y, y1: y + big,
+    words: [W(a[0], 800, 900), W(a[1], 700, 790), W(a[2], 600, 690), W(b[0], 400, 490), W(b[1], 300, 390), W(b[2], 200, 290)] });
+  const note = (y, t) => ({ text: t, x0: 100, x1: 900, y0: y, y1: y + 28, words: t.split(' ').map((w, i) => W(w, 900 - i * 60, 850 - i * 60)) });
+  const L = [
+    { text: 'باب الطهارة', x0: 400, x1: 600, y0: 40, y1: 100 },
+    vers(130, ['قال', 'محمد', 'هو'], ['ابن', 'مالك', 'أحمد']), vers(210, ['ربي', 'الله', 'خير'], ['مالك', 'مصليا', 'على']), vers(290, ['النبي', 'المصطفى', 'وآله'], ['المستكملين', 'الشرفا', 'وسلم']),
+    { text: '12', x0: 450, x1: 480, y0: 560, y1: 590 },
+    note(700, '(1) هذا شرح للبيت الأول من المتن'), note(740, 'وفيه تفصيل في الكتب المطولة'), { text: 'Page 12', x0: 0, x1: 50, y0: 800, y1: 820 }];
+  const r = ocrFilter(L, { ruleY: 660 });
+  assert.equal(r.kept.length, 3, 'trois vers gardés : ' + JSON.stringify(r.kept));
+  assert.ok(r.kept.every(l => l.split(' * ').length === 2 && l.split(' * ').every(h => h.split(' ').length === 3)), 'chaque vers : deux hémistiches de trois mots séparés par « * » : ' + r.kept.join(' | '));
+  assert.equal(r.kept[0], 'قال محمد هو * ابن مالك أحمد'); assert.ok(!r.text.includes('شرح') && !r.text.includes('تفصيل') && !r.text.includes('الطهارة'), 'notes et titre absents');
+  const why = Object.fromEntries(r.dropped.map(d => [d.text, d.why])); assert.equal(why['باب الطهارة'], 'titre'); assert.equal(why['(1) هذا شرح للبيت الأول من المتن'], 'note'); assert.equal(why['12'], 'num'); assert.equal(why['Page 12'], 'num');
+  // sans filet : les notes sont quand même repérées par leur petite taille
+  const r2 = ocrFilter(L); assert.equal(r2.kept.length, 3, 'taille seule : trois vers'); assert.ok(!r2.text.includes('شرح'));
+  // « tout garder » : rien n'est écarté sauf ce qui n'est pas arabe
+  const r3 = ocrFilter(L, { notes: false }); assert.equal(r3.kept.length, 6, 'tout garder : titre, 3 vers, 2 notes = 6 lignes (seuls « 12 » et « Page 12 » sont écartés)');
+});
+test('lecture de photos : un filet décoratif au milieu des vers ne supprime pas les vers qui suivent ; vers numérotés ; pas de séparateur sans grand blanc', () => {
+  const html = readApp(), c = html.slice(html.indexOf('/* OCRF:begin'), html.indexOf('/* OCRF:end */'));
+  const { ocrFilter, ocrRuleY } = new Function(c + '; return {ocrFilter, ocrRuleY};')();
+  const ligne = (y, t, h = 60) => ({ text: t, x0: 100, x1: 900, y0: y, y1: y + h });
+  const L = [ligne(100, 'قال محمد هو ابن مالك'), ligne(180, 'احمد ربي الله خير مالك'), ligne(260, 'مصليا على النبي المصطفى'), ligne(340, 'وآله المستكملين الشرفا'), ligne(420, 'وأستعين الله في ألفية'), ligne(500, 'مقاصد النحو بها محوية')];
+  const r = ocrFilter(L, { ruleY: 230 });   // le filet est au milieu : plus de lignes dessous que dessus → ignoré
+  assert.equal(r.kept.length, 6, 'tous les vers gardés : ' + r.dropped.map(d => d.text).join(' | '));
+  assert.ok(r.kept.every(l => !l.includes('*')), 'pas de grand blanc : pas de séparateur');
+  const n = ocrFilter([ligne(100, '(١) قال محمد هو ابن مالك احمد ربي'), ligne(180, '٢ - مصليا على النبي المصطفى وآله')]);
+  assert.equal(n.kept.length, 2); assert.ok(n.kept.every(l => !/[\d٠-٩()]/.test(l)), 'numéros retirés : ' + n.kept.join(' | '));
+  // filet : image 100 × 100, une rangée noire sur 60 % de la largeur à y = 80
+  const g = new Uint8Array(100 * 100).fill(255); for (let x = 20; x < 80; x++) g[80 * 100 + x] = 0; assert.equal(ocrRuleY(g, 100, 100), 80);
+  const g2 = new Uint8Array(100 * 100).fill(255); for (let y = 50; y < 70; y++) for (let x = 10; x < 90; x++) g2[y * 100 + x] = 0; assert.equal(ocrRuleY(g2, 100, 100), null, 'un bloc épais n’est pas un filet');
+  assert.equal(ocrRuleY(new Uint8Array(100 * 100).fill(255), 100, 100), null);
+});
+test('lecture de photos : blanc discret entre hémistiches repéré ; prose sans séparateur', () => {
+  const html = readApp(), c = html.slice(html.indexOf('/* OCRF:begin'), html.indexOf('/* OCRF:end */'));
+  const { ocrFilter } = new Function(c + '; return {ocrFilter};')();
+  const W = (t, x0, x1) => ({ text: t, x0, x1 });
+  // mots de 90 px séparés par 14 px ; blanc entre hémistiches de 45 px ; hauteur de ligne 90
+  const l = { text: 'أ ب ج د ه و', x0: 0, x1: 900, y0: 0, y1: 90, words: [W('أب', 800, 890), W('جد', 696, 786), W('هو', 592, 682), W('زح', 443, 533), W('طي', 339, 429), W('كل', 235, 325)] };
+  assert.equal(ocrFilter([l, l, l]).kept[0].includes(' * '), true, 'blanc de 45 px (≈ 3 espaces) : séparateur');
+  assert.equal(ocrFilter([l], { sep: false }).kept[0].includes('*'), false, 'prose : pas de séparateur');
+  const serre = { ...l, words: l.words.map((w, i) => W(w.text, 800 - i * 104, 890 - i * 104)) };
+  assert.equal(ocrFilter([serre, serre]).kept[0].includes('*'), false, 'espaces réguliers : pas de séparateur');
+});

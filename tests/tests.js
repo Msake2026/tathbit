@@ -6,7 +6,8 @@
 
   const results = [], tests = [];
   const FAST = /[?&]fast\b/.test(location.search);   // « ?fast » : on saute les tests lents (audit d'accessibilité, audio réel sur le réseau) ; la suite complète reste obligatoire avant d'envoyer
-  const SLOW = /audit axe|\(réseau requis\)/;
+  const ONLY = new URLSearchParams(location.search).get('only');   // « ?only=texte » : ne lance que les tests dont le titre contient ce texte (mise au point)
+  const SLOW = /audit axe|\(réseau requis\)|lecture réelle/;
   const test = (name, fn) => tests.push({name, fn, slow: SLOW.test(name)});
   const fail = m => { throw new Error(m); };
   const ok = (c, m) => { if (!c) fail(m || 'condition fausse'); };
@@ -1111,6 +1112,28 @@
     eq(E('cfg.tab + ":" + cfg.setTab'), 'settings:audio', 'ouvre Réglages › Audio et notifications'); ok(!!$q('#card-notif.flash') && !!$q('#wk-on') && !!$q('#upd-mail') && /Rappels de révision/.test($q('#card-notif').textContent) && /E-mails/.test($q('#card-notif').textContent) && /cloche/.test($q('#card-notif').textContent), 'une carte : rappels, e-mails, et la cloche expliquée');
     E("IOS = false; IS_STANDALONE = () => navigator.standalone === true || !!(window.matchMedia && matchMedia('(display-mode: standalone)').matches); CLOUD.url = ''; CLOUD.anonKey = ''; me = null; sb = null; tch.uid = null; cfg.setTab = 'hub'; stats = {}; store.set('tathbit.iosSnooze', 0); store.set('tathbit.firstUse', Date.now())"); noErr('iPhone et notifications');
   });
+  test('Import d’un matn par photos : « Image 1, Image 2… » dans l’ordre, lecture réelle (moteur hébergé), seuls les vers gardés (lecture réelle)', async () => {
+    reset("cfg.scope = {type: 'matn', id: 'all'}; store.set('tathbit.welcome', 1)"); E("go('train')"); ok($q('#cm-text') && $q('#cm-notes') && $q('#cm-notes').checked, 'import : zone de texte et case « Ignorer les notes » cochée par défaut');
+    const d = W.document; await d.fonts.load('60px "Amiri Quran"'); await d.fonts.load('30px "Amiri Quran"');
+    const page = async (vers, notes, photo) => { const c = d.createElement('canvas'); c.width = 1400; c.height = 1000; const x = c.getContext('2d'); x.fillStyle = photo ? '#efe9dc' : '#fff'; x.fillRect(0, 0, 1400, 1000); x.fillStyle = '#111'; x.direction = 'rtl'; x.textAlign = 'right'; if (photo){ x.translate(700, 500); x.rotate(0.02); x.translate(-700, -500); x.filter = 'blur(0.9px)'; }
+      x.font = '64px "Amiri Quran"'; vers.forEach(([a, b], i) => { x.fillText(a, 1300, 120 + i * 120); x.fillText(b, 700, 120 + i * 120); });
+      x.fillRect(150, 700, 1100, 3); x.font = '30px "Amiri Quran"'; notes.forEach((n, i) => x.fillText(n, 1300, 780 + i * 56));
+      if (photo){ x.setTransform(1, 0, 0, 1, 0, 0); x.filter = 'none'; const g = x.createLinearGradient(0, 0, 1400, 0); g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(1, 'rgba(40,30,10,0.42)'); x.fillStyle = g; x.fillRect(0, 0, 1400, 1000); }   // photo : papier jaune, ombre qui grandit, petite inclinaison, flou léger
+      const blob = await new Promise(r => c.toBlob(r, 'image/jpeg', photo ? 0.7 : 0.92)); return new W.File([blob], 'image.jpg', {type: 'image/jpeg'}); };
+    const f1 = await page([['الشمس تشرق كل صباح', 'والقمر ينير ليل الدنيا'], ['البحر واسع وعميق جدا', 'والسفينة تمخر فيه بهدوء'], ['العلم نور في القلوب', 'والجهل ظلام ما يزول'], ['الصبر مفتاح الفرج', 'والشكر يزيد النعمة']], ['(1) هذه حاشية تشرح البيت الأول', '(2) وفي هذا الموضع كلام طويل للعلماء']);
+    const f2 = await page([['الكتاب خير جليس وأنيس', 'والصديق عون في الشدائد'], ['الوقت كالسيف إن لم تقطعه', 'قطعك وأنت في غفلة نائم'], ['من جد وجد ومن زرع حصد', 'ومن سار على الدرب وصل'], ['الأمل ينير درب الحياة', 'والعمل يبني ما نرجو']], ['(1) حاشية ثانية تتعلق بالصفحة الثانية'], true);
+    W.__f = [f1, f2]; E("cmQueue = []; queueAdd(window.__f)");
+    const labs = $$q('#cm-queue .weak > span:first-child').map(s => s.textContent.replace(/\s+/g, ' ').trim()); ok(/^1\. Image 1/.test(labs[0]) && /^2\. Image 2/.test(labs[1]) && !labs.some(l => /image\.jpg/.test(l)), 'les deux photos s’appellent « Image 1 » et « Image 2 » (pas « image.jpg ») : ' + labs.join(' | '));
+    clickAct('cm-down', '0'); const l2 = $$q('#cm-queue .weak > span:first-child').map(s => s.textContent.replace(/\s+/g, ' ').trim()); ok(/^1\. Image 1/.test(l2[0]) && /^2\. Image 2/.test(l2[1]), 'après un échange d’ordre, les numéros suivent la liste'); clickAct('cm-down', '0');
+    clickAct('cm-run'); for (let i = 0; i < 360 && !/Texte lu|arrêté/.test($q('#cm-status').textContent); i++) await wait(500);
+    const st = $q('#cm-status').textContent; ok(/Texte lu/.test(st), 'lecture terminée : ' + st.slice(0, 200));
+    const lines = $q('#cm-text').value.split('\n').filter(Boolean); const poems = lines.filter(l => l.includes(' * '));
+    ok(poems.length >= 6 && lines.length <= 10, 'au moins 6 des 8 vers lus avec leurs deux hémistiches séparés par « * » (' + poems.length + ' vers sur ' + lines.length + ' lignes) : ' + lines.slice(0, 3).join(' / '));
+    ok(!/حاشية|الموضع|للعلماء|تشرح/.test($q('#cm-text').value), 'aucune note dans le texte importé');
+    ok(E('cmIgnored.length') >= 2 && !!$q('#cm-ignored details') && /ignorée/.test($q('#cm-ignored').textContent) && E('cmIgnored.some(x => x.from === "Image 1")'), 'les notes écartées sont listées pour vérification, avec la photo d’origine : ' + E('cmIgnored.length'));
+    ok(!$q('#cm-title').value || !/image/i.test($q('#cm-title').value), 'le titre n’est pas « image »');
+    E("cmQueue = []; cmIgnored = []; $('cm-text').value = ''; $('cm-title').value = ''"); noErr('import par photos');
+  });
   test('Premier lancement : 3 écrans (le but, choisir ses sourates ou un matn, premier exercice) ; pas pour un utilisateur existant', async () => {
     reset(); E("store.set('tathbit.welcome', 0); go('home')"); ok(/Le but de Tathbīt/.test(appText()) && /1 \/ 3/.test(appText()) && /ḥifẓ/.test(appText()), 'écran 1 : le but (tathbīt, pas ḥifẓ)'); ok(!$q('#nav') || $q('#nav').hidden, 'pas de barre de menu pendant le guide');
     clickAct('wz-next'); ok(/Ce que tu veux consolider/.test(appText()) && /2 \/ 3/.test(appText()) && !!$q('#wz-from'), 'écran 2 : choix des sourates');
@@ -1263,7 +1286,7 @@
   const out = document.getElementById('out');
   for (const t of tests){
     let r; const t0 = performance.now();
-    if (FAST && t.slow) r = {name: t.name, ok: true, skipped: true, ms: 0};
+    if ((FAST && t.slow) || (ONLY && !t.name.includes(ONLY))) r = {name: t.name, ok: true, skipped: true, ms: 0};
     else try { await t.fn(); r = {name: t.name, ok: true, ms: Math.round(performance.now() - t0)}; } catch (e){ r = {name: t.name, ok: false, err: String(e && e.message || e), ms: Math.round(performance.now() - t0)}; }
     results.push(r);
     const li = document.createElement('li'); li.innerHTML = `<span class="${r.skipped ? 'mut' : r.ok ? 'ok' : 'ko'}">${r.skipped ? '⏭' : r.ok ? '✓' : '✗'}</span> ${r.name.replace(/</g, '&lt;')}` + (r.ok ? '' : `<pre class="ko"></pre>`);
