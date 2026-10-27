@@ -321,7 +321,8 @@ function ocrRuleY(g, w, h){
 }
 /* lines : [{text, x0, y0, x1, y1, words?: [{text, x0, x1}]}] ; o : {notes: false pour tout garder, ruleY, pageH, sep: false pour de la prose, titles: false}.
    Écarte : les lignes sans texte arabe (numéros de page, mots latins), les notes (caractères nettement plus petits que ceux des vers, numéro d'appel « (1) », ligne entre parenthèses, sous le filet),
-   les en-têtes (courtes lignes tout en haut de la page), les titres de chapitres, et tout ce qui est en MARGE : à gauche ou à droite de la colonne des vers (mots ou lignes hors de la colonne).
+   les en-têtes (courtes lignes tout en haut de la page) et tout ce qui est en MARGE : à gauche ou à droite de la colonne des vers (mots ou lignes hors de la colonne).
+   Les TITRES de chapitres (باب، فصل، كتاب، مقدمة، خاتمة) sont gardés, sur leur propre ligne précédée de « # ».
    Les deux hémistiches d'un vers (grand blanc au milieu de la ligne ; o.sep: false pour de la prose) sont séparés par « * ». Renvoie {text, kept, dropped: [{text, why}]}. */
 function ocrFilter(lines, o = {}){
   const L = (lines || []).filter(l => l && typeof l.text === 'string'), kept = [], dropped = [], strict = o.notes !== false;
@@ -331,6 +332,7 @@ function ocrFilter(lines, o = {}){
   let below = new Set();
   if (strict && o.ruleY != null){ const b = AR.filter(l => l.y0 > o.ruleY), a = AR.length - b.length; if (b.length && a >= 2 && b.length <= 0.6 * a) below = new Set(b); }   // filet décoratif au milieu des vers : on ne coupe pas
   const flat = t => t.replace(/\s+/g, ' ').trim(), nWords = t => flat(t).split(' ').length;
+  const isTitle = t => nWords(t) <= 6 && /^(ال)?(باب|فصل|كتاب|مقدمة|خاتمة)(\s|$)/.test(flat(t).replace(/^[#\s]+/, '').replace(/[\u064B-\u065F\u0670]/g, ''));   // titre de chapitre : il est gardé (« # titre »), car il range le matn en blocs
   const why = l => {   // pourquoi cette ligne n'est pas un vers (null : c'est un vers)
     const h = l.y1 - l.y0, t = flat(l.text), nw = nWords(t);
     if (o.pageH && l.y1 <= 0.08 * o.pageH && (nw <= 5 || (H > 0 && h < 0.85 * H))) return 'entete';       // titre courant tout en haut de la page
@@ -338,24 +340,41 @@ function ocrFilter(lines, o = {}){
     if (below.has(l)) return 'note';                                                                     // sous le filet des notes
     if (/^[\(\[{]?\s*[\d\u0660-\u0669\u06F0-\u06F9]{1,3}\s*[\)\]}]/.test(t) && H > 0 && h < 0.9 * H) return 'note';   // numéro d'appel « (1) »
     if (/^[\(\[{«]/.test(t) && /[\)\]}»]\s*[.،]?$/.test(t) && H > 0 && h < 0.95 * H) return 'note';  // ligne entre parenthèses : renvoi, précision
-    if (o.titles !== false && nw <= 5 && /^(باب|فصل|كتاب|مقدمة|خاتمة|تنبيه|فائدة|تتمة)(\s|$)/.test(t.replace(/[\u064B-\u065F\u0670]/g, ''))) return 'titre';
     return null;
   };
-  const verses = [];
-  for (const l of AR){ const w = strict ? why(l) : null; if (w) drop(l.text, w); else verses.push(l); }
-  // colonne des vers : bords médians des lignes de vers ; ce qui est en dehors (à gauche ou à droite) est une note de marge
+  const verses = [], titles = new Set();
+  for (const l of AR){ if (isTitle(l.text)){ titles.add(l); verses.push(l); continue; } const w = strict ? why(l) : null; if (w) drop(l.text, w); else verses.push(l); }
+  // 1) mots isolés au bord d'une ligne : un vers a deux hémistiches d'au moins trois mots ; un ou deux mots séparés du reste par le plus grand blanc sont une note collée au vers (marge)
+  const V = verses.map(l => {
+    const h = l.y1 - l.y0; let words = null;
+    if (!titles.has(l) && l.words && l.words.length >= 2) words = l.words.filter(w => w && String(w.text).trim()).sort((a, b) => (b.x0 + b.x1) - (a.x0 + a.x1));   // arabe : on lit de droite à gauche
+    if (strict && words && words.length >= 5){
+      for (let guard = 0; guard < 4 && words.length >= 5; guard++){
+        const gaps = []; for (let i = 0; i + 1 < words.length; i++) gaps.push(words[i].x0 - words[i + 1].x1);
+        const med = ocrMedian(gaps.filter(g => g > 0)), big = Math.max(...gaps), k = gaps.indexOf(big), right = k + 1, left = words.length - right;
+        if (!(big > Math.max(0.4 * (h > 0 ? h : 20), 2.2 * med))) break;
+        if (right <= 2 && left >= 4){ drop(words.slice(0, right).map(w => String(w.text).trim()).join(' '), 'marge'); words = words.slice(right); }
+        else if (left <= 2 && right >= 4){ drop(words.slice(right).map(w => String(w.text).trim()).join(' '), 'marge'); words = words.slice(0, right); }
+        else break;
+      }
+    }
+    const x0 = words && words.length ? Math.min(...words.map(w => w.x0)) : l.x0, x1 = words && words.length ? Math.max(...words.map(w => w.x1)) : l.x1;
+    return {l, words, x0, x1, h};
+  });
+  // 2) colonne des vers : bords médians des lignes de vers (sans les fragments de marge) ; une ligne ou des mots entièrement en dehors (à gauche ou à droite) sont des notes de marge
   let colL = null, colR = null, tol = 0;
-  if (strict && verses.length >= 3){
-    colL = ocrMedian(verses.map(l => l.x0)); colR = ocrMedian(verses.map(l => l.x1));
-    const hh = ocrMedian(verses.map(l => l.y1 - l.y0)); tol = Math.max(0.05 * (colR - colL), 0.6 * hh, 8);
+  const body = V.filter(v => !titles.has(v.l));
+  if (strict && body.length >= 3){
+    colL = ocrMedian(body.map(v => v.x0)); colR = ocrMedian(body.map(v => v.x1));
+    const hh = ocrMedian(body.map(v => v.h)); tol = Math.max(0.05 * (colR - colL), 0.6 * hh, 8);
     if (!(colR - colL > 4 * hh)) colL = colR = null;   // colonne trop étroite pour être fiable (texte très court) : pas de filtre de marge
   }
   const out = [];
-  for (const l of verses){
-    const h = l.y1 - l.y0, t = flat(l.text);
-    if (colL != null && (l.x1 < colL - tol || l.x0 > colR + tol)){ drop(t, 'marge'); continue; }   // ligne entière dans la marge
-    let words = null;
-    if (l.words && l.words.length >= 2) words = l.words.filter(w => w && String(w.text).trim()).sort((a, b) => (b.x0 + b.x1) - (a.x0 + a.x1));   // arabe : on lit de droite à gauche
+  for (const v of V){
+    const l = v.l, t = flat(l.text), h = v.h;
+    if (titles.has(l)){ out.push('# ' + t.replace(/^[#\s]+/, '')); continue; }   // titre : ligne à part, sans séparateur
+    if (colL != null && (v.x1 < colL - tol || v.x0 > colR + tol)){ drop(t, 'marge'); continue; }   // ligne entière dans la marge
+    let words = v.words;
     if (words && colL != null){
       const inside = words.filter(w => { const c = (w.x0 + w.x1) / 2; return c >= colL - tol && c <= colR + tol; });
       if (inside.length < words.length){ drop(words.filter(w => !inside.includes(w)).map(w => String(w.text).trim()).join(' '), 'marge'); words = inside; }
@@ -564,28 +583,37 @@ async function runQueue(){
 function renderIgnored(){ // ce que la lecture a écarté, pour que la personne puisse vérifier (et recopier une ligne écartée à tort)
   const el = $('cm-ignored'); if (!el) return;
   if (!cmIgnored.length){ el.innerHTML = ''; return; }
-  const why = {note: tr('note'), titre: tr('titre de chapitre'), num: tr('numéro ou texte non arabe'), entete: tr('en-tête'), marge: tr('note de marge')};
-  el.innerHTML = `<details class="card" style="margin:8px 0 0"><summary>${trp(cmIgnored.length, '{n} ligne ignorée (notes, titres, numéros)|{n} lignes ignorées (notes, titres, numéros)')}</summary>
+  const why = {note: tr('note'), num: tr('numéro ou texte non arabe'), entete: tr('en-tête'), marge: tr('note de marge')};
+  el.innerHTML = `<details class="card" style="margin:8px 0 0"><summary>${trp(cmIgnored.length, '{n} ligne ignorée (notes, numéros)|{n} lignes ignorées (notes, numéros)')}</summary>
     ${cmIgnored.slice(0, 80).map(d => `<p class="ref" style="margin:6px 0 0"><b>${esc(d.from)}</b> · ${why[d.why] || ''}<br><span class="ar" dir="rtl" lang="ar" style="font-size:1.05rem;display:block;line-height:1.7;padding:0">${esc(d.text)}</span></p>`).join('')}
     <p class="ref" style="margin:8px 0 0">${tr("Si une ligne de vers a été écartée à tort, décoche « Ignorer les notes… » et relis la photo, ou recopie-la dans le texte.")}</p></details>`;
 }
 
 /* ---------- mes moutoun ---------- */
+function cmVerse(l, kind){ // une ligne de texte -> un vers {t, m} (m : nombre de mots de la première moitié)
+  if (kind === 'poem'){
+    const parts = l.split(/\s*(?:\*|\/\/|\\\\)\s*/).map(x => x.trim()).filter(Boolean);
+    if (parts.length >= 2){ const h2 = parts.slice(1).join(' '); return {t: (parts[0] + ' ' + h2).replace(/\s+/g, ' '), m: parts[0].split(/\s+/).length}; }
+  }
+  const w = l.split(/\s+/); return {t: w.join(' '), m: splitPoint(w)};
+}
 function addCustom(){
   const title = $('cm-title').value.trim(), kind = $('cm-kind').value;
   const lines = $('cm-text').value.split('\n').map(s => s.trim()).filter(Boolean);
   if (!title || !lines.length) return alert(tr('Indique un titre et colle le texte.'));
   if (!confirm(cmImported ? tr('Tu as importé ce texte depuis des fichiers ou des photos : as-tu vérifié que les vers sont dans le bon ordre ?') : tr("Avant d'enregistrer : as-tu vérifié que les vers sont dans l'ordre du matn, sans oubli ni répétition ?"))) return;
   cmImported = false;
-  const a = lines.map(l => {
-    if (kind === 'poem'){
-      const parts = l.split(/\s*(?:\*|\/\/|\\\\)\s*/).map(x => x.trim()).filter(Boolean);
-      if (parts.length >= 2){ const h2 = parts.slice(1).join(' '); return {t: (parts[0] + ' ' + h2).replace(/\s+/g, ' '), m: parts[0].split(/\s+/).length}; }
-    }
-    const w = l.split(/\s+/); return {t: w.join(' '), m: splitPoint(w)};
-  });
+  const a = [], sec = []; let pend = '';
+  for (const l0 of lines){   // une ligne « # titre » (ou un titre court « باب… » sans séparateur) ouvre un bloc du matn ; elle n'est pas un vers
+    const tl = /^#/.test(l0) ? l0.replace(/^[#\s]+/, '') : (kind === 'poem' && l0.split(/\s+/).length <= 4 && !/\*|\/\/|\\\\/.test(l0) && /^(ال)?(باب|فصل|كتاب|مقدمة|خاتمة)(\s|$)/.test(l0.replace(/[\u064B-\u065F\u0670]/g, ''))) ? l0 : '';
+    if (tl){ pend = pend ? pend + ' — ' + tl : tl; continue; }
+    if (pend){ if (!sec.length && a.length) sec.push({ar: 'البداية', fr: 'Début', from: 1}); sec.push({ar: pend, fr: pend, from: a.length + 1}); pend = ''; }
+    a.push(cmVerse(l0, kind));
+  }
+  if (!a.length) return alert(tr('Indique un titre et colle le texte.'));
   const t = {id: 'u' + Date.now().toString(36), ar: title, fr: title, author: '', kind, unit: kind === 'poem' ? 'vers' : 'passage',
     source: {name: 'Saisi par toi', url: '', note: 'texte que tu as fourni : fais confiance à ton édition de référence'}, a, custom: true};
+  if (sec.length) t.sec = sec;
   custom.push(t); store.set('tathbit.custom', custom); MT[t.id] = t;
   cfg.scope = {type: 'matn', id: t.id}; saveCfg(); home();
 }

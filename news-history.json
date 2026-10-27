@@ -1,6 +1,27 @@
 {
  "versions": [
   {
+   "v": 104,
+   "date": "2026-10-27",
+   "items": [
+    {
+     "id": "photos3",
+     "icon": "📷",
+     "go": "train",
+     "title": {
+      "fr": "Photos de matn : en-têtes, notes et marges ignorés",
+      "en": "Mutun photos: headers, notes and margins ignored",
+      "ar": "صور المتون: تجاهل الترويسات والحواشي والهوامش"
+     },
+     "text": {
+      "fr": "La lecture écarte maintenant les titres courants en haut de la page, les notes entre les vers et celles des marges à gauche et à droite, en plus des notes du bas. La liste des lignes ignorées indique la raison de chacune.",
+      "en": "Reading now skips running headers at the top of the page, notes between verses and notes in the left and right margins, as well as footnotes. The list of ignored lines gives the reason for each.",
+      "ar": "تتجاهل القراءة الآن الترويسات في أعلى الصفحة والحواشي بين الأبيات وحواشي الهامشين الأيمن والأيسر إضافة إلى حواشي الأسفل. وتبيّن قائمة الأسطر المتجاهَلة سبب كل سطر."
+     }
+    }
+   ]
+  },
+  {
    "v": 103,
    "date": "2026-10-27",
    "items": [

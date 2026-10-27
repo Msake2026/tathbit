@@ -649,12 +649,12 @@ test('lecture de photos : seuls les vers sont gardés (notes, titres, numéros �
     { text: '12', x0: 450, x1: 480, y0: 560, y1: 590 },
     note(700, '(1) هذا شرح للبيت الأول من المتن'), note(740, 'وفيه تفصيل في الكتب المطولة'), { text: 'Page 12', x0: 0, x1: 50, y0: 800, y1: 820 }];
   const r = ocrFilter(L, { ruleY: 660 });
-  assert.equal(r.kept.length, 3, 'trois vers gardés : ' + JSON.stringify(r.kept));
-  assert.ok(r.kept.every(l => l.split(' * ').length === 2 && l.split(' * ').every(h => h.split(' ').length === 3)), 'chaque vers : deux hémistiches de trois mots séparés par « * » : ' + r.kept.join(' | '));
-  assert.equal(r.kept[0], 'قال محمد هو * ابن مالك أحمد'); assert.ok(!r.text.includes('شرح') && !r.text.includes('تفصيل') && !r.text.includes('الطهارة'), 'notes et titre absents');
-  const why = Object.fromEntries(r.dropped.map(d => [d.text, d.why])); assert.equal(why['باب الطهارة'], 'titre'); assert.equal(why['(1) هذا شرح للبيت الأول من المتن'], 'note'); assert.equal(why['12'], 'num'); assert.equal(why['Page 12'], 'num');
+  assert.equal(r.kept.length, 4, 'le titre et trois vers gardés : ' + JSON.stringify(r.kept)); assert.equal(r.kept[0], '# باب الطهارة', 'le titre est gardé, sur sa ligne, précédé de « # »');
+  assert.ok(r.kept.slice(1).every(l => l.split(' * ').length === 2 && l.split(' * ').every(h => h.split(' ').length === 3)), 'chaque vers : deux hémistiches de trois mots séparés par « * » : ' + r.kept.join(' | '));
+  assert.equal(r.kept[1], 'قال محمد هو * ابن مالك أحمد'); assert.ok(!r.text.includes('شرح') && !r.text.includes('تفصيل'), 'notes absentes');
+  const why = Object.fromEntries(r.dropped.map(d => [d.text, d.why])); assert.equal(why['باب الطهارة'], undefined, 'le titre n’est pas écarté'); assert.equal(why['(1) هذا شرح للبيت الأول من المتن'], 'note'); assert.equal(why['12'], 'num'); assert.equal(why['Page 12'], 'num');
   // sans filet : les notes sont quand même repérées par leur petite taille
-  const r2 = ocrFilter(L); assert.equal(r2.kept.length, 3, 'taille seule : trois vers'); assert.ok(!r2.text.includes('شرح'));
+  const r2 = ocrFilter(L); assert.equal(r2.kept.length, 4, 'taille seule : titre et trois vers'); assert.ok(!r2.text.includes('شرح'));
   // « tout garder » : rien n'est écarté sauf ce qui n'est pas arabe
   const r3 = ocrFilter(L, { notes: false }); assert.equal(r3.kept.length, 6, 'tout garder : titre, 3 vers, 2 notes = 6 lignes (seuls « 12 » et « Page 12 » sont écartés)');
 });
@@ -711,4 +711,36 @@ test('lecture de photos : en-tête du haut, notes entre les vers, notes de marge
   const par = ocrFilter([vers(200, ['قال', 'محمد', 'هو'], ['ابن', 'مالك', 'أحمد']), vers(300, ['ربي', 'الله', 'خير'], ['مالك', 'مصليا', 'على']), vers(400, ['قال', 'محمد', 'هو'], ['ابن', 'مالك', 'أحمد']), { text: '(انظر الباب السابق في الكتاب)', x0: 300, x1: 800, y0: 470, y1: 505 }]); assert.equal(par.kept.length, 3); assert.equal(par.dropped[0].why, 'note');
   // verset tout en haut mais long et de taille normale : gardé (pas pris pour un en-tête)
   const haut = ocrFilter([vers(20, ['قال', 'محمد', 'هو'], ['ابن', 'مالك', 'أحمد']), vers(120, ['ربي', 'الله', 'خير'], ['مالك', 'مصليا', 'على']), vers(220, ['قال', 'محمد', 'هو'], ['ابن', 'مالك', 'أحمد'])], { pageH: 1400 }); assert.equal(haut.kept.length, 3, 'des vers en haut de la page restent des vers');
+});
+test('lecture de photos : les titres de chapitres sont gardés (« # titre »), même tout en haut, petits ou en marge ; les en-têtes restent écartés', () => {
+  const html = readApp(), c = html.slice(html.indexOf('/* OCRF:begin'), html.indexOf('/* OCRF:end */'));
+  const { ocrFilter } = new Function(c + '; return {ocrFilter};')();
+  const W = (t, x0, x1) => ({ text: t, x0, x1 });
+  const vers = y => { const w = [W('قال', 760, 850), W('محمد', 660, 750), W('هو', 560, 650), W('ابن', 400, 490), W('مالك', 320, 390), W('أحمد', 250, 310)]; return { text: 'قال محمد هو ابن مالك أحمد', x0: 250, x1: 850, y0: y, y1: y + 60, words: w }; };
+  const r = ocrFilter([
+    { text: 'شرح المتن في الفقه', x0: 400, x1: 700, y0: 20, y1: 60 },                  // en-tête : écarté
+    { text: 'فصل في أحكام المياه', x0: 450, x1: 650, y0: 70, y1: 105 },                // titre tout en haut, petit : gardé
+    vers(160), vers(260), vers(360), { text: 'كتاب الصلاة', x0: 480, x1: 620, y0: 440, y1: 470 }, vers(520), vers(620)], { pageH: 1400 });
+  assert.deepEqual(r.kept.filter(l => l.startsWith('#')), ['# فصل في أحكام المياه', '# كتاب الصلاة'], 'deux titres gardés : ' + JSON.stringify(r.kept));
+  assert.equal(r.kept.filter(l => l.includes(' * ')).length, 5, 'cinq vers');
+  assert.deepEqual(r.dropped.map(d => d.why), ['entete'], 'seul l’en-tête est écarté : ' + JSON.stringify(r.dropped));
+  // « تنبيه » et « فائدة » sont des remarques, pas des titres : écartées si petites
+  const n = ocrFilter([vers(160), vers(260), vers(360), { text: 'تنبيه هام في المسألة', x0: 300, x1: 800, y0: 430, y1: 458 }]); assert.equal(n.kept.length, 3); assert.equal(n.dropped[0].why, 'note');
+  // même sans filtre de notes : le titre garde son « # »
+  assert.equal(ocrFilter([{ text: 'باب الطهارة', x0: 1, x1: 2, y0: 0, y1: 50 }], { notes: false }).kept[0], '# باب الطهارة');
+});
+test('lecture de photos : un ou deux mots isolés au bord d’un vers (note collée) sont écartés et ne déplacent pas le séparateur des hémistiches', () => {
+  const html = readApp(), c = html.slice(html.indexOf('/* OCRF:begin'), html.indexOf('/* OCRF:end */'));
+  const { ocrFilter } = new Function(c + '; return {ocrFilter};')();
+  const W = (t, x0, x1) => ({ text: t, x0, x1 });
+  const base = [W('البحر', 1393, 1496), W('واسع', 1276, 1376), W('وحميق', 1132, 1250), W('جدا', 1030, 1106), W('والسفينة', 715, 876), W('مخر', 625, 691), W('فيه', 557, 608), W('بهدوء', 425, 531)];
+  const ligne = (y, extra) => { const w = [...base, ...extra]; return { text: w.map(x => x.text).join(' '), x0: Math.min(...w.map(x => x.x0)), x1: Math.max(...w.map(x => x.x1)), y0: y, y1: y + 80, words: w }; };
+  // note d'un mot à droite (écart 240 > blanc des hémistiches 154), note de deux mots à gauche (écart 352)
+  const r = ocrFilter([ligne(100, [W('0', 1736, 1788)]), ligne(200, [W('لق', 106, 150)]), ligne(300, [W('نيه', 136, 168), W('جاني', 81, 125)]), ligne(400, [])], { pageH: 1400 });
+  assert.equal(r.kept.length, 4, JSON.stringify(r));
+  assert.ok(r.kept.every(l => l === 'البحر واسع وحميق جدا * والسفينة مخر فيه بهدوء'), 'séparateur au bon endroit, sans mot parasite : ' + r.kept.join(' | '));
+  assert.deepEqual(r.dropped.map(d => d.why), ['marge', 'marge', 'marge']); assert.deepEqual(r.dropped.map(d => d.text), ['0', 'لق', 'نيه جاني'], 'mots écartés, lus de droite à gauche');
+  // deux hémistiches de trois mots : jamais pris pour une note
+  const six = { text: 'قال محمد هو ابن مالك أحمد', x0: 100, x1: 900, y0: 0, y1: 80, words: [W('قال', 800, 900), W('محمد', 700, 790), W('هو', 600, 690), W('ابن', 300, 390), W('مالك', 200, 290), W('أحمد', 100, 190)] };
+  assert.equal(ocrFilter([six, six, six]).kept[0], 'قال محمد هو * ابن مالك أحمد'); assert.equal(ocrFilter([six, six, six]).dropped.length, 0);
 });
