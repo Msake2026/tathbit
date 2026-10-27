@@ -1,7 +1,7 @@
 /* Tathbīt — Compte (Supabase), nouveautés, premier lancement, contact, confidentialité, espace admin.
    Scripts classiques chargés dans l'ordre par index.html (même portée globale) : ne pas les réordonner. */
 /* ---------- compte (Supabase) : inscription, connexion, synchronisation, espace admin ---------- */
-const APP_VERSION = '26 oct. 2026 · v101';
+const APP_VERSION = '27 oct. 2026 · v102';
 const APP_BUILD = +((/v(\d+)/.exec(APP_VERSION) || [])[1]) || 0;   // numéro de la version qui tourne ; version.json (à jour à chaque publication) donne le dernier numéro publié
 let newVer = null, verAt = 0;
 function updBannerHtml(){

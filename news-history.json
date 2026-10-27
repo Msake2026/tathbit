@@ -1,6 +1,57 @@
 {
  "versions": [
   {
+   "v": 101,
+   "date": "2026-10-26",
+   "items": [
+    {
+     "id": "nav2",
+     "icon": "🧭",
+     "go": "progress",
+     "title": {
+      "fr": "Une barre du bas plus claire",
+      "en": "A clearer bottom bar",
+      "ar": "شريط سفلي أوضح"
+     },
+     "text": {
+      "fr": "Cinq onglets : les erreurs passent dans Progrès (bascule Statistiques / Erreurs). Un enseignant ne voit que l'onglet Enseignant, un élève que l'onglet Élève.",
+      "en": "Five tabs: mistakes move into Progress (Statistics / Mistakes switch). A teacher sees only the Teacher tab, a student only the Student tab.",
+      "ar": "خمس تبويبات: انتقلت الأخطاء إلى «التقدّم» (تبديل الإحصاءات / الأخطاء). يرى المعلّم تبويب المعلّم فقط، ويرى الطالب تبويب الطالب فقط."
+     }
+    },
+    {
+     "id": "notif2",
+     "icon": "🔔",
+     "go": "notif",
+     "title": {
+      "fr": "Toutes tes notifications au même endroit",
+      "en": "All your notifications in one place",
+      "ar": "كل إشعاراتك في مكان واحد"
+     },
+     "text": {
+      "fr": "Réglages › Audio et notifications : rappels de révision, e-mail du dimanche et e-mail de nouvelle version se règlent dans une seule carte.",
+      "en": "Settings › Audio and notifications: revision reminders, the Sunday e-mail and the new-version e-mail are set in a single card.",
+      "ar": "الإعدادات › الصوت والإشعارات: تذكيرات المراجعة ورسالة الأحد ورسالة الإصدار الجديد في بطاقة واحدة."
+     }
+    },
+    {
+     "id": "ios2",
+     "icon": "📱",
+     "go": "install",
+     "title": {
+      "fr": "Garde ta progression sur iPhone",
+      "en": "Keep your progress on iPhone",
+      "ar": "احفظ تقدّمك على iPhone"
+     },
+     "text": {
+      "fr": "Sur iPhone, Safari peut effacer les données d'un site délaissé une semaine. Sans compte ni installation, l'accueil te propose désormais d'installer l'application ou d'exporter ta sauvegarde.",
+      "en": "On iPhone, Safari may erase the data of a site left alone for a week. Without an account or installation, the home screen now offers to install the app or export your backup.",
+      "ar": "على iPhone قد يمسح Safari بيانات موقع تُرك أسبوعًا. وبدون حساب أو تثبيت تقترح الصفحة الرئيسية الآن تثبيت التطبيق أو تصدير نسختك."
+     }
+    }
+   ]
+  },
+  {
    "v": 100,
    "date": "2026-10-25",
    "items": [

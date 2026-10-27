@@ -73,7 +73,7 @@ const onClick = e => {
     case 'ls-toggle': if (player.paused && player.src) player.play(); else player.pause(); break;
     case 'ls-hide': ls.hide = !ls.hide; lsRender(); break;
     case 'home': home(); break;
-    case 'tab': if (v === 'settings') { cfg.setTab = 'hub'; setQ = ''; } go(v); break;   // en touchant « Réglages », on retrouve toujours les 6 blocs
+    case 'tab': { const to = v === 'class' ? classDefault() : v; if (to === 'settings') { cfg.setTab = 'hub'; setQ = ''; } if (to === 'teacher' || to === 'student') cfg.lastClass = to; go(to); break; }   // en touchant « Réglages », on retrouve toujours les 6 blocs
 
     case 'upd': forceUpdate(el); break;
     case 'aud-scope': audioScope(); break;

@@ -80,6 +80,7 @@ const BASE_TABS = [
   ['settings', 'Réglages', '<path d="M4 6h8M16 6h4M4 12h2M10 12h10M4 18h10M18 18h2"/><circle cx="14" cy="6" r="2"/><circle cx="8" cy="12" r="2"/><circle cx="16" cy="18" r="2"/>']
 ];
 const TAB_STUDENT = ['student', 'Élève', '<path d="M12 3 2 8l10 5 10-5z"/><path d="M6 10.5V16c0 1.5 2.7 3 6 3s6-1.5 6-3v-5.5"/>'];
+const TAB_CLASS = ['class', 'Classe', '<circle cx="9" cy="8" r="3"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="17" cy="9" r="2.5"/><path d="M16 14.5c2.8 0 5 2 5 5"/>'];   // enseignant ET élève : un seul onglet, deux gros boutons à l'intérieur
 const TAB_TEACHER = ['teacher', 'Enseignant', '<circle cx="9" cy="8" r="3"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6M16 6h5M16 10h5M16 14h5"/>'];
 // Qui est la personne ? administrateur, enseignant (rôle donné par l'admin), élève (au moins un enseignant, message ou objectif), sinon simple utilisateur.
 // L'onglet Élève n'apparaît que pour un élève, l'onglet Enseignant que pour un enseignant ; un simple utilisateur n'a ni l'un ni l'autre (ses invitations sont dans Mon compte).
@@ -88,20 +89,22 @@ const AI = () => `<span class="ai" role="note">🤖 ${tr('Texte rédigé par une
 const stuKey = () => 'tathbit.stu.' + (me ? me.user.id : '');
 const isStudent = () => !!me && !isAdmin() && (tch.loaded ? !!((tch.links || []).length || (tch.msgs || []).length || (tch.goals || []).length) : !!store.get(stuKey(), false));
 // un enseignant n'a que l'onglet Enseignant, un élève que l'onglet Élève ; un enseignant qui est aussi élève d'un autre (message, objectif) ne voit l'onglet Élève que le temps d'y aller depuis une notification
-const hasStudentTab = () => cloudOn() && !!me && !isAdmin() && ((isStudent() && !isTeacher()) || (cfg.tab === 'student' && (isStudent() || !tch.loaded)));
+const isDual = () => cloudOn() && !!me && !isAdmin() && isTeacher() && isStudent();   // à la fois enseignant et élève (d'un autre enseignant)
+const hasStudentTab = () => cloudOn() && !!me && !isAdmin() && !isDual() && ((isStudent() && !isTeacher()) || (cfg.tab === 'student' && isTeacher()));
 const hasTeacherTab = () => cloudOn() && !!me && isTeacher();
 const profileRoles = () => !me ? [] : isAdmin() ? [['admin', 'Administrateur']] : [...(isTeacher() ? [['teacher', 'Enseignant']] : []), ...(isStudent() ? [['student', 'Élève']] : []), ...(!isTeacher() && !isStudent() ? [['user', 'Utilisateur']] : [])];
 const roleChips = () => profileRoles().map(([k, t]) => `<span class="chip role-${k}">${tr(t)}</span>`).join(' ');
 const unreadStudent = () => (tch.msgs || []).filter(m => !m.from_student && !m.read_at).length;
 const unreadTeacher = () => Object.values(tch.unread || {}).reduce((a, b) => a + b, 0);
-const tabsNow = () => [...BASE_TABS.slice(0, 4), ...(hasTeacherTab() ? [TAB_TEACHER] : []), ...(hasStudentTab() ? [TAB_STUDENT] : []), BASE_TABS[5]];   // 5 onglets (6 avec la classe) : « Erreurs » est dans Progrès
-const navOf = t => t === 'errors' ? 'progress' : t;   // l'écran Erreurs allume l'onglet Progrès
+const tabsNow = () => [...BASE_TABS.slice(0, 4), ...(isDual() ? [TAB_CLASS] : [...(hasTeacherTab() ? [TAB_TEACHER] : []), ...(hasStudentTab() ? [TAB_STUDENT] : [])]), BASE_TABS[5]];   // 5 onglets (6 avec la classe) : « Erreurs » est dans Progrès
+const navOf = t => t === 'errors' ? 'progress' : (isDual() && (t === 'teacher' || t === 'student')) ? 'class' : t;
+const classDefault = () => unreadStudent() && !unreadTeacher() ? 'student' : (cfg.lastClass === 'student' ? 'student' : 'teacher');   // à l'ouverture de l'onglet Classe : le côté qui a des messages non lus, sinon le dernier utilisé   // l'écran Erreurs allume l'onglet Progrès
 function setNav(on){
   const n = $('nav'); n.hidden = !on; document.body.classList.toggle('has-nav', on); screen = on ? 'tab' : 'full'; queueMicrotask(bellSync);
   if (!on) return;
   const due = dueRefs().length;
   n.innerHTML = `<div class="in">${tabsNow().map(([id, t, ico]) => `<button class="${navOf(cfg.tab) === id ? 'sel' : ''}" data-act="tab" data-v="${id}" aria-label="${tr(t)}"${navOf(cfg.tab) === id ? ' aria-current="page"' : ''}>
-    <svg viewBox="0 0 24 24" aria-hidden="true">${ico}</svg>${tr(t)}${id === 'home' && due ? `<span class="badge">${due > 99 ? '99+' : due}</span>` : ''}${id === 'student' && unreadStudent() ? `<span class="badge">${unreadStudent()}</span>` : ''}${id === 'teacher' && unreadTeacher() ? `<span class="badge">${unreadTeacher()}</span>` : ''}</button>`).join('')}</div>`;
+    <svg viewBox="0 0 24 24" aria-hidden="true">${ico}</svg>${tr(t)}${id === 'home' && due ? `<span class="badge">${due > 99 ? '99+' : due}</span>` : ''}${id === 'student' && unreadStudent() ? `<span class="badge">${unreadStudent()}</span>` : ''}${id === 'class' && (unreadStudent() + unreadTeacher()) ? `<span class="badge">${unreadStudent() + unreadTeacher()}</span>` : ''}${id === 'teacher' && unreadTeacher() ? `<span class="badge">${unreadTeacher()}</span>` : ''}</button>`).join('')}</div>`;
 }
 const scopeLabel = sc => sc.type === 'matn' ? (sc.id === 'all' ? tr('Tous les moutoun') : (MT[sc.id] ? MN(sc.id) + (sc.sec != null && MT[sc.id].sec && MT[sc.id].sec[sc.sec] ? ' · ' + secName(MT[sc.id].sec[sc.sec]) : '') : tr('Matn')))
   : sc.type === 'all' ? tr('Tout le Coran')
@@ -170,7 +173,7 @@ function setLang(l){ // change la langue de l'interface (le texte du Coran ne ch
   if (me && sb && remState().on) pushResync().catch(() => {});
   if (screen === 'account') renderAccount(); else if (screen === 'admin') renderAdmin(); else home();
 }
-function go(tab){ homeNotice = ''; cfg.tab = tab; if (tab === 'student') tch.loaded = false; if (tab === 'teacher'){ tch.students = null; tch.detail = null; } tch.msg = ''; saveCfg(); home(); window.scrollTo(0, 0); }
+function go(tab){ homeNotice = ''; cfg.tab = tab; if (tab === 'student' && !isDual()) tch.loaded = false; /* enseignant ET élève : on garde les données, sinon l'onglet « Classe » clignote pendant le rechargement */ if (tab === 'teacher'){ tch.students = null; tch.detail = null; } tch.msg = ''; saveCfg(); home(); window.scrollTo(0, 0); }
 
 /* -- Accueil : l'essentiel du jour -- */
 function weakCard(full){ // verset fragile : « sourate · verset » en gras, la raison dessous ; sur l'accueil : 3 lignes et un bouton

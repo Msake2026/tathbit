@@ -33,7 +33,12 @@ const send = (method, params = {}) => new Promise(r => { const i = ++id; pend[i]
 await send('Page.navigate', {url: `http://127.0.0.1:${port}/tests/${fast ? '?fast' : ''}`});
 const t0 = Date.now(), LIMIT = (+process.env.TEST_TIMEOUT || 900) * 1000; let R = null;
 while (Date.now() - t0 < LIMIT){ await sleep(1500); const r = await send('Runtime.evaluate', {expression: 'JSON.stringify(window.__result || null)', returnByValue: true}); const v = r.result && r.result.result && r.result.result.value; if (v && v !== 'null'){ R = JSON.parse(v); break; } }
-if (!R){ console.error(`Les tests n'ont pas fini en ${LIMIT / 1000} s.`); await done(2); }
+if (!R){   // bloqué : on dit où (dernier test terminé), ce qui désigne le test qui tourne ou qui boucle
+  const r = await send('Runtime.evaluate', {expression: "JSON.stringify([...document.querySelectorAll('#out li')].map(l => l.textContent.trim().slice(0, 110)))", returnByValue: true}).catch(() => null);
+  let L = []; try { L = JSON.parse(r.result.result.value); } catch { /* page figée */ }
+  console.error(`Les tests n'ont pas fini en ${LIMIT / 1000} s. Terminés : ${L.length}. Dernier terminé : ${L[L.length - 1] || '(aucun)'}`);
+  await done(2);
+}
 for (const t of R.results) console.log(`${t.skipped ? '⏭' : t.ok ? '✓' : '✗'} ${t.name}${t.ok ? '' : '\n    ' + t.err}`);
 const slow = R.results.filter(t => t.ms > 2500).sort((a, b) => b.ms - a.ms).slice(0, 5);
 if (slow.length) console.log('\nLes plus lents :\n' + slow.map(t => `  ${(t.ms / 1000).toFixed(1)} s  ${t.name.slice(0, 90)}`).join('\n'));

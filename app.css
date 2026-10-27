@@ -192,6 +192,9 @@ body:has(#bell:not([hidden])) .rdtool{margin-top:8px}
 .nh{display:flex;align-items:center;gap:8px;margin:16px 0 8px;font-size:1.05rem}#card-notif .nh:first-of-type{margin-top:4px}
 .uact{margin-top:6px}.uact summary{margin:2px 0 4px}
 .stepper{display:flex;gap:10px;align-items:center}.stepper button{flex:1;min-width:0;min-height:48px;font-size:1.1rem;font-weight:700}.stepper b{flex:1;text-align:center;font-size:1.2rem}
+.classseg{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0 0 12px}.classseg button{display:flex;flex-direction:column;align-items:flex-start;gap:2px;padding:10px 12px;min-height:60px;text-align:start;border-radius:14px}
+.classseg .ch{display:flex;align-items:center;gap:6px}.classseg .ch b{font-size:1.02rem}.classseg small{color:var(--muted);font-size:.78rem;line-height:1.25}
+.classseg button.sel{background:var(--accent);color:var(--accent-ink);border-color:var(--gold)}.classseg button.sel small{color:inherit;opacity:.85}
 .srow{padding:14px 0}.srow .shead{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;margin:0 0 2px}.srow .shead b{overflow-wrap:anywhere}.srow .smeta{margin:0 0 6px}.srow>button.big{margin-top:8px}
 .prow{display:flex;gap:12px;align-items:center;justify-content:space-between;padding:10px 0;border-top:1px solid var(--line-soft)}.prow:first-of-type{border-top:0}.prow>div{min-width:0}.prow button{flex:none;min-width:104px}.pdone{flex:none;color:var(--ok);font-weight:600;display:inline-flex;align-items:center;gap:4px}
 .note{padding:12px 14px}.note h2{font-size:1.1rem;margin:0 0 6px}.note h2::after{display:none}.note p{font-size:.92rem}.note button{min-height:44px}.note .grades{gap:8px;margin-top:8px}.note .grades button{flex:0 1 auto;min-width:0;padding:8px 16px}

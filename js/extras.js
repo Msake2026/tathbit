@@ -566,10 +566,15 @@ function teachersCard(){
     <p class="ref" style="margin:8px 0">${tr("Pour inviter un enseignant, rejoindre une classe ou voir qui a consulté tes données : ouvre Mon compte.")}</p>
     <button data-act="acc-open">${tr('Mon compte')}</button></div>`;
 }
+function classSeg(cur){ // enseignant ET élève : deux grands boutons explicites (qui je suis, ce que je vois), avec les messages non lus
+  if (!isDual()) return '';
+  const b = (id, ico, t, d, n) => `<button class="${cur === id ? 'sel' : ''}" data-act="tab" data-v="${id}" aria-pressed="${cur === id}"><span class="ch">${ic(ico)}<b>${tr(t)}</b>${n ? `<span class="tbadge">${n}</span>` : ''}</span><small>${tr(d)}</small></button>`;
+  return `<div class="classseg" role="group" aria-label="${tr('Classe')}">${b('teacher', 'cap', 'Enseignant', 'Mes élèves', unreadTeacher())}${b('student', 'user', 'Élève', 'Mon enseignant, mes objectifs', unreadStudent())}</div>`;
+}
 function tabStudent(){
   const unseen = unreadStudent(), nT = (tch.links || []).length, nG = (tch.goals || []).length;
   const sum = tch.loaded ? [trp(nT, '{n} enseignant|{n} enseignants'), trp(nG, '{n} objectif en cours|{n} objectifs en cours'), unseen ? `<b>${trp(unseen, '{n} message non lu|{n} messages non lus')}</b>` : ''].filter(Boolean).join(' · ') : '';
-  return `<h1 style="margin-top:8px">${tr('Espace élève')}</h1><p class="sub">${sum || tr('Ton enseignant, tes objectifs et tes messages.')}</p>
+  return `${classSeg('student')}<h1 style="margin-top:8px">${tr('Espace élève')}</h1><p class="sub">${sum || tr('Ton enseignant, tes objectifs et tes messages.')}</p>
     ${tch.msg && cfg.tab === 'student' ? `<p class="fb tch-flash ${tch.ok ? 'ok' : 'ko'}">${esc(tch.msg)}</p>` : ''}
     ${tch.loaded ? goalsCard() + chatCard() + teachersCard() : `<p class="sub">${tr('Chargement…')}</p>`}`;
 }
@@ -704,7 +709,7 @@ function tabTeacher(){
       <button class="${open ? '' : 'pri '}big" data-act="tch-detail" data-v="${u.id}" aria-expanded="${!!open}">${open ? tr('Masquer') : tr('Progression et messages')}</button>
       ${open ? (tch.detail.data ? `<p class="ref" style="margin:10px 0 0">${tr('depuis le {d}', {d: fdd(u.since)})}</p>` + tchDetailHtml(tch.detail.data) + tchActionsHtml(u.id) + `<p style="margin:12px 0 0;text-align:center"><button class="link" style="color:var(--ko)" data-act="tch-del" data-v="${u.id}">${tr('Retirer cet élève')}</button></p>` : '') : ''}</div>`; };
   const list = tchSorted();
-  return `<h1 style="margin-top:8px">${tr('Espace enseignant')}</h1>
+  return `${classSeg('teacher')}<h1 style="margin-top:8px">${tr('Espace enseignant')}</h1>
     <p class="sub">${S ? trp(S.length, '{n} élève|{n} élèves') : tr('Chargement…')}</p>
     ${tch.msg ? `<div class="fb tch-flash ${tch.ok ? 'ok' : 'ko'}">${esc(tch.msg)}</div>` : ''}
     <div class="card"><h2>${tr('Mes élèves')}</h2>${S && S.length > 1 ? `<div class="row"><input type="text" id="tch-q" style="flex:1 1 100%" placeholder="${tr('Rechercher un élève')}" aria-label="${tr('Rechercher un élève')}" value="${esc(tch.q || '')}" autocomplete="off"><select id="tch-sort" aria-label="${tr('Trier par')}">${[['activity', 'Activité récente'], ['unread', 'Messages non lus'], ['rate', 'Réussite (les plus fragiles d\'abord)'], ['name', 'Nom']].map(([k, t]) => `<option value="${k}" ${tch.sort === k ? 'selected' : ''}>${tr(t)}</option>`).join('')}</select></div>` : ''}
