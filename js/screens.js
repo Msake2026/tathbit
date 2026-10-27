@@ -543,7 +543,7 @@ function tabTrain(){
         <input type="file" id="cm-f-img" accept="image/*" multiple hidden>
         <input type="file" id="cm-f-doc" accept=".pdf,.docx,.txt,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain" multiple hidden>
         <p class="ref" style="margin:6px 0 0">${tr("Limites : image {a} Mo, PDF ou Word {b} Mo, texte {c} Mo, PDF {d} pages à la fois. Si c'est plus grand, découpe en plusieurs fichiers ou prends plusieurs photos : ajoute-les dans l'ordre du texte, elles sont lues l'une après l'autre.", {a: CM.img, b: CM.doc, c: CM.txt, d: CM.pdfPages})}</p>
-        <label class="consent" style="margin-top:10px"><input type="checkbox" id="cm-notes" checked><span>${tr("Ignorer les notes de bas de page, les titres de chapitres et les numéros : ne garder que les vers.")}</span></label>
+        <label class="consent" style="margin-top:10px"><input type="checkbox" id="cm-notes" checked><span>${tr("Ignorer les notes (en haut, entre les vers, en bas, dans les marges), les titres de chapitres et les numéros : ne garder que les vers.")}</span></label>
         <div id="cm-queue">${queueHtml()}</div>
         <div id="cm-ignored"></div>
         <div class="row"><div><label class="f" for="cm-p1">${tr('Pages du PDF (facultatif) : de')}</label><input type="number" id="cm-p1" min="1" inputmode="numeric"></div>

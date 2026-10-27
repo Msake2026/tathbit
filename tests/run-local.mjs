@@ -28,16 +28,29 @@ const done = async code => { try { chrome.kill(); } catch {} server.close(); awa
 let list = [];
 for (let i = 0; i < 60; i++){ try { list = await (await fetch(`http://127.0.0.1:${dbg}/json`)).json(); if (list.find(t => t.type === 'page')) break; } catch { /* Chrome démarre */ } await sleep(500); }
 const page = list.find(t => t.type === 'page'); if (!page){ console.error('Chrome introuvable ou non démarré (variable CHROME ?)'); await done(2); }
-const ws = new WebSocket(page.webSocketDebuggerUrl); await new Promise(r => { ws.onopen = r; });
-let id = 0; const pend = {}; ws.onmessage = m => { const d = JSON.parse(m.data); if (d.id && pend[d.id]) pend[d.id](d); };
-const send = (method, params = {}) => new Promise(r => { const i = ++id; pend[i] = r; ws.send(JSON.stringify({id: i, method, params})); });
-await send('Page.navigate', {url: `http://127.0.0.1:${port}/tests/?${fast ? 'fast&' : ''}${only ? 'only=' + encodeURIComponent(only) : ''}`});
+// Chaque échange avec Chrome passe par une connexion toute neuve, avec délai : une connexion unique qui se fige (arrivé : tests terminés, lanceur bloqué) ne peut plus bloquer l'attente.
+const evalIn = (wsUrl, expression, ms = 8000) => new Promise(resolve => {
+  let ws, done = false; const end = v => { if (done) return; done = true; try { ws.close(); } catch { /* déjà fermée */ } resolve(v); };
+  try { ws = new WebSocket(wsUrl); } catch { return resolve(null); }
+  setTimeout(() => end(null), ms);
+  ws.onerror = () => end(null);
+  ws.onopen = () => ws.send(JSON.stringify({id: 1, method: 'Runtime.evaluate', params: {expression, returnByValue: true}}));
+  ws.onmessage = m => { const d = JSON.parse(m.data); if (d.id === 1) end(d.result && d.result.result ? d.result.result.value : null); };
+});
+const pages = async () => { try { const r = await fetch(`http://127.0.0.1:${dbg}/json`, {signal: AbortSignal.timeout(4000)}); return await r.json(); } catch { return []; } };
+const myPage = async () => (await pages()).find(t => t.type === 'page' && t.url.startsWith(`http://127.0.0.1:${port}/tests/`));
+{ const ws = new WebSocket(page.webSocketDebuggerUrl); await new Promise(r => { ws.onopen = r; });
+  ws.send(JSON.stringify({id: 1, method: 'Page.navigate', params: {url: `http://127.0.0.1:${port}/tests/?${fast ? 'fast&' : ''}${only ? 'only=' + encodeURIComponent(only) : ''}`}})); await sleep(500); ws.close(); }
 const t0 = Date.now(), LIMIT = (+process.env.TEST_TIMEOUT || 900) * 1000; let R = null;
-const sendT = (m, p, ms = 6000) => Promise.race([send(m, p), sleep(ms).then(() => null)]);   // une réponse perdue ne doit pas bloquer l'attente (arrivé une fois : tests terminés mais lanceur figé)
-while (Date.now() - t0 < LIMIT){ await sleep(1500); const r = await sendT('Runtime.evaluate', {expression: 'JSON.stringify(window.__result || null)', returnByValue: true}); const v = r && r.result && r.result.result && r.result.result.value; if (v && v !== 'null'){ R = JSON.parse(v); break; } }
+while (Date.now() - t0 < LIMIT){
+  await sleep(1500);
+  const p = await myPage(); if (!p || !/^DONE/.test(p.title || '')) continue;   // la page de tests met « DONE » dans son titre quand elle a fini
+  for (let k = 0; k < 6 && !R; k++){ const v = await evalIn(p.webSocketDebuggerUrl, 'JSON.stringify(window.__result || null)'); if (v && v !== 'null') R = JSON.parse(v); else await sleep(1000); }
+  if (R) break;
+}
 if (!R){   // bloqué : on dit où (dernier test terminé), ce qui désigne le test qui tourne ou qui boucle
-  const r = await sendT('Runtime.evaluate', {expression: "JSON.stringify([...document.querySelectorAll('#out li')].map(l => l.textContent.trim().slice(0, 110)))", returnByValue: true}).catch(() => null);
-  let L = []; try { L = JSON.parse(r.result.result.value); } catch { /* page figée */ }
+  const p = await myPage(); let L = [];
+  if (p){ try { L = JSON.parse(await evalIn(p.webSocketDebuggerUrl, "JSON.stringify([...document.querySelectorAll('#out li')].map(l => l.textContent.trim().slice(0, 110)))")); } catch { /* page figée */ } }
   console.error(`Les tests n'ont pas fini en ${LIMIT / 1000} s. Terminés : ${L.length}. Dernier terminé : ${L[L.length - 1] || '(aucun)'}`);
   await done(2);
 }

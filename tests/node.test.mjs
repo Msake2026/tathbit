@@ -684,3 +684,31 @@ test('lecture de photos : blanc discret entre hémistiches repéré ; prose sans
   const serre = { ...l, words: l.words.map((w, i) => W(w.text, 800 - i * 104, 890 - i * 104)) };
   assert.equal(ocrFilter([serre, serre]).kept[0].includes('*'), false, 'espaces réguliers : pas de séparateur');
 });
+test('lecture de photos : en-tête du haut, notes entre les vers, notes de marge à gauche et à droite écartés ; les vers gardent leurs deux hémistiches', () => {
+  const html = readApp(), c = html.slice(html.indexOf('/* OCRF:begin'), html.indexOf('/* OCRF:end */'));
+  const { ocrFilter } = new Function(c + '; return {ocrFilter};')();
+  const W = (t, x0, x1) => ({ text: t, x0, x1 });
+  // page 1000 × 1400 ; colonne des vers : x de 250 à 850 ; hauteur de vers 60
+  const vers = (y, a, b, extra = []) => { const w = [W(a[0], 760, 850), W(a[1], 660, 750), W(a[2], 560, 650), W(b[0], 400, 490), W(b[1], 320, 390), W(b[2], 250, 310), ...extra];
+    return { text: w.slice().sort((p, q) => q.x0 - p.x0).map(x => x.text).join(' '), x0: Math.min(...w.map(x => x.x0)), x1: Math.max(...w.map(x => x.x1)), y0: y, y1: y + 60, words: w }; };
+  const L = [
+    { text: 'شرح ألفية في النحو', x0: 400, x1: 700, y0: 20, y1: 60 },                                   // en-tête (tout en haut, court)
+    vers(200, ['قال', 'محمد', 'هو'], ['ابن', 'مالك', 'أحمد']),
+    { text: 'أي أبدأ بحمد الله تعالى', x0: 300, x1: 800, y0: 270, y1: 296 },                              // note entre les vers (petits caractères)
+    vers(320, ['ربي', 'الله', 'خير'], ['مالك', 'مصليا', 'على'], [W('معنى', 880, 960), W('حاشية', 970, 990)]),   // note de marge à droite, sur la même ligne
+    { text: 'ملاحظة جانبية على اليسار', x0: 20, x1: 200, y0: 400, y1: 460 },                              // ligne entière dans la marge gauche, même taille que les vers
+    vers(480, ['النبي', 'المصطفى', 'وآله'], ['المستكملين', 'الشرفا', 'وسلم'], [W('هامش', 120, 200)]),    // mot de marge à gauche
+    vers(560, ['وأستعين', 'الله', 'في'], ['ألفية', 'مقاصد', 'النحو'])];
+  const r = ocrFilter(L, { pageH: 1400 });
+  assert.equal(r.kept.length, 4, 'quatre vers : ' + JSON.stringify(r.kept) + ' / écartés : ' + JSON.stringify(r.dropped));
+  assert.equal(r.kept[0], 'قال محمد هو * ابن مالك أحمد');
+  assert.ok(r.kept.every(l => l.split(' * ').length === 2 && l.split(' * ').every(h => h.split(' ').length === 3)), 'deux hémistiches de trois mots : ' + r.kept.join(' | '));
+  assert.ok(!/معنى|حاشية|هامش|جانبية|أبدأ|ألفية في النحو/.test(r.text.replace('ألفية مقاصد', '')), 'en-tête, note entre vers et notes de marge absents : ' + r.text);
+  const why = Object.fromEntries(r.dropped.map(d => [d.text, d.why])); assert.equal(why['شرح ألفية في النحو'], 'entete'); assert.equal(why['أي أبدأ بحمد الله تعالى'], 'note'); assert.equal(why['ملاحظة جانبية على اليسار'], 'marge'); assert.equal(why['حاشية معنى'], 'marge'); assert.equal(why['هامش'], 'marge');
+  // pas de filtre de marge quand il y a trop peu de lignes pour estimer la colonne
+  const peu = ocrFilter([vers(200, ['قال', 'محمد', 'هو'], ['ابن', 'مالك', 'أحمد']), vers(300, ['ربي', 'الله', 'خير'], ['مالك', 'مصليا', 'على'])], { pageH: 1400 }); assert.equal(peu.kept.length, 2);
+  // ligne entre parenthèses plus petite : renvoi, écartée
+  const par = ocrFilter([vers(200, ['قال', 'محمد', 'هو'], ['ابن', 'مالك', 'أحمد']), vers(300, ['ربي', 'الله', 'خير'], ['مالك', 'مصليا', 'على']), vers(400, ['قال', 'محمد', 'هو'], ['ابن', 'مالك', 'أحمد']), { text: '(انظر الباب السابق في الكتاب)', x0: 300, x1: 800, y0: 470, y1: 505 }]); assert.equal(par.kept.length, 3); assert.equal(par.dropped[0].why, 'note');
+  // verset tout en haut mais long et de taille normale : gardé (pas pris pour un en-tête)
+  const haut = ocrFilter([vers(20, ['قال', 'محمد', 'هو'], ['ابن', 'مالك', 'أحمد']), vers(120, ['ربي', 'الله', 'خير'], ['مالك', 'مصليا', 'على']), vers(220, ['قال', 'محمد', 'هو'], ['ابن', 'مالك', 'أحمد'])], { pageH: 1400 }); assert.equal(haut.kept.length, 3, 'des vers en haut de la page restent des vers');
+});

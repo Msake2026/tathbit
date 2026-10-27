@@ -1115,10 +1115,12 @@
   test('Import d’un matn par photos : « Image 1, Image 2… » dans l’ordre, lecture réelle (moteur hébergé), seuls les vers gardés (lecture réelle)', async () => {
     reset("cfg.scope = {type: 'matn', id: 'all'}; store.set('tathbit.welcome', 1)"); E("go('train')"); ok($q('#cm-text') && $q('#cm-notes') && $q('#cm-notes').checked, 'import : zone de texte et case « Ignorer les notes » cochée par défaut');
     const d = W.document; await d.fonts.load('60px "Amiri Quran"'); await d.fonts.load('30px "Amiri Quran"');
-    const page = async (vers, notes, photo) => { const c = d.createElement('canvas'); c.width = 1400; c.height = 1000; const x = c.getContext('2d'); x.fillStyle = photo ? '#efe9dc' : '#fff'; x.fillRect(0, 0, 1400, 1000); x.fillStyle = '#111'; x.direction = 'rtl'; x.textAlign = 'right'; if (photo){ x.translate(700, 500); x.rotate(0.02); x.translate(-700, -500); x.filter = 'blur(0.9px)'; }
-      x.font = '64px "Amiri Quran"'; vers.forEach(([a, b], i) => { x.fillText(a, 1300, 120 + i * 120); x.fillText(b, 700, 120 + i * 120); });
-      x.fillRect(150, 700, 1100, 3); x.font = '30px "Amiri Quran"'; notes.forEach((n, i) => x.fillText(n, 1300, 780 + i * 56));
-      if (photo){ x.setTransform(1, 0, 0, 1, 0, 0); x.filter = 'none'; const g = x.createLinearGradient(0, 0, 1400, 0); g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(1, 'rgba(40,30,10,0.42)'); x.fillStyle = g; x.fillRect(0, 0, 1400, 1000); }   // photo : papier jaune, ombre qui grandit, petite inclinaison, flou léger
+    const page = async (vers, notes, photo) => { const c = d.createElement('canvas'); c.width = 1600; c.height = 1000; const x = c.getContext('2d'); x.fillStyle = photo ? '#efe9dc' : '#fff'; x.fillRect(0, 0, 1600, 1000); x.fillStyle = '#111'; x.direction = 'rtl'; x.textAlign = 'right'; if (photo){ x.translate(800, 500); x.rotate(0.02); x.translate(-800, -500); x.filter = 'blur(0.9px)'; }
+      x.font = '28px "Amiri Quran"'; x.fillText('شرح المتن في الفقه', 1000, 50);   // en-tête
+      x.font = '64px "Amiri Quran"'; vers.forEach(([a, b], i) => { x.fillText(a, 1400, 150 + i * 130); x.fillText(b, 800, 150 + i * 130); });
+      x.font = '26px "Amiri Quran"'; x.fillText('أي أبدأ بذكر الله تعالى', 1200, 232); x.fillText('هامش', 1590, 280); x.fillText('تعليق', 190, 410); x.fillText('تنبيه جانبي', 190, 540);   // note entre deux vers, notes en marge droite et gauche
+      x.fillRect(150, 700, 1300, 3); x.font = '30px "Amiri Quran"'; notes.forEach((n, i) => x.fillText(n, 1400, 780 + i * 56));
+      if (photo){ x.setTransform(1, 0, 0, 1, 0, 0); x.filter = 'none'; const g = x.createLinearGradient(0, 0, 1600, 0); g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(1, 'rgba(40,30,10,0.42)'); x.fillStyle = g; x.fillRect(0, 0, 1600, 1000); }   // photo : papier jaune, ombre qui grandit, petite inclinaison, flou léger
       const blob = await new Promise(r => c.toBlob(r, 'image/jpeg', photo ? 0.7 : 0.92)); return new W.File([blob], 'image.jpg', {type: 'image/jpeg'}); };
     const f1 = await page([['الشمس تشرق كل صباح', 'والقمر ينير ليل الدنيا'], ['البحر واسع وعميق جدا', 'والسفينة تمخر فيه بهدوء'], ['العلم نور في القلوب', 'والجهل ظلام ما يزول'], ['الصبر مفتاح الفرج', 'والشكر يزيد النعمة']], ['(1) هذه حاشية تشرح البيت الأول', '(2) وفي هذا الموضع كلام طويل للعلماء']);
     const f2 = await page([['الكتاب خير جليس وأنيس', 'والصديق عون في الشدائد'], ['الوقت كالسيف إن لم تقطعه', 'قطعك وأنت في غفلة نائم'], ['من جد وجد ومن زرع حصد', 'ومن سار على الدرب وصل'], ['الأمل ينير درب الحياة', 'والعمل يبني ما نرجو']], ['(1) حاشية ثانية تتعلق بالصفحة الثانية'], true);
@@ -1129,8 +1131,9 @@
     const st = $q('#cm-status').textContent; ok(/Texte lu/.test(st), 'lecture terminée : ' + st.slice(0, 200));
     const lines = $q('#cm-text').value.split('\n').filter(Boolean); const poems = lines.filter(l => l.includes(' * '));
     ok(poems.length >= 6 && lines.length <= 10, 'au moins 6 des 8 vers lus avec leurs deux hémistiches séparés par « * » (' + poems.length + ' vers sur ' + lines.length + ' lignes) : ' + lines.slice(0, 3).join(' / '));
-    ok(!/حاشية|الموضع|للعلماء|تشرح/.test($q('#cm-text').value), 'aucune note dans le texte importé');
-    ok(E('cmIgnored.length') >= 2 && !!$q('#cm-ignored details') && /ignorée/.test($q('#cm-ignored').textContent) && E('cmIgnored.some(x => x.from === "Image 1")'), 'les notes écartées sont listées pour vérification, avec la photo d’origine : ' + E('cmIgnored.length'));
+    ok(!/حاشية|الموضع|للعلماء|تشرح|هامش|تعليق|جانبي|أبدأ|شرح المتن/.test($q('#cm-text').value), 'aucune note (haut, entre vers, marges, bas) dans le texte importé : ' + $q('#cm-text').value.replace(/\n/g, ' / ').slice(0, 260));
+    ok(E('cmIgnored.length') >= 4 && !!$q('#cm-ignored details') && /ignorée/.test($q('#cm-ignored').textContent) && E('cmIgnored.some(x => x.from === "Image 1")'), 'les notes écartées sont listées pour vérification, avec la photo d’origine : ' + E('cmIgnored.length'));
+    const raisons = E('cmIgnored.map(x => x.why)'); ok(new Set(raisons).size >= 2, 'plusieurs sortes de lignes écartées (note, en-tête, marge…) : ' + raisons.join(',') + ' ; ' + E('cmIgnored.map(x => x.text.slice(0, 12))').join(' | '));
     ok(!$q('#cm-title').value || !/image/i.test($q('#cm-title').value), 'le titre n’est pas « image »');
     E("cmQueue = []; cmIgnored = []; $('cm-text').value = ''; $('cm-title').value = ''"); noErr('import par photos');
   });
@@ -1297,4 +1300,5 @@
   const failed = results.filter(r => !r.ok).length, skipped = results.filter(r => r.skipped).length;
   document.getElementById('sum').innerHTML = `<b class="${failed ? 'ko' : 'ok'}">${results.length - failed - skipped} réussis, ${failed} en échec${skipped ? `, ${skipped} ignorés (mode rapide : lance la suite complète avant d’envoyer)` : ''}</b>`;
   window.__result = {passed: results.length - failed - skipped, failed, skipped, fast: FAST, results};
+  document.title = 'DONE ' + (results.length - failed - skipped) + '/' + failed;   // le lanceur local lit ce titre pour savoir que c'est fini
 })();

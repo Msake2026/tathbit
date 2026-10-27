@@ -1,6 +1,27 @@
 {
  "versions": [
   {
+   "v": 103,
+   "date": "2026-10-27",
+   "items": [
+    {
+     "id": "photos2",
+     "icon": "📷",
+     "go": "train",
+     "title": {
+      "fr": "Matn par photos : seulement les vers",
+      "en": "Mutun from photos: verses only",
+      "ar": "متن من الصور: الأبيات فقط"
+     },
+     "text": {
+      "fr": "Les photos s'appellent « Image 1, Image 2… » dans l'ordre. La lecture écarte les notes de bas de page, les titres et les numéros (liste des lignes ignorées à vérifier), sépare les deux moitiés de chaque vers et corrige mieux les ombres.",
+      "en": "Photos are named “Image 1, Image 2…” in order. Reading skips footnotes, titles and numbers (list of ignored lines to check), splits the two halves of each verse and copes better with shadows.",
+      "ar": "تُسمّى الصور «الصورة 1، الصورة 2…» بالترتيب. تتجاهل القراءة الحواشي والعناوين والأرقام (مع قائمة بالأسطر المتجاهَلة للتحقق)، وتفصل شطري كل بيت، وتتعامل أفضل مع الظلال."
+     }
+    }
+   ]
+  },
+  {
    "v": 102,
    "date": "2026-10-27",
    "items": [
