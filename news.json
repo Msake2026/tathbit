@@ -1,50 +1,20 @@
 {
- "v": 108,
+ "v": 109,
  "date": "2026-10-28",
  "items": [
   {
-   "id": "next-review",
-   "icon": "🗓️",
-   "go": "home",
+   "id": "fr-timer",
+   "icon": "⏱️",
+   "go": "recite",
    "title": {
-    "fr": "Prochaine révision visible",
-    "en": "Next review shown",
-    "ar": "موعد المراجعة القادمة ظاهر"
+    "fr": "Compteur de temps à voix haute",
+    "en": "Timer when reciting aloud",
+    "ar": "عدّاد الوقت عند التسميع بصوت عالٍ"
    },
    "text": {
-    "fr": "Dans « À renforcer en priorité », chaque verset indique quand il sera revu : « revu dans 3 j », « revu dans 5 h » ou « à revoir maintenant ».",
-    "en": "In “Priority review”, each verse now shows when it will come back: “review in 3 d”, “review in 5 h” or “to review now”.",
-    "ar": "في «أولوية التقوية» يظهر لكل آية موعد عودتها: «مراجعة بعد 3 أيام» أو «بعد 5 ساعات» أو «للمراجعة الآن»."
-   }
-  },
-  {
-   "id": "week-recap",
-   "icon": "📊",
-   "go": "progress",
-   "title": {
-    "fr": "Bilan de la semaine",
-    "en": "Weekly recap",
-    "ar": "حصيلة الأسبوع"
-   },
-   "text": {
-    "fr": "Dans Progrès, « Cette semaine » ajoute tes réponses (comparées à la semaine d'avant), tes jours actifs et le nombre de versets à reprendre, avec un mot d'encouragement.",
-    "en": "In Progress, “This week” now adds your answers (compared with the week before), your active days and the number of verses to review again, with a short word of encouragement.",
-    "ar": "في «التقدم» صار قسم «هذا الأسبوع» يعرض إجاباتك (مقارنةً بالأسبوع السابق) وأيامك النشطة وعدد الآيات التي تحتاج إعادة، مع كلمة تشجيع."
-   }
-  },
-  {
-   "id": "fast-start",
-   "icon": "⚡",
-   "go": "home",
-   "title": {
-    "fr": "Démarrage plus rapide",
-    "en": "Faster start",
-    "ar": "بدء أسرع"
-   },
-   "text": {
-    "fr": "Le logo s'affiche tout de suite pendant le chargement, et la bibliothèque des comptes est maintenant hébergée avec l'application : plus aucun service extérieur n'est contacté au lancement.",
-    "en": "The logo now appears immediately while loading, and the accounts library is hosted with the app: no outside service is contacted at launch any more.",
-    "ar": "يظهر الشعار فور فتح التطبيق أثناء التحميل، ومكتبة الحسابات صارت مستضافة مع التطبيق: لا تُتصل أي خدمة خارجية عند التشغيل."
+    "fr": "Quand tu récites à voix haute, le temps écoulé s'affiche en haut de l'écran, et le bilan indique la durée de ta récitation.",
+    "en": "When you recite aloud, the elapsed time is shown at the top of the screen, and the summary tells you how long you recited.",
+    "ar": "عند التسميع بصوت عالٍ يظهر الوقت المنقضي أعلى الشاشة، ويذكر الملخّص مدة التسميع."
    }
   }
  ]

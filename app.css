@@ -310,3 +310,4 @@ details.rblkd:not([open]) > summary.rblk::before{content:'▸ '}
 
 .boot{margin-top:30vh;text-align:center}.boot img{border-radius:16px;box-shadow:0 2px 10px color-mix(in srgb,var(--accent) 30%,transparent)}
 .stat div{min-width:0;overflow-wrap:anywhere}
+.frtime{font-variant-numeric:tabular-nums;font-weight:700;color:var(--accent)}

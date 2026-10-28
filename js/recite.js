@@ -3,7 +3,9 @@
 /* ---------- récitation libre à voix haute (sans exercice) : une ou plusieurs sourates, de mémoire ---------- */
 const FR_MAX = 1800;   // durée maximale d'une récitation libre (secondes)
 let fr = null;
-function frQuit(){ if (fr){ clearTimeout(fr.timer); clearTimeout(fr.cap); clearTimeout(fr.grace); if (fr.rec){ fr.rec.onend = null; fr.rec.onresult = null; try { fr.rec.abort(); } catch { /* déjà arrêté */ } } fr = null; } go('train'); }
+const mmss = s => Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');   // compteur de temps de la récitation
+function frTick(){ const el = $('fr-time'); if (fr && fr.t0 && el) el.textContent = mmss(Math.floor((Date.now() - fr.t0) / 1000)); }
+function frQuit(){ if (fr){ clearInterval(fr.tick); clearTimeout(fr.timer); clearTimeout(fr.cap); clearTimeout(fr.grace); if (fr.rec){ fr.rec.onend = null; fr.rec.onresult = null; try { fr.rec.abort(); } catch { /* déjà arrêté */ } } fr = null; } go('train'); }
 /* historique de la récitation libre, par sourate (sur cet appareil) : date, versets récités, sans oubli, à revoir, et où reprendre */
 const frHist = () => store.get('tathbit.frSurah', {});
 function frRemember(done, clean, flagged, open){
@@ -60,7 +62,7 @@ function frStart(res){ // res = {s, a, to} : reprise au verset a de la sourate s
   cfg.frFrom = from; cfg.frTo = to; if ($('frhide')) cfg.frHide = $('frhide').checked; saveCfg();
   fr = frBuild(from, to, cfg.frHide !== false); stopMic(); setNav(false);
   if (res && res.a > 1){ const v = fr.verses.find(x => x.s === res.s && x.a === res.a); if (v){ fr.p = fr.base = fr.start0 = v.from; } }
-  $app.innerHTML = `<div class="top"><button class="link" data-act="fr-quit">✕ ${tr('Quitter')}</button><span id="fr-pos"></span></div>
+  $app.innerHTML = `<div class="top"><button class="link" data-act="fr-quit">✕ ${tr('Quitter')}</button><span id="fr-time" class="frtime" role="timer" aria-label="${esc(tr('Temps écoulé'))}">0:00</span><span id="fr-pos"></span></div>
     <div class="bar"><i id="fr-bar" style="width:0%"></i></div>
     <h2 class="rtitle" id="fr-title" style="margin-top:8px"></h2>
     <div class="card frtext rd" id="fr-text" dir="rtl" lang="ar" style="font-size:${cfg.rdSize || 1.7}rem"></div>
@@ -72,7 +74,7 @@ function frStart(res){ // res = {s, a, to} : reprise au verset a de la sourate s
     <div class="grades"><button data-act="fr-hint" ${fr.hide ? '' : 'hidden'}>${ic('bulb')} ${tr('Montrer le mot suivant')}</button><button data-act="fr-skip">${ic('skip')} ${tr('Passer ce verset')}</button></div>
     <button class="rec-stop" data-act="fr-stop">${ic('stop')} ${esc(tr("J'ai fini de réciter"))}<small>${esc(tr('Touche ici pour terminer et voir le bilan'))}</small></button>`;
   frDraw(fr.meta[Math.min(fr.p, fr.exp.length - 1)].s); frPaint();
-  fr.cap = setTimeout(() => frFinish('time'), FR_MAX * 1000);
+  fr.cap = setTimeout(() => frFinish('time'), FR_MAX * 1000); fr.t0 = Date.now(); fr.tick = setInterval(frTick, 1000);
   frListen();
 }
 function frDraw(s){ // affiche le texte de la sourate s ; chaque mot est un <span data-w=n° du mot dans toute la récitation>
@@ -138,7 +140,7 @@ function frSkip(){ // passe au verset suivant : les mots restants du verset sont
   frPaint(); if (fr.p >= fr.exp.length) frFinish('done'); else { clearTimeout(fr.timer); fr.timer = setTimeout(frListen, 150); }
 }
 function frFinish(reason){
-  if (!fr || fr.finishing) return; fr.finishing = true; fr.reason = reason; clearTimeout(fr.timer); clearTimeout(fr.cap);
+  if (!fr || fr.finishing) return; fr.finishing = true; fr.reason = reason; clearTimeout(fr.timer); clearTimeout(fr.cap); clearInterval(fr.tick); if (fr.t0) fr.dur = Math.round((Date.now() - fr.t0) / 1000);
   const rec = fr.rec, go = () => { if (!fr || fr.summarized) return; fr.summarized = true; clearTimeout(fr.grace); frSummary(); };
   if (!rec) return go();
   rec.onend = go; fr.grace = setTimeout(go, 1200); try { rec.stop(); } catch { go(); }   // on laisse le dernier résultat arriver avant le bilan
@@ -166,6 +168,7 @@ function frShowSummary(){
   $app.innerHTML = `<div class="top"><button class="link" data-act="fr-quit">✕ ${tr('Quitter')}</button><span>${tr('Récitation libre')}</span></div>
     <h1 style="margin-top:8px">${title}</h1>
     <div class="card"><p style="margin:0 0 6px"><b>${trp(done.length, '{n} verset récité en entier|{n} versets récités en entier')}</b> · ${trp(clean.length, '{n} sans oubli|{n} sans oubli')}${flagged.length ? ' · ' + trp(flagged.length, '{n} à revoir|{n} à revoir') : ''}</p>
+      ${fr.dur ? `<p class="ref" style="margin:0 0 6px">${tr('Durée : {d}', {d: mmss(fr.dur)})}</p>` : ''}
       ${open ? `<p class="ref" style="margin:0 0 6px">${tr('Verset en cours quand tu as terminé : {s}, verset {a}.', {s: SN(open.s), a: open.a})}</p>` : ''}
       ${fr.hide && clean.length ? `<p class="ref" style="margin:0 0 6px">${trp(clean.length, '{n} verset récité de mémoire sans oubli est compté dans ta révision.|{n} versets récités de mémoire sans oubli sont comptés dans ta révision.')}</p>` : ''}
       ${!done.length ? `<p class="ref" style="margin:0">${tr("Aucun verset n'a été suivi jusqu'au bout : vérifie le micro, parle près de l'appareil, et réessaie.")}</p>` : ''}
