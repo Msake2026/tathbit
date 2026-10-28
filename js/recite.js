@@ -4,7 +4,7 @@
 const FR_MAX = 1800;   // durée maximale d'une récitation libre (secondes)
 let fr = null;
 const mmss = s => Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');   // compteur de temps de la récitation
-function frTick(){ const el = $('fr-time'); if (fr && fr.t0 && el) el.textContent = mmss(Math.floor((Date.now() - fr.t0) / 1000)); }
+function frTick(){ const el = $('fr-time'); if (fr && fr.t0 && el) el.textContent = mmss(Math.floor((Date.now() - fr.t0) / 1000)) + ' / ' + mmss(FR_MAX); }
 function frQuit(){ if (fr){ clearInterval(fr.tick); clearTimeout(fr.timer); clearTimeout(fr.cap); clearTimeout(fr.grace); if (fr.rec){ fr.rec.onend = null; fr.rec.onresult = null; try { fr.rec.abort(); } catch { /* déjà arrêté */ } } fr = null; } go('train'); }
 /* historique de la récitation libre, par sourate (sur cet appareil) : date, versets récités, sans oubli, à revoir, et où reprendre */
 const frHist = () => store.get('tathbit.frSurah', {});
@@ -62,7 +62,7 @@ function frStart(res){ // res = {s, a, to} : reprise au verset a de la sourate s
   cfg.frFrom = from; cfg.frTo = to; if ($('frhide')) cfg.frHide = $('frhide').checked; saveCfg();
   fr = frBuild(from, to, cfg.frHide !== false); stopMic(); setNav(false);
   if (res && res.a > 1){ const v = fr.verses.find(x => x.s === res.s && x.a === res.a); if (v){ fr.p = fr.base = fr.start0 = v.from; } }
-  $app.innerHTML = `<div class="top"><button class="link" data-act="fr-quit">✕ ${tr('Quitter')}</button><span id="fr-time" class="frtime" role="timer" aria-label="${esc(tr('Temps écoulé'))}">0:00</span><span id="fr-pos"></span></div>
+  $app.innerHTML = `<div class="top"><button class="link" data-act="fr-quit">✕ ${tr('Quitter')}</button><span id="fr-time" class="frtime" role="timer" aria-label="${esc(tr('Temps écoulé'))}">0:00 / ${mmss(FR_MAX)}</span><span id="fr-pos"></span></div>
     <div class="bar"><i id="fr-bar" style="width:0%"></i></div>
     <h2 class="rtitle" id="fr-title" style="margin-top:8px"></h2>
     <div class="card frtext rd" id="fr-text" dir="rtl" lang="ar" style="font-size:${cfg.rdSize || 1.7}rem"></div>

@@ -1,6 +1,27 @@
 {
  "versions": [
   {
+   "v": 109,
+   "date": "2026-10-28",
+   "items": [
+    {
+     "id": "fr-timer",
+     "icon": "⏱️",
+     "go": "recite",
+     "title": {
+      "fr": "Compteur de temps à voix haute",
+      "en": "Timer when reciting aloud",
+      "ar": "عدّاد الوقت عند التسميع بصوت عالٍ"
+     },
+     "text": {
+      "fr": "Quand tu récites à voix haute, le temps écoulé s'affiche en haut de l'écran, et le bilan indique la durée de ta récitation.",
+      "en": "When you recite aloud, the elapsed time is shown at the top of the screen, and the summary tells you how long you recited.",
+      "ar": "عند التسميع بصوت عالٍ يظهر الوقت المنقضي أعلى الشاشة، ويذكر الملخّص مدة التسميع."
+     }
+    }
+   ]
+  },
+  {
    "v": 108,
    "date": "2026-10-28",
    "items": [

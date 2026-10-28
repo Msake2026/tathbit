@@ -874,8 +874,8 @@
     say(heard(0) + ' ' + heard(1).split(' ').slice(1).join(' ')); ok(E('fr.p') === E('fr.verses[1].to'), 'le 2e verset est suivi même sans son premier mot (donné en indice)');
     say(heard(0) + ' ' + heard(1).split(' ').slice(1).join(' ') + ' ' + heard(2)); eq(E('fr.p'), E('fr.verses[2].to'), 'le 3e verset suit');
     ok(/Verset 4 \/ 4/.test($q('#fr-pos').textContent), 'position : ' + $q('#fr-pos').textContent);
-    ok($q('#fr-time') && /^\d+:\d\d$/.test($q('#fr-time').textContent), 'compteur de temps affiché : ' + ($q('#fr-time') || {}).textContent);
-    E("fr.t0 -= 65000"); await wait(1200); eq($q('#fr-time').textContent, '1:06', 'le compteur avance chaque seconde');
+    ok($q('#fr-time') && /^\d+:\d\d \/ 30:00$/.test($q('#fr-time').textContent), 'compteur de temps affiché : ' + ($q('#fr-time') || {}).textContent);
+    E("fr.t0 -= 65000"); await wait(1200); eq($q('#fr-time').textContent, '1:06 / 30:00', 'le compteur avance chaque seconde, avec la limite');
     clickAct('fr-stop'); await wait(100);
     ok(/Durée : 1:0\d/.test(appText()), 'le bilan indique la durée : ' + appText().slice(0, 200));
     ok(/Bilan de ta récitation/.test(appText()) && /3 versets récités en entier/.test(appText()) && /2 sans oubli/.test(appText()) && /1 à revoir/.test(appText()), 'bilan : 3 versets, 2 sans oubli, 1 à revoir : ' + appText().slice(0, 250));
