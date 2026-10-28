@@ -307,3 +307,6 @@ details.rblkd:not([open]) > summary.rblk::before{content:'▸ '}
 }
 @media (min-width:1280px){ body{font-size:18px} main{max-width:1240px} #nav .in{max-width:1240px} }
 @media (hover:hover) and (pointer:fine){ button:not(:disabled):hover{filter:brightness(1.04)} }   /* trackpad ou souris : retour visuel au survol */
+
+.boot{margin-top:30vh;text-align:center}.boot img{border-radius:16px;box-shadow:0 2px 10px color-mix(in srgb,var(--accent) 30%,transparent)}
+.stat div{min-width:0;overflow-wrap:anywhere}

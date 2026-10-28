@@ -230,6 +230,14 @@ function record(r, score){
   days[today()] = (days[today()] || 0) + 1;
   store.set('tathbit.days', days);
 }
+/* WK:begin — bilan des 7 derniers jours : fonctions pures, testées dans tests/node.test.mjs (key = jour « AAAA-MM-JJ » d'une date) */
+function weekStats(days, errs, now, key){
+  const DAY = 864e5, sum = (from, to) => { let a = 0, act = 0; for (let i = from; i < to; i++){ const d = new Date(now); d.setDate(d.getDate() - i); const n = days[key(d)] || 0; a += n; if (n) act++; } return [a, act]; };
+  const [a1, act] = sum(0, 7), [a0] = sum(7, 14), miss = new Set();
+  for (const e of errs) if (e && e.k && e.sc < 1 && now - e.t >= 0 && now - e.t < 7 * DAY) miss.add(e.k);
+  return {a1, a0, act, missed: miss.size, msg: !a1 ? 'none' : act >= 5 ? 'steady' : 'some'};
+}
+/* WK:end */
 /* SRS:begin — répétition espacée adaptative : fonctions pures, testées dans tests/node.test.mjs */
 const SRS = {MAXIV: 180, EZ0: 2.2, EZMIN: 1.3, EZMAX: 2.8, HALF: 10, WINDOW: 45};
 /* Après chaque réponse : réussite → l'intervalle grandit d'un facteur « ez » propre au verset (2,2 au départ, +0,05 par réussite) ;
@@ -259,7 +267,7 @@ function weakList(errs, stats, sched, now){
     if (o.err < 0.3 && ratio < 0.4) continue;
     let pri = 2 * o.err + ratio + 0.5 * Math.min(14, lateD) / 14;
     if (s && s.iv >= 7) pri *= 0.4;
-    if (pri >= 0.6) out.push({k, pri, n30: o.n30, lateD: Math.floor(lateD), pct: tot >= 3 ? Math.round(100 * ok / tot) : null});
+    if (pri >= 0.6) out.push({k, pri, n30: o.n30, lateD: Math.floor(lateD), due: s ? s.due : 0, pct: tot >= 3 ? Math.round(100 * ok / tot) : null});
   }
   return out.sort((a, b) => b.pri - a.pri);
 }

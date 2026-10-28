@@ -1,6 +1,27 @@
 {
  "versions": [
   {
+   "v": 107,
+   "date": "2026-10-28",
+   "items": [
+    {
+     "id": "logo2",
+     "icon": "📖",
+     "go": "home",
+     "title": {
+      "fr": "Logo : icône plus lisible",
+      "en": "Logo: clearer icon",
+      "ar": "الشعار: أيقونة أوضح"
+     },
+     "text": {
+      "fr": "Sur l'icône de l'application, le livre et la coche sont plus grands : le nom reste sur l'écran de lancement. Le logo de l'en-tête est aussi un peu plus grand.",
+      "en": "On the app icon, the book and the check are larger: the name stays on the launch screen. The header logo is also a little bigger.",
+      "ar": "على أيقونة التطبيق صار الكتاب وعلامة الصح أكبر، ويبقى الاسم على شاشة الإطلاق. كما كبُر شعار الترويسة قليلاً."
+     }
+    }
+   ]
+  },
+  {
    "v": 106,
    "date": "2026-10-28",
    "items": [

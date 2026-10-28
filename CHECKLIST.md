@@ -15,7 +15,7 @@
 3. **Supabase** : *Authentication → Providers → Email → Confirm email* activé ; *Rate Limits* adaptées ; au moins **deux administrateurs** (pour ne pas te verrouiller dehors) ; mot de passe de la base noté dans ton gestionnaire.
 4. **Gmail comme expéditeur** : fonctionne pour quelques dizaines de personnes. Au-delà, ou si Google bloque l'envoi : nom de domaine + Resend (`supabase/README.md`).
 5. **Sauvegarde** : télécharge de temps en temps un fichier du dossier *Artifacts* (30 jours de conservation seulement) et garde ta phrase secrète `BACKUP_PASSPHRASE` ailleurs.
-6. **Essai complet sur un iPhone** : installer l'application, créer un compte, recevoir l'e-mail, activer un rappel, télécharger une sourate hors ligne.
+6. **Essai complet sur un iPhone** : suis `TEST-IPHONE.md` (installation, compte et e-mails, révision, hors ligne, rappels), environ 25 minutes.
 
 GitHub désactive les tâches planifiées d'un dépôt sans activité pendant 60 jours : un envoi (`git push`) ou un lancement manuel les réactive (GitHub t'écrit avant de le faire).
 7. **Lecteur d'écran réel** : l'audit automatique (axe-core) ne remplace pas un essai avec VoiceOver (iPhone : Réglages → Accessibilité → VoiceOver) sur les écrans principaux et un exercice.

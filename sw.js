@@ -1,11 +1,11 @@
 // Service worker Tathbīt : l'application fonctionne hors ligne, mais NE MET JAMAIS EN CACHE les échanges de compte (Supabase).
-const SHELL = 'tathbit-shell-v51', RUNTIME = 'tathbit-runtime-v51', AUDIO = 'tathbit-audio-v1';   // AUDIO : sourates téléchargées par l'utilisateur (jamais effacé automatiquement)
-const FILES = ['./', './index.html', './app.css', './js/core.js', './js/screens.js', './js/session.js', './js/recite.js', './js/clicks.js', './js/reader.js', './js/account.js', './js/extras.js', './js/start.js', './config.js', './i18n.js', './manifest.webmanifest', './icon.svg', './quran.js', './huruf.js', './moutoun.js', './mutashabihat.js',
+const SHELL = 'tathbit-shell-v52', RUNTIME = 'tathbit-runtime-v52', AUDIO = 'tathbit-audio-v1';   // AUDIO : sourates téléchargées par l'utilisateur (jamais effacé automatiquement)
+const FILES = ['./', './index.html', './app.css', './js/core.js', './js/screens.js', './js/session.js', './js/recite.js', './js/clicks.js', './js/reader.js', './js/account.js', './js/extras.js', './js/start.js', './config.js', './i18n.js', './vendor/supabase.min.js', './manifest.webmanifest', './icon.svg', './quran.js', './huruf.js', './moutoun.js', './mutashabihat.js',
   './icons/icon-192.png', './icons/icon-512.png', './icons/apple-touch-icon.png',
   './fonts/fonts.css', './fonts/amiri-quran-arabic.woff2', './fonts/amiri-quran-latin.woff2', './fonts/cormorant-garamond-latin.woff2', './fonts/cormorant-garamond-latin-ext.woff2',
   './fonts/inter-latin.woff2', './fonts/inter-latin-ext.woff2', './fonts/noto-sans-arabic-arabic.woff2'];
-// seuls ces hôtes externes sont mis en cache (texte du Coran, bibliothèque) ; tout le reste passe directement par le réseau. Les polices sont hébergées ici.
-const CACHEABLE = ['api.alquran.cloud', 'cdn.jsdelivr.net'];
+// seuls ces hôtes externes sont mis en cache (texte du Coran) ; tout le reste passe directement par le réseau. Les polices sont hébergées ici.
+const CACHEABLE = ['api.alquran.cloud'];
 const keep = (cacheName, req, res) => { const copy = res.clone(); caches.open(cacheName).then(c => c.put(req, copy)).catch(() => {}); }; // clone AVANT de rendre la réponse
 self.addEventListener('install', e => { e.waitUntil(caches.open(SHELL).then(c => c.addAll(FILES))); self.skipWaiting(); });
 self.addEventListener('activate', e => e.waitUntil(

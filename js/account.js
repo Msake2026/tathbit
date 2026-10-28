@@ -1,7 +1,7 @@
 /* Tathbīt — Compte (Supabase), nouveautés, premier lancement, contact, confidentialité, espace admin.
    Scripts classiques chargés dans l'ordre par index.html (même portée globale) : ne pas les réordonner. */
 /* ---------- compte (Supabase) : inscription, connexion, synchronisation, espace admin ---------- */
-const APP_VERSION = '28 oct. 2026 · v107';
+const APP_VERSION = '28 oct. 2026 · v108';
 const APP_BUILD = +((/v(\d+)/.exec(APP_VERSION) || [])[1]) || 0;   // numéro de la version qui tourne ; version.json (à jour à chaque publication) donne le dernier numéro publié
 let newVer = null, verAt = 0;
 function updBannerHtml(){
@@ -129,13 +129,13 @@ function friendly(e){
   if (/accès refusé|42501|permission denied|row-level security/i.test(m)) return tr('Action refusée (droits insuffisants).');
   return m || tr('Erreur inconnue.');
 }
+let sbLoad = null;   // une seule requête, même si le démarrage et cloudInit la demandent
 function loadSupabase(){
-  return new Promise((res, rej) => {
+  return sbLoad ||= new Promise((res, rej) => {
     if (window.supabase) return res();
     const sc = document.createElement('script');
-    sc.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0/dist/umd/supabase.min.js';
-    sc.integrity = 'sha384-JBR+x8blGwjDRO63aHCGiZMD4VNiTR4ZUGA+N6ZKLf3zNt1fK8IBpcgPaMrxqWBp'; sc.crossOrigin = 'anonymous';
-    sc.onload = res; sc.onerror = () => rej(new Error(tr('Bibliothèque de compte indisponible (hors ligne ?)')));
+    sc.src = 'vendor/supabase.min.js';   // hébergée ici (supabase-js 2.116.0, MIT, octets identiques à ceux du paquet npm) : aucun service tiers contacté au démarrage
+    sc.onload = res; sc.onerror = () => { sbLoad = null; rej(new Error(tr('Bibliothèque de compte indisponible (hors ligne ?)'))); };
     document.head.appendChild(sc);
   });
 }

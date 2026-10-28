@@ -62,12 +62,15 @@ function mapHtml(){
     <div class="legend">${tr('pas vu')} <i class="cell" style="width:14px;height:14px"></i><i class="cell l1" style="width:14px;height:14px"></i><i class="cell l2" style="width:14px;height:14px"></i><i class="cell l3" style="width:14px;height:14px"></i><i class="cell l4" style="width:14px;height:14px"></i> ${tr('maîtrisé')} · <i class="cell lw" style="width:14px;height:14px"></i> ${tr('fragile')}</div>
     <p class="ref" style="margin:4px 0 0">${tr('Maîtrise = réussite × part des versets déjà vus.')}${cfg.map === 'm' ? '' : ' ' + tr('Touche une case pour réviser.')}</p>`;
 }
-function weekHtml(){
-  const out = []; let tot = 0, act = 0;
-  for (let i = 6; i >= 0; i--){ const d = new Date(); d.setDate(d.getDate() - i); const n = days[today(d)] || 0; tot += n; if (n) act++; out.push([d.toLocaleDateString(LOCALE(), {weekday: 'narrow'}), n]); }
-  const mx = Math.max(cfg.goal, ...out.map(x => x[1]));
+function weekHtml(){   // histogramme des 7 jours, puis le bilan : réponses (écart avec la semaine d'avant), jours actifs, versets à reprendre, un mot
+  const out = [];
+  for (let i = 6; i >= 0; i--){ const d = new Date(); d.setDate(d.getDate() - i); out.push([d.toLocaleDateString(LOCALE(), {weekday: 'narrow'}), days[today(d)] || 0]); }
+  const mx = Math.max(cfg.goal, ...out.map(x => x[1])), W = weekStats(days, errors, Date.now(), today), dl = W.a1 - W.a0;
+  const note = {none: 'Pas de série cette semaine : cinq minutes suffisent pour reprendre.', steady: 'Belle régularité cette semaine.', some: 'Un peu chaque jour tient mieux dans la mémoire qu\'une longue séance.'}[W.msg];
   return `<div class="week">${out.map(([l, n]) => `<div title="${trp(n, '{n} réponse|{n} réponses')}"><i style="height:${Math.round(70 * n / mx)}px"></i>${l}</div>`).join('')}</div>
-    <p class="ref" style="margin:4px 0 0">${tr('7 derniers jours')} : ${trp(tot, '{n} réponse|{n} réponses')}, ${trp(act, '{n} jour actif|{n} jours actifs')}.</p>`;
+    <div class="stat" style="margin-top:10px"><div><b>${W.a1}</b>${tr('réponses')}</div>
+      <div><b>${W.act} / 7</b>${tr('jours actifs')}</div><div><b>${W.missed}</b>${tr('à reprendre')}</div></div>
+    <p class="ref" style="margin:8px 0 0">${W.a0 && dl ? `<b>${dl > 0 ? '+' : '−'}${Math.abs(dl)}</b> ${tr('réponses')} ${tr('vs semaine dernière')} · ` : ''}${tr(note)}</p>`;
 }
 
 /* ---------- navigation : menu en bas, un écran à la fois ---------- */
@@ -179,8 +182,9 @@ function go(tab){ homeNotice = ''; cfg.tab = tab; if (tab === 'student' && !isDu
 function weakCard(full){ // verset fragile : « sourate · verset » en gras, la raison dessous ; sur l'accueil : 3 lignes et un bouton
   const W = weakNow(), top = W.slice(0, full ? 10 : 3);
   if (!W.length) return full ? `<div class="card"><h2>${tr('À renforcer en priorité')}</h2><p class="sub" style="margin:0">${tr('Rien à renforcer pour le moment : continue ainsi.')}</p></div>` : '';
+  const next = w => { if (!w.due) return ''; const h = (w.due - Date.now()) / 36e5; return w.lateD >= 1 ? '' : h <= 0 ? tr('à revoir maintenant') : h < 24 ? tr('revu dans {n} h', {n: Math.max(1, Math.round(h))}) : tr('revu dans {n} j', {n: Math.ceil(h / 24)}); };   // prochaine échéance de la répétition espacée
   const why = w => [w.n30 ? trp(w.n30, '{n} erreur ces 30 derniers jours|{n} erreurs ces 30 derniers jours') : '', w.lateD >= 1 ? tr('en retard de {n} j', {n: w.lateD}) : '',
-    w.pct !== null && w.pct < 75 ? tr('réussite {p} %', {p: w.pct}) : ''].filter(Boolean).join(' · ');
+    w.pct !== null && w.pct < 75 ? tr('réussite {p} %', {p: w.pct}) : '', next(w)].filter(Boolean).join(' · ');
   return `<div class="card${full ? '' : ' note'}"><h2>${tr('À renforcer en priorité')}</h2>
     ${top.map(w => `<div class="weak"><span><b>${rshort(pk(w.k))}</b>${why(w) ? `<br><span class="ref">${why(w)}</span>` : ''}</span></div>`).join('')}
     <button class="${full ? 'pri ' : ''}big" style="margin-top:10px" data-act="strengthen">${tr('Renforcer maintenant ({n})', {n: Math.min(10, W.length)})}</button>

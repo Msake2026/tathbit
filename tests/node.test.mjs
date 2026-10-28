@@ -189,6 +189,7 @@ test('révision espacée : intervalle adaptatif et liste « à renforcer en prio
   const sched = { '2:5': { iv: 0.25, due: T - 2 * DAY }, '3:9': { iv: 30, due: T + 5 * DAY }, '9:9': { iv: 20, due: T + 10 * DAY } };
   const W = weakList(errs, stats, sched, T);
   assert.equal(W[0].k, '2:5', 'le plus fragile d\'abord'); assert.equal(W[0].n30, 2); assert.ok(W[0].lateD >= 2); assert.equal(W[0].pct, 20);
+  assert.equal(W[0].due, T - 2 * DAY, 'l\'échéance de répétition est exposée (affichée « revu dans X j »)'); assert.equal(weakList([e('1:1', 1)], {}, {}, T)[0].due, 0, 'sans calendrier : pas d\'échéance');
   assert.ok(!W.some(w => w.k === '3:9'), 'erreur ancienne et verset stable : pas dans la liste');
   assert.ok(!W.some(w => w.k === '1:1'), 'jamais d\'erreur : pas dans la liste');
   assert.ok(!W.some(w => w.k === '9:9') || W.find(w => w.k === '9:9').pri < W[0].pri, 'un verset stable pèse moins');
@@ -435,7 +436,7 @@ test('confidentialité : chaque service contacté automatiquement est cité dans
   const html = readApp(), sw = read('sw.js'), cfg = read('config.js');
   const legal = html.slice(html.indexOf('function renderLegal'), html.indexOf('function summarize') > 0 ? html.indexOf('function summarize') : undefined);
   // services contactés par l'application sans clic de l'utilisateur -> mot attendu dans la page de confidentialité
-  const auto = { 'supabase.co': 'Supabase', 'cdn.jsdelivr.net': 'jsDelivr', 'api.alquran.cloud': 'AlQuran Cloud', 'cdn.islamic.network': 'AlQuran Cloud', 'everyayah.com': 'everyayah.com', 'github.io': 'GitHub' };
+  const auto = { 'supabase.co': 'Supabase', 'api.alquran.cloud': 'AlQuran Cloud', 'cdn.islamic.network': 'AlQuran Cloud', 'everyayah.com': 'everyayah.com', 'github.io': 'GitHub' };
   for (const [host, word] of Object.entries(auto)) assert.ok(legal.includes(word), `la page de confidentialité doit citer « ${word} » (${host})`);
   // liens que l'utilisateur ouvre lui-même (aucune donnée envoyée) : seuls ces autres hôtes sont admis dans le code
   const linkOnly = ['www.cnil.fr', 'tanzil.net', 'alquran.cloud', '1x.ax', 'www.w3.org', 'schemas.openxmlformats.org', 'ar.wikipedia.org', 'ar.wikisource.org', 'github.com', 'resend.com', 'supabase.com', 'api.alquran.cloud'];
@@ -755,4 +756,26 @@ test('logo : le symbole de l’en-tête (js/core.js) est identique à icon.svg, 
   assert.equal(read('js/screens.js').includes('class="logo"><span'), false, 'ancien logo texte');
   assert.ok(!/تثبيت<\/span><\/div>/.test(read('js/account.js')), 'ancien logo texte (account)');
   for (const f of ['confirm-signup', 'reset-password']) assert.ok(read(`supabase/emails/${f}.html`).includes('icons/icon-192.png'), f + ' : logo');
+});
+
+test('bilan de la semaine : réponses, jours actifs, versets à reprendre (7 jours glissants), semaine précédente en comparaison', () => {
+  const html = readApp(); const code = html.slice(html.indexOf('/* WK:begin'), html.indexOf('/* WK:end */'));
+  const { weekStats } = new Function(code + '; return {weekStats};')();
+  const DAY = 864e5, now = Date.UTC(2026, 9, 28, 12), key = d => d.toISOString().slice(0, 10);
+  const at = i => key(new Date(now - i * DAY));
+  const days = { [at(0)]: 10, [at(1)]: 5, [at(3)]: 7, [at(6)]: 2, [at(7)]: 4, [at(9)]: 6, [at(20)]: 50 };
+  const errs = [{ k: '2:5', t: now - DAY, sc: 0 }, { k: '2:5', t: now - 2 * DAY, sc: 0.5 }, { k: '3:9', t: now - 3 * DAY, sc: 0 }, { k: '4:1', t: now - 8 * DAY, sc: 0 }, { k: '5:1', t: now - DAY, sc: 1 }];
+  const W = weekStats(days, errs, now, key);
+  assert.deepEqual([W.a1, W.a0, W.act, W.missed, W.msg], [24, 10, 4, 2, 'some'], 'écart de 7 jours, versets distincts, erreur ancienne ou réussie exclue');
+  assert.equal(weekStats({}, [], now, key).msg, 'none');
+  const full = Object.fromEntries([0, 1, 2, 3, 4].map(i => [at(i), 3]));
+  assert.equal(weekStats(full, [], now, key).msg, 'steady');
+});
+
+test('bibliothèque des comptes hébergée : octets identiques au paquet npm (SHA-384), en cache hors ligne, plus aucun appel à jsDelivr', () => {
+  const buf = fs.readFileSync(path.join(root, 'vendor/supabase.min.js'));
+  assert.equal('sha384-' + crypto.createHash('sha384').update(buf).digest('base64'), 'sha384-JBR+x8blGwjDRO63aHCGiZMD4VNiTR4ZUGA+N6ZKLf3zNt1fK8IBpcgPaMrxqWBp');
+  assert.ok(read('sw.js').includes("'./vendor/supabase.min.js'"), 'dans le cache hors ligne');
+  assert.ok(read('js/account.js').includes("sc.src = 'vendor/supabase.min.js'"));
+  assert.equal(/jsdelivr/i.test(readApp() + read('sw.js')), false, 'aucun service tiers au démarrage');
 });

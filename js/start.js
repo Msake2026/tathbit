@@ -14,6 +14,7 @@ if ('serviceWorker' in navigator && location.protocol.startsWith('http')) naviga
 (async function init(){
   MT = Object.fromEntries((window.MOUTOUN?.texts || []).map(t => [t.id, t]));
   custom.forEach(t => { MT[t.id] = t; });
+  if (cloudOn()) loadSupabase().catch(() => {});   // téléchargée en même temps que le Coran, pas après
   try { await loadQuran(); dropBadRefs(); if (cloudOn()){ renderLoading(); await cloudInit(); } else home(); }
   catch (err){
     $app.innerHTML = `<h1>${tr('Chargement impossible')}</h1>

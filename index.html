@@ -51,14 +51,15 @@
 <link rel="stylesheet" href="app.css">
 </head>
 <body>
+<!-- la coquille s'affiche tout de suite (logo + attente) ; les gros fichiers de données et le code se chargent en dessous, sans bloquer le premier affichage -->
+<main id="app"><div class="boot"><img src="icon.svg" width="72" height="72" alt=""><p class="sub" id="boot">…</p></div></main>
+<nav id="nav" hidden aria-label="Menu principal"></nav>
 <script src="quran.js"></script>
 <script src="huruf.js"></script>
 <script src="moutoun.js"></script>
 <script src="mutashabihat.js"></script>
 <script src="config.js"></script>
 <script src="i18n.js"></script>
-<main id="app"><p class="sub" id="boot">…</p></main>
-<nav id="nav" hidden aria-label="Menu principal"></nav>
 
 <script src="js/core.js"></script>
 <script src="js/screens.js"></script>
