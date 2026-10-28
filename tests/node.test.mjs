@@ -744,3 +744,15 @@ test('lecture de photos : un ou deux mots isolés au bord d’un vers (note coll
   const six = { text: 'قال محمد هو ابن مالك أحمد', x0: 100, x1: 900, y0: 0, y1: 80, words: [W('قال', 800, 900), W('محمد', 700, 790), W('هو', 600, 690), W('ابن', 300, 390), W('مالك', 200, 290), W('أحمد', 100, 190)] };
   assert.equal(ocrFilter([six, six, six]).kept[0], 'قال محمد هو * ابن مالك أحمد'); assert.equal(ocrFilter([six, six, six]).dropped.length, 0);
 });
+
+test('logo : le symbole de l’en-tête (js/core.js) est identique à icon.svg, généré par tools/_logo.mjs', async () => {
+  const { ICON_SVG } = await import('../tools/_logo.mjs');
+  const inner = s => s.replace(/^<svg[^>]*>/, '').replace(/<\/svg>\s*$/, '');
+  assert.equal(read('icon.svg').trim(), ICON_SVG, 'icon.svg est périmé : node tools/build_icons.mjs');
+  const m = read('js/core.js').match(/const LOGO = '<svg class="logo"[^>]*>(.*)<\/svg>';/);
+  assert.ok(m, 'constante LOGO absente de js/core.js');
+  assert.equal(m[1], inner(ICON_SVG), 'LOGO (js/core.js) diffère de icon.svg');
+  assert.equal(read('js/screens.js').includes('class="logo"><span'), false, 'ancien logo texte');
+  assert.ok(!/تثبيت<\/span><\/div>/.test(read('js/account.js')), 'ancien logo texte (account)');
+  for (const f of ['confirm-signup', 'reset-password']) assert.ok(read(`supabase/emails/${f}.html`).includes('icons/icon-192.png'), f + ' : logo');
+});

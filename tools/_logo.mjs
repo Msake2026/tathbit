@@ -1,0 +1,15 @@
+// Logo de Tathbīt : « livre validé sur pupitre » (sceau doré à coche au-dessus d'un livre ouvert posé sur un pupitre en X), vert profond et or.
+// Source unique des dessins : icônes (tools/build_icons.mjs), écrans de lancement (tools/build_store_assets.mjs), icon.svg (symbole seul).
+// L'en-tête de l'application (js/core.js, constante LOGO_SYM) reprend la version « symbole » : un test vérifie qu'elle est identique à icon.svg.
+export const GREEN = '#0f5d46', GOLD = '#d9bd6a', CREAM = '#f6ecd0', CREAM2 = '#ead9a8', INK = '#f1e2b4';
+const BOOK = `<path d="M80 112C62 100 38 98 24 104V62C38 56 62 58 80 70Z" fill="${CREAM}"/><path d="M80 112C98 100 122 98 136 104V62C122 56 98 58 80 70Z" fill="${CREAM2}"/><path d="M18 109C38 101 62 105 80 119C98 105 122 101 142 109" fill="none" stroke="${GOLD}" stroke-width="3.5" stroke-linecap="round"/><path d="M36 74h28M36 84h28M36 94h22M96 74h28M96 84h28M96 94h22" stroke="${GREEN}" stroke-opacity=".38" stroke-width="2.6" stroke-linecap="round"/>`;
+const book = (tx, ty, s) => `<g transform="translate(${tx} ${ty}) scale(${s}) translate(-80 -88)">${BOOK}</g>`;
+// symbole seul (icon.svg, favicon, en-tête de l'application)
+export const SYMBOL = `<circle cx="80" cy="38" r="23" fill="none" stroke="${GOLD}" stroke-opacity=".4" stroke-width="2.5"/><circle cx="80" cy="38" r="18" fill="${GOLD}"/><path d="M69 39l8.5 8.5 16-18.5" fill="none" stroke="${GREEN}" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M54 142L106 108M106 142L54 108" stroke="${GOLD}" stroke-width="7" stroke-linecap="round"/><circle cx="80" cy="125" r="3.2" fill="${GREEN}"/>${book(80, 87, 0.62)}`;
+// avec le nom sous le livre : « تثبيت » en calligraphie Amiri Quran, « TATHBĪT » en Cormorant Garamond (polices du dossier fonts/)
+export const FULL = `<circle cx="80" cy="33" r="18" fill="none" stroke="${GOLD}" stroke-opacity=".4" stroke-width="2"/><circle cx="80" cy="33" r="14" fill="${GOLD}"/><path d="M73 34l5.5 5.5 10-11.5" fill="none" stroke="${GREEN}" stroke-width="4.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M58 106L102 80M102 106L58 80" stroke="${GOLD}" stroke-width="5.5" stroke-linecap="round"/><circle cx="80" cy="93" r="2.6" fill="${GREEN}"/>${book(80, 68, 0.46)}<text x="80" y="127" text-anchor="middle" direction="rtl" font-family="'Amiri Quran',serif" font-size="22" fill="${INK}">تثبيت</text><text x="80" y="141" text-anchor="middle" textLength="58" lengthAdjust="spacingAndGlyphs" font-family="'Cormorant Garamond',Georgia,serif" font-weight="700" font-size="9.5" fill="${GOLD}">TATHBĪT</text>`;
+// fond : carré vert (rx > 0 : coins arrondis) et cadre doré intérieur
+export const BG = (rx = 36, frame = true) => `<rect width="160" height="160" rx="${rx}" fill="${GREEN}"/>${frame ? `<rect x="9" y="9" width="142" height="142" rx="28" fill="none" stroke="${GOLD}" stroke-opacity=".5" stroke-width="2"/>` : ''}`;
+export const svg = (inner, extra = '') => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160"${extra}>${inner}</svg>`;
+// icon.svg : symbole seul (un nom de six lettres serait illisible dans un onglet de navigateur)
+export const ICON_SVG = svg(BG() + SYMBOL);

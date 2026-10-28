@@ -1,6 +1,27 @@
 {
  "versions": [
   {
+   "v": 105,
+   "date": "2026-10-27",
+   "items": [
+    {
+     "id": "photos4",
+     "icon": "📷",
+     "go": "train",
+     "title": {
+      "fr": "Photos de matn : les titres sont gardés",
+      "en": "Mutun photos: titles are kept",
+      "ar": "صور المتون: تُحفظ العناوين"
+     },
+     "text": {
+      "fr": "Les titres de chapitres (باب، فصل، كتاب…) ne sont plus ignorés : ils apparaissent sur leur ligne, précédés de #, et rangent le matn en blocs à l'enregistrement. Les notes collées au bord d'un vers sont mieux écartées.",
+      "en": "Chapter titles (باب، فصل، كتاب…) are no longer ignored: they appear on their own line, prefixed with #, and sort the matn into blocks when saved. Notes stuck to the edge of a verse are dropped more reliably.",
+      "ar": "لم تعد عناوين الأبواب (باب، فصل، كتاب…) تُتجاهل: تظهر في سطر مستقل مسبوقة بـ # وتقسّم المتن إلى أقسام عند الحفظ. وتُستبعد الحواشي الملاصقة لطرف البيت بدقة أكبر."
+     }
+    }
+   ]
+  },
+  {
    "v": 104,
    "date": "2026-10-27",
    "items": [

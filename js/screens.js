@@ -250,7 +250,7 @@ function tabHome(){
   const DS = daySteps(), td = days[today()] || 0, st = streak(), pct = Math.min(100, Math.round(100 * td / cfg.goal));
   return `
   <div id="upd-slot">${updBannerHtml()}</div>
-  <div class="hero"><div class="logo"><span class="lg">تثبيت</span></div><div><h1>Tathbīt</h1><p class="tag">${me ? esc(me.user.email) + ' ' + roleChips() : tr('Que ta mémorisation soit bénie.')}</p></div></div>
+  <div class="hero">${LOGO}<div><h1>Tathbīt</h1><p class="tag">${me ? esc(me.user.email) + ' ' + roleChips() : tr('Que ta mémorisation soit bénie.')}</p></div></div>
   ${homeNotice ? `<div class="fb ok" role="status">${esc(homeNotice)}</div>` : ''}
   ${remOfferHtml()}
   ${iosNudgeHtml()}${exportNudgeHtml()}

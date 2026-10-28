@@ -1,7 +1,7 @@
 /* Tathbīt — Compte (Supabase), nouveautés, premier lancement, contact, confidentialité, espace admin.
    Scripts classiques chargés dans l'ordre par index.html (même portée globale) : ne pas les réordonner. */
 /* ---------- compte (Supabase) : inscription, connexion, synchronisation, espace admin ---------- */
-const APP_VERSION = '27 oct. 2026 · v105';
+const APP_VERSION = '28 oct. 2026 · v106';
 const APP_BUILD = +((/v(\d+)/.exec(APP_VERSION) || [])[1]) || 0;   // numéro de la version qui tourne ; version.json (à jour à chaque publication) donne le dernier numéro publié
 let newVer = null, verAt = 0;
 function updBannerHtml(){
@@ -208,7 +208,7 @@ function renderWelcome(){
       ${SR && wz.kind === 'quran' ? `<button class="big" style="margin-top:8px" data-act="wz-recite">${ic('mic')} ${tr('Plutôt réciter à voix haute')}</button>` : ''}
       <div class="row" style="margin-top:8px"><button data-act="wz-back">${tr('← Retour')}</button><button data-act="wz-skip">${tr("Aller à l'accueil")}</button></div>`;
   $app.innerHTML = `<div class="top"><span>${tr('Bienvenue')} · ${i + 1} / 3</span>${i < 2 ? `<button class="link" data-act="wz-skip">${tr('Passer')}</button>` : '<span></span>'}</div>
-    <div class="hero" style="margin-top:8px"><div class="logo"><span class="lg">تثبيت</span></div><div><h1>${tr('Bienvenue sur Tathbīt')}</h1><div class="wdots" role="img" aria-label="${tr('Étape {i} sur {n}', {i: i + 1, n: 3})}">${dots}</div></div></div>
+    <div class="hero" style="margin-top:8px">${LOGO}<div><h1>${tr('Bienvenue sur Tathbīt')}</h1><div class="wdots" role="img" aria-label="${tr('Étape {i} sur {n}', {i: i + 1, n: 3})}">${dots}</div></div></div>
     ${body}`;
   window.scrollTo(0, 0);
 }
@@ -357,7 +357,7 @@ function renderAccount(){
   const gate = cloudOn() && !me; acc.fromGate = gate;
   const langBar = `<div class="langs">${Object.entries(LANGS).map(([k, n]) => `<button class="${LANG === k ? 'sel' : ''}" data-act="lang" data-v="${k}" lang="${k}">${n}</button>`).join('')}</div>`;
   $app.innerHTML = `${gate ? langBar : `<div class="top"><button class="link" data-act="acc-back">${tr('← Retour')}</button><span>${tr('Compte')}</span></div>`}
-    ${gate ? `<div class="hero" style="margin-top:8px"><div class="logo"><span class="lg">تثبيت</span></div><div><h1>Tathbīt</h1><p class="tag">${tr('Coran et moutoun')}</p><p>${tr("Crée un compte ou connecte-toi pour accéder à l'application.")}</p><p class="ref" style="margin:2px 0 0">${tr('Consolider ce que tu as déjà mémorisé (tathbīt), pas le mémoriser pour la première fois (ḥifẓ).')}</p></div></div>` : `<h1 style="margin-top:8px">${tr('Mon compte')}</h1>`}
+    ${gate ? `<div class="hero" style="margin-top:8px">${LOGO}<div><h1>Tathbīt</h1><p class="tag">${tr('Coran et moutoun')}</p><p>${tr("Crée un compte ou connecte-toi pour accéder à l'application.")}</p><p class="ref" style="margin:2px 0 0">${tr('Consolider ce que tu as déjà mémorisé (tathbīt), pas le mémoriser pour la première fois (ḥifẓ).')}</p></div></div>` : `<h1 style="margin-top:8px">${tr('Mon compte')}</h1>`}
     ${acc.msg && cloudOn() && sb ? `<div id="acc-msg" class="fb ${acc.ok ? 'ok' : 'ko'}">${esc(acc.msg)}</div>` : ''}
     ${acc.resend && !me && sb && !acc.mode.startsWith('newp') ? `<div class="card"><h2>${tr("J'ai un code de confirmation")}</h2>
       <p class="ref" style="margin:0 0 6px">${tr("Le message de confirmation contient aussi un code. S'il est classé dans les indésirables, ses liens ne sont pas cliquables : ouvre-le, touche « Ce n'est pas du spam » (les liens redeviennent cliquables), ou tape le code ici.")}</p>

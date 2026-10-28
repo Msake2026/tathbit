@@ -4,11 +4,10 @@ import { spawn } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import url from 'node:url';
-import { ART_JS } from './_art.mjs';
-const NAME = 'تثبيت', SUB = 'Coran et moutoun';
+import { FULL, svg, GREEN } from './_logo.mjs';
+const SUB = 'Coran et moutoun';
 const root = path.resolve(path.dirname(url.fileURLToPath(import.meta.url)), '..');
-const font = url.pathToFileURL(path.join(root, 'fonts/amiri-quran-arabic.woff2')).href;
-const ui = url.pathToFileURL(path.join(root, 'fonts/inter-latin.woff2')).href;
+const css = url.pathToFileURL(path.join(root, 'fonts/fonts.css')).href;
 const CHROME = process.env.CHROME || '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
 const BASE = process.env.BASE || 'http://localhost:8766/';
 // [largeur appareil, hauteur appareil, densité] en points CSS : l'image mesure largeur×densité
@@ -25,19 +24,13 @@ let id = 0; const pend = {}; ws.onmessage = m => { const d = JSON.parse(m.data);
 const send = (method, params = {}) => new Promise(r => { const i = ++id; pend[i] = r; ws.send(JSON.stringify({ id: i, method, params })); });
 const ev = async e => (await send('Runtime.evaluate', { expression: e, awaitPromise: true, returnByValue: true })).result?.result?.value;
 fs.mkdirSync(path.join(root, 'icons/splash'), { recursive: true }); fs.mkdirSync(path.join(root, 'screenshots'), { recursive: true });
-// --- écrans de lancement : fond vert du logo ; le mot (centré selon l'encre) et son sous-titre forment un groupe centré dans l'écran
+// --- écrans de lancement : fond vert du logo ; le logo complet et son sous-titre forment un groupe centré dans l'écran
 const links = [];
 for (const [dw, dh, d, ori] of SPLASH) for (const o of ori) {
   const w = o === 'p' ? dw : dh, h = o === 'p' ? dh : dw;   // l'image paysage a la largeur et la hauteur inversées
-  const html = `<!doctype html><meta charset="utf-8"><style>@font-face{font-family:AQ;src:url(${font})}@font-face{font-family:IN;src:url(${ui})}html,body{margin:0}canvas{display:block}</style><canvas id="c" width="${w}" height="${h}"></canvas>
-<script>${ART_JS}
-Promise.all([document.fonts.load('100px AQ'), document.fonts.load('20px IN')]).then(() => { const W = ${w}, H = ${h}, ctx = document.getElementById('c').getContext('2d'); fond(ctx, W, H);
-  const B = Math.min(W, H), nameW = B * 0.5, probe = document.createElement('canvas').getContext('2d'); const r0 = nom(probe, ${JSON.stringify(NAME)}, 0, 0, nameW, 'AQ', '#000'), nameH = r0.y1 - r0.y0;
-  const gap = B * 0.07, subPx = B * 0.045, lineH = Math.max(2, B * 0.006), groupH = nameH + gap + lineH + gap * 0.6 + subPx, top = (H - groupH) / 2;
-  nom(ctx, ${JSON.stringify(NAME)}, W / 2, top + nameH / 2, nameW, 'AQ', '#f1e2b4');
-  ctx.fillStyle = 'rgba(217,189,106,.75)'; ctx.fillRect(W / 2 - B * 0.14, top + nameH + gap, B * 0.28, lineH);
-  ctx.font = subPx + 'px IN'; ctx.direction = 'ltr'; ctx.textAlign = 'center'; ctx.textBaseline = 'top'; ctx.fillStyle = '#d9bd6a'; if ('letterSpacing' in ctx) ctx.letterSpacing = (B * 0.003) + 'px';
-  ctx.fillText(${JSON.stringify(SUB)}, W / 2, top + nameH + gap + lineH + gap * 0.6); document.title = 'ready'; });</script>`;
+  const B = Math.min(w, h), L = Math.round(B * 0.6);   // le logo complet (avec son nom) fait 60 % du petit côté ; le sous-titre est en dessous
+  const html = `<!doctype html><meta charset="utf-8"><link rel="stylesheet" href="${css}"><style>html,body{margin:0;height:100%}body{display:flex;flex-direction:column;align-items:center;justify-content:center;background:radial-gradient(circle at 35% 25%,#127a5a,${GREEN} 70%)}svg{width:${L}px;height:${L}px}p{margin:${Math.round(B * 0.02)}px 0 0;font:600 ${Math.round(B * 0.042)}px/1 Inter,sans-serif;letter-spacing:${(B * 0.003).toFixed(1)}px;color:#d9bd6a}</style>${svg(FULL)}<p>${SUB}</p>
+<script>Promise.all([document.fonts.load('22px "Amiri Quran"'), document.fonts.load('700 10px "Cormorant Garamond"'), document.fonts.load('600 20px Inter')]).then(() => { document.title = 'ready'; });</script>`;
   const tmp = path.join(prof, 's.html'); fs.writeFileSync(tmp, html);
   await send('Emulation.setDeviceMetricsOverride', { width: w, height: h, deviceScaleFactor: d, mobile: false });
   await send('Page.navigate', { url: url.pathToFileURL(tmp).href });
@@ -52,7 +45,7 @@ page = page.replace(/(<!-- splash:begin[^>]*-->\n)[\s\S]*?(<!-- splash:end -->)/
 // --- captures d'écran de l'application (comptes désactivés pour la capture : la vraie interface, sans connexion)
 await send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 2, mobile: true });
 await send('Page.navigate', { url: BASE + 'index.html' }); await sleep(4000);
-await ev("localStorage.clear(); CLOUD.url = ''; CLOUD.anonKey = ''; me = null; sb = null; cfg.scope = {type: 'surah', from: 78, to: 114}; cfg.mode = 'mix'; cfg.input = 'recite'; 1");
+await ev("localStorage.clear(); store.set('tathbit.welcome', 1); CLOUD.url = ''; CLOUD.anonKey = ''; me = null; sb = null; cfg.scope = {type: 'surah', from: 78, to: 114}; cfg.mode = 'mix'; cfg.input = 'recite'; 1");
 const shots = [['accueil', "go('home')"], ['reviser', "go('train')"], ['question', "cfg.mode = 'mcq'; start()"]];
 for (const [name, code] of shots) {
   await ev(code); await sleep(900);

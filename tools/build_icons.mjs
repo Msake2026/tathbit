@@ -1,22 +1,20 @@
-// Génère icons/*.png : nom de l'application en calligraphie Amiri Quran sur le fond vert, cadre doré, mot centré selon l'encre.
-// Usage : node tools/build_icons.mjs   (demande Google Chrome ; le texte est dans NAME ci-dessous)
+// Génère icon.svg (symbole seul) et icons/*.png (logo complet avec le nom) à partir de tools/_logo.mjs.
+// Usage : node tools/build_icons.mjs   (demande Google Chrome ; les polices viennent de fonts/)
 import { spawn } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import url from 'node:url';
-import { ART_JS } from './_art.mjs';
-const NAME = 'تثبيت';
+import { BG, FULL, ICON_SVG, svg } from './_logo.mjs';
 const root = path.resolve(path.dirname(url.fileURLToPath(import.meta.url)), '..');
-const font = url.pathToFileURL(path.join(root, 'fonts/amiri-quran-arabic.woff2')).href;
+const css = url.pathToFileURL(path.join(root, 'fonts/fonts.css')).href;
 const CHROME = process.env.CHROME || '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
-// kind : standard (cadre à 10 %) ou maskable (cadre dans la zone sûre, 19,5 %)
-const html = (S, kind) => `<!doctype html><meta charset="utf-8"><style>@font-face{font-family:AQ;src:url(${font})}html,body{margin:0}canvas{display:block}</style><canvas id="c" width="${S}" height="${S}"></canvas>
-<script>${ART_JS}
-document.fonts.load('100px AQ').then(() => { const S = ${S}, ctx = document.getElementById('c').getContext('2d'); fond(ctx, S, S);
-  const inset = S * ${kind === 'maskable' ? 0.195 : 0.1}, w = S - 2 * inset;
-  ctx.strokeStyle = '#d9bd6a'; ctx.lineWidth = S * 0.012; ctx.strokeRect(inset, inset, w, w);
-  ctx.strokeStyle = 'rgba(217,189,106,.55)'; ctx.lineWidth = S * 0.006; ctx.strokeRect(inset + S * 0.03, inset + S * 0.03, w - S * 0.06, w - S * 0.06);
-  const r = nom(ctx, ${JSON.stringify(NAME)}, S / 2, S / 2, w * 0.62, 'AQ', '#f1e2b4'); document.title = 'ready:' + JSON.stringify(r); });</script>`;
+fs.writeFileSync(path.join(root, 'icon.svg'), ICON_SVG + '\n');
+// standard : carré plein cadre avec cadre doré (le système arrondit les coins) ; maskable : fond uni, logo réduit dans la zone sûre (≈ 72 %)
+const art = kind => kind === 'maskable'
+  ? svg(BG(0, false) + `<g transform="translate(80 80) scale(.72) translate(-80 -80)">${FULL}</g>`)
+  : svg(BG(0) + FULL);
+const html = (S, kind) => `<!doctype html><meta charset="utf-8"><link rel="stylesheet" href="${css}"><style>html,body{margin:0}svg{display:block;width:${S}px;height:${S}px}</style>${art(kind)}
+<script>Promise.all([document.fonts.load('22px "Amiri Quran"'), document.fonts.load('700 10px "Cormorant Garamond"')]).then(() => { document.title = 'ready'; });</script>`;
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const prof = fs.mkdtempSync('/tmp/ic-');
 const chrome = spawn(CHROME, ['--headless=new', '--no-sandbox', '--allow-file-access-from-files', '--remote-debugging-port=9340', '--user-data-dir=' + prof, 'about:blank'], { stdio: 'ignore' });
@@ -28,8 +26,8 @@ for (const [file, S, kind] of [['icon-512.png', 512, 'standard'], ['icon-192.png
   const tmp = path.join(prof, 'i.html'); fs.writeFileSync(tmp, html(S, kind));
   await send('Emulation.setDeviceMetricsOverride', { width: S, height: S, deviceScaleFactor: 1, mobile: false });
   await send('Page.navigate', { url: url.pathToFileURL(tmp).href });
-  let ink = ''; for (let i = 0; i < 40; i++) { await sleep(200); const r = await send('Runtime.evaluate', { expression: 'document.title', returnByValue: true }); ink = String(r.result?.result?.value); if (ink.startsWith('ready')) break; }
+  let st = ''; for (let i = 0; i < 40; i++) { await sleep(200); const r = await send('Runtime.evaluate', { expression: 'document.title', returnByValue: true }); st = String(r.result?.result?.value); if (st === 'ready') break; }
   const shot = await send('Page.captureScreenshot', { format: 'png', clip: { x: 0, y: 0, width: S, height: S, scale: 1 } });
-  fs.writeFileSync(path.join(root, 'icons', file), Buffer.from(shot.result.data, 'base64')); console.log(file, S, ink);
+  fs.writeFileSync(path.join(root, 'icons', file), Buffer.from(shot.result.data, 'base64')); console.log(file, S, st);
 }
 chrome.kill(); process.exit(0);

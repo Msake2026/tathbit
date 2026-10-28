@@ -180,7 +180,6 @@ body.has-nav main{padding-bottom:96px}
 .eye{position:absolute;right:2px;top:50%;transform:translateY(-50%);border:0;background:none;padding:9px 10px;color:var(--muted);line-height:0}
 .eye svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .hero{display:flex;align-items:center;gap:12px;margin:2px 0 14px}
-.hero .logo{width:44px;height:44px;border-radius:12px;background:var(--accent);color:var(--accent-ink);display:flex;align-items:center;justify-content:center;font-family:"Amiri Quran",serif;font-size:1.3rem}
 .hero h1{margin:0;line-height:1.1}.hero p{margin:0;color:var(--muted);font-size:.9rem}
 .sumline{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 12px}
 .sumline span{background:var(--bg);border:1px solid var(--line);border-radius:999px;padding:3px 10px;font-size:.82rem}
@@ -227,10 +226,9 @@ button.big{border-radius:14px}
 .seg button.sel,.chips button.sel{background:var(--accent);color:var(--accent-ink);border-color:var(--gold)}
 .link{color:var(--muted)}
 /* repères */
-.hero .logo{width:48px;height:48px;border-radius:50%;background:radial-gradient(circle at 30% 25%,color-mix(in srgb,var(--accent) 70%,#fff),var(--accent));border:2px solid var(--gold);color:var(--gold-soft);
-  box-shadow:0 0 0 4px color-mix(in srgb,var(--gold) 22%,transparent)}
+.hero .logo{width:52px;height:52px;flex:none;border-radius:12px;box-shadow:0 1px 6px color-mix(in srgb,var(--accent) 35%,transparent)}
 .hero h1{font-size:2.1rem}
-.hero .logo{font-size:.95rem;line-height:1}.hero .logo .lg{display:block;transform:translate(.009em,-.354em)}   /* centrage selon l'encre de la calligraphie (mesuré : le mot paraissait trop bas) */.hero p.tag{font-weight:600;color:var(--accent);font-size:.95rem;margin-top:2px}
+.hero p.tag{font-weight:600;color:var(--accent);font-size:.95rem;margin-top:2px}
 .bar,.goal{height:8px;border-radius:8px;background:color-mix(in srgb,var(--gold) 22%,var(--line))}
 .bar i,.goal i{background:linear-gradient(90deg,var(--accent),var(--gold));border-radius:8px}
 .stat div{background:color-mix(in srgb,var(--bg) 55%,var(--card));border:1px solid var(--line);border-radius:14px}
