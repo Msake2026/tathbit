@@ -1,6 +1,27 @@
 {
  "versions": [
   {
+   "v": 106,
+   "date": "2026-10-28",
+   "items": [
+    {
+     "id": "logo",
+     "icon": "📖",
+     "go": "home",
+     "title": {
+      "fr": "Nouveau logo : le livre validé",
+      "en": "New logo: the checked book",
+      "ar": "شعار جديد: الكتاب المُثبَّت"
+     },
+     "text": {
+      "fr": "Un livre ouvert posé sur un pupitre, surmonté d'une coche dorée : consolider ce qu'on a déjà appris. Il remplace l'ancien logo partout : icône de l'application, écran de lancement, en-tête, e-mails.",
+      "en": "An open book resting on a stand, topped with a golden check: consolidating what you already learned. It replaces the old logo everywhere: app icon, launch screen, header, e-mails.",
+      "ar": "كتاب مفتوح على حامل تعلوه علامة صح ذهبية: تثبيت ما حفظتَه من قبل. يحلّ محل الشعار القديم في كل مكان: أيقونة التطبيق وشاشة الإطلاق والترويسة والرسائل الإلكترونية."
+     }
+    }
+   ]
+  },
+  {
    "v": 105,
    "date": "2026-10-27",
    "items": [

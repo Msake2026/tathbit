@@ -1,20 +1,20 @@
 {
- "v": 106,
+ "v": 107,
  "date": "2026-10-28",
  "items": [
   {
-   "id": "logo",
+   "id": "logo2",
    "icon": "📖",
    "go": "home",
    "title": {
-    "fr": "Nouveau logo : le livre validé",
-    "en": "New logo: the checked book",
-    "ar": "شعار جديد: الكتاب المُثبَّت"
+    "fr": "Logo : icône plus lisible",
+    "en": "Logo: clearer icon",
+    "ar": "الشعار: أيقونة أوضح"
    },
    "text": {
-    "fr": "Un livre ouvert posé sur un pupitre, surmonté d'une coche dorée : consolider ce qu'on a déjà appris. Il remplace l'ancien logo partout : icône de l'application, écran de lancement, en-tête, e-mails.",
-    "en": "An open book resting on a stand, topped with a golden check: consolidating what you already learned. It replaces the old logo everywhere: app icon, launch screen, header, e-mails.",
-    "ar": "كتاب مفتوح على حامل تعلوه علامة صح ذهبية: تثبيت ما حفظتَه من قبل. يحلّ محل الشعار القديم في كل مكان: أيقونة التطبيق وشاشة الإطلاق والترويسة والرسائل الإلكترونية."
+    "fr": "Sur l'icône de l'application, le livre et la coche sont plus grands : le nom reste sur l'écran de lancement. Le logo de l'en-tête est aussi un peu plus grand.",
+    "en": "On the app icon, the book and the check are larger: the name stays on the launch screen. The header logo is also a little bigger.",
+    "ar": "على أيقونة التطبيق صار الكتاب وعلامة الصح أكبر، ويبقى الاسم على شاشة الإطلاق. كما كبُر شعار الترويسة قليلاً."
    }
   }
  ]

@@ -1,20 +1,19 @@
-// Génère icon.svg (symbole seul) et icons/*.png (logo complet avec le nom) à partir de tools/_logo.mjs.
-// Usage : node tools/build_icons.mjs   (demande Google Chrome ; les polices viennent de fonts/)
+// Génère icon.svg et icons/*.png (symbole seul : un nom de six lettres devient illisible à 60 px) à partir de tools/_logo.mjs.
+// Usage : node tools/build_icons.mjs   (demande Google Chrome)
 import { spawn } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import url from 'node:url';
-import { BG, FULL, ICON_SVG, svg } from './_logo.mjs';
+import { BG, SYMBOL, ICON_SVG, svg } from './_logo.mjs';
 const root = path.resolve(path.dirname(url.fileURLToPath(import.meta.url)), '..');
-const css = url.pathToFileURL(path.join(root, 'fonts/fonts.css')).href;
 const CHROME = process.env.CHROME || '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
 fs.writeFileSync(path.join(root, 'icon.svg'), ICON_SVG + '\n');
-// standard : carré plein cadre avec cadre doré (le système arrondit les coins) ; maskable : fond uni, logo réduit dans la zone sûre (≈ 72 %)
+// standard : carré plein cadre avec cadre doré (le système arrondit les coins) ; maskable : fond uni, symbole réduit dans la zone sûre (≈ 74 %)
 const art = kind => kind === 'maskable'
-  ? svg(BG(0, false) + `<g transform="translate(80 80) scale(.72) translate(-80 -80)">${FULL}</g>`)
-  : svg(BG(0) + FULL);
-const html = (S, kind) => `<!doctype html><meta charset="utf-8"><link rel="stylesheet" href="${css}"><style>html,body{margin:0}svg{display:block;width:${S}px;height:${S}px}</style>${art(kind)}
-<script>Promise.all([document.fonts.load('22px "Amiri Quran"'), document.fonts.load('700 10px "Cormorant Garamond"')]).then(() => { document.title = 'ready'; });</script>`;
+  ? svg(BG(0, false) + `<g transform="translate(80 80) scale(.74) translate(-80 -80)">${SYMBOL}</g>`)
+  : svg(BG(0) + SYMBOL);
+const html = (S, kind) => `<!doctype html><meta charset="utf-8"><style>html,body{margin:0}svg{display:block;width:${S}px;height:${S}px}</style>${art(kind)}
+<script>document.title = 'ready';</script>`;
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const prof = fs.mkdtempSync('/tmp/ic-');
 const chrome = spawn(CHROME, ['--headless=new', '--no-sandbox', '--allow-file-access-from-files', '--remote-debugging-port=9340', '--user-data-dir=' + prof, 'about:blank'], { stdio: 'ignore' });

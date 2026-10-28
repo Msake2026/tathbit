@@ -226,7 +226,7 @@ button.big{border-radius:14px}
 .seg button.sel,.chips button.sel{background:var(--accent);color:var(--accent-ink);border-color:var(--gold)}
 .link{color:var(--muted)}
 /* repères */
-.hero .logo{width:52px;height:52px;flex:none;border-radius:12px;box-shadow:0 1px 6px color-mix(in srgb,var(--accent) 35%,transparent)}
+.hero .logo{width:60px;height:60px;flex:none;border-radius:14px;box-shadow:0 1px 6px color-mix(in srgb,var(--accent) 35%,transparent)}
 .hero h1{font-size:2.1rem}
 .hero p.tag{font-weight:600;color:var(--accent);font-size:.95rem;margin-top:2px}
 .bar,.goal{height:8px;border-radius:8px;background:color-mix(in srgb,var(--gold) 22%,var(--line))}
