@@ -4,8 +4,9 @@
 const FR_MAX = 1800;   // durée maximale d'une récitation libre (secondes)
 let fr = null;
 const mmss = s => Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');   // compteur de temps de la récitation
-function frTick(){ const el = $('fr-time'); if (fr && fr.t0 && el) el.textContent = mmss(Math.floor((Date.now() - fr.t0) / 1000)) + ' / ' + mmss(FR_MAX); }
-function frQuit(){ if (fr){ clearInterval(fr.tick); clearTimeout(fr.timer); clearTimeout(fr.cap); clearTimeout(fr.grace); if (fr.rec){ fr.rec.onend = null; fr.rec.onresult = null; try { fr.rec.abort(); } catch { /* déjà arrêté */ } } fr = null; } go('train'); }
+let frTickId = 0;
+function frTick(){ const el = $('fr-time'); if (!fr || !fr.t0 || !el){ clearInterval(frTickId); return; } el.textContent = mmss(Math.floor((Date.now() - fr.t0) / 1000)) + ' / ' + mmss(FR_MAX); }
+function frQuit(){ if (fr){ clearInterval(frTickId); clearTimeout(fr.timer); clearTimeout(fr.cap); clearTimeout(fr.grace); if (fr.rec){ fr.rec.onend = null; fr.rec.onresult = null; try { fr.rec.abort(); } catch { /* déjà arrêté */ } } fr = null; } go('train'); }
 /* historique de la récitation libre, par sourate (sur cet appareil) : date, versets récités, sans oubli, à revoir, et où reprendre */
 const frHist = () => store.get('tathbit.frSurah', {});
 function frRemember(done, clean, flagged, open){
@@ -74,7 +75,7 @@ function frStart(res){ // res = {s, a, to} : reprise au verset a de la sourate s
     <div class="grades"><button data-act="fr-hint" ${fr.hide ? '' : 'hidden'}>${ic('bulb')} ${tr('Montrer le mot suivant')}</button><button data-act="fr-skip">${ic('skip')} ${tr('Passer ce verset')}</button></div>
     <button class="rec-stop" data-act="fr-stop">${ic('stop')} ${esc(tr("J'ai fini de réciter"))}<small>${esc(tr('Touche ici pour terminer et voir le bilan'))}</small></button>`;
   frDraw(fr.meta[Math.min(fr.p, fr.exp.length - 1)].s); frPaint();
-  fr.cap = setTimeout(() => frFinish('time'), FR_MAX * 1000); fr.t0 = Date.now(); fr.tick = setInterval(frTick, 1000);
+  fr.cap = setTimeout(() => frFinish('time'), FR_MAX * 1000); fr.t0 = Date.now(); clearInterval(frTickId); frTickId = setInterval(frTick, 1000);
   frListen();
 }
 function frDraw(s){ // affiche le texte de la sourate s ; chaque mot est un <span data-w=n° du mot dans toute la récitation>
@@ -140,7 +141,7 @@ function frSkip(){ // passe au verset suivant : les mots restants du verset sont
   frPaint(); if (fr.p >= fr.exp.length) frFinish('done'); else { clearTimeout(fr.timer); fr.timer = setTimeout(frListen, 150); }
 }
 function frFinish(reason){
-  if (!fr || fr.finishing) return; fr.finishing = true; fr.reason = reason; clearTimeout(fr.timer); clearTimeout(fr.cap); clearInterval(fr.tick); if (fr.t0) fr.dur = Math.round((Date.now() - fr.t0) / 1000);
+  if (!fr || fr.finishing) return; fr.finishing = true; fr.reason = reason; clearTimeout(fr.timer); clearTimeout(fr.cap); clearInterval(frTickId); if (fr.t0) fr.dur = Math.round((Date.now() - fr.t0) / 1000);
   const rec = fr.rec, go = () => { if (!fr || fr.summarized) return; fr.summarized = true; clearTimeout(fr.grace); frSummary(); };
   if (!rec) return go();
   rec.onend = go; fr.grace = setTimeout(go, 1200); try { rec.stop(); } catch { go(); }   // on laisse le dernier résultat arriver avant le bilan

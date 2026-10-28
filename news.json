@@ -1,20 +1,20 @@
 {
- "v": 110,
+ "v": 111,
  "date": "2026-10-28",
  "items": [
   {
-   "id": "fr-timer2",
-   "icon": "⏱️",
-   "go": "recite",
+   "id": "small-screens",
+   "icon": "📱",
+   "go": "settings",
    "title": {
-    "fr": "Compteur : la limite est affichée",
-    "en": "Timer: the limit is shown",
-    "ar": "العدّاد: يظهر الحد الأقصى"
+    "fr": "Petits écrans mieux ajustés",
+    "en": "Better fit on small screens",
+    "ar": "ملاءمة أفضل للشاشات الصغيرة"
    },
    "text": {
-    "fr": "Pendant la récitation à voix haute, le compteur indique aussi la durée maximale : « 4:12 / 30:00 ».",
-    "en": "While reciting aloud, the timer now also shows the maximum length: “4:12 / 30:00”.",
-    "ar": "أثناء التسميع بصوت عالٍ يعرض العدّاد المدة القصوى أيضاً: «4:12 / 30:00»."
+    "fr": "Sur les très petits écrans (320 px), la page Réglages ne dépasse plus de la largeur et la barre du bas n'est plus décalée.",
+    "en": "On very small screens (320 px), the Settings page no longer overflows sideways and the bottom bar is no longer shifted.",
+    "ar": "على الشاشات الصغيرة جداً (320 بكسل) لم تعد صفحة الإعدادات تتجاوز العرض ولم يعد الشريط السفلي مُزاحاً."
    }
   }
  ]

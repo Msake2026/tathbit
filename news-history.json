@@ -1,6 +1,27 @@
 {
  "versions": [
   {
+   "v": 110,
+   "date": "2026-10-28",
+   "items": [
+    {
+     "id": "fr-timer2",
+     "icon": "⏱️",
+     "go": "recite",
+     "title": {
+      "fr": "Compteur : la limite est affichée",
+      "en": "Timer: the limit is shown",
+      "ar": "العدّاد: يظهر الحد الأقصى"
+     },
+     "text": {
+      "fr": "Pendant la récitation à voix haute, le compteur indique aussi la durée maximale : « 4:12 / 30:00 ».",
+      "en": "While reciting aloud, the timer now also shows the maximum length: “4:12 / 30:00”.",
+      "ar": "أثناء التسميع بصوت عالٍ يعرض العدّاد المدة القصوى أيضاً: «4:12 / 30:00»."
+     }
+    }
+   ]
+  },
+  {
    "v": 109,
    "date": "2026-10-28",
    "items": [
